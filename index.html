@@ -1,1 +1,674 @@
-<h1>POS System Online</h1>
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#f4f5f7] text-[#1c1f24]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>JumpMind Commerce Terminal</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JM Commerce">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { 
+                extend: { 
+                    colors: { 
+                        jmBlue: '#1a4e8a',
+                        jmHeader: '#113c6e',
+                        jmCanvas: '#f4f5f7',
+                        jmCard: '#ffffff',
+                        jmBorder: '#dcdfe4',
+                        jmText: '#1c1f24',
+                        jmGreen: '#5b7a3a'
+                    } 
+                } 
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * { -webkit-user-select: none; user-select: none; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        input, textarea, select { -webkit-user-select: text !important; user-select: text !important; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #f4f5f7; }
+        ::-webkit-scrollbar-thumb { background: #cdd2d9; border-radius: 2px; }
+        .jm-touch-target:active { transform: scale(0.98); filter: brightness(0.95); }
+    </style>
+</head>
+<body class="h-full overflow-hidden antialiased bg-[#f4f5f7]">
+
+    <div id="global-toast" class="fixed top-16 right-4 z-[9999] transform translate-y-20 opacity-0 pointer-events-none transition-all duration-200 flex items-center p-3 rounded shadow-lg border bg-white border-jmBorder max-w-xs">
+        <div id="toast-icon" class="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-white mr-2 text-xs"></div>
+        <div><p id="toast-msg" class="text-xs font-semibold text-jmText"></p></div>
+    </div>
+
+    <div id="root-app" class="h-full flex flex-col"></div>
+
+    <script>
+        // ========================================================================
+        // COMPACT DATA STORAGE INTERFACE STRATEGIES
+        // ========================================================================
+        const FALLBACK_OPERATORS = [
+            { id: "e1", name: "Tony", pin: "9091237", role: "Admin", wage: 35.00 },
+            { id: "e2", name: "Mike Rufone", pin: "1111", role: "Manager", wage: 25.00 }
+        ];
+
+        class MemoryStorageFallback {
+            constructor() { this.store = {}; }
+            getItem(key) { return this.store[key] || null; }
+            setItem(key, val) { this.store[key] = String(val); }
+            clear() { this.store = {}; }
+        }
+
+        class DatabaseEngine {
+            constructor() {
+                this.storage = window.localStorage;
+                try {
+                    window.localStorage.setItem("__pos_test", "1");
+                    window.localStorage.removeItem("__pos_test");
+                } catch (e) {
+                    this.storage = new MemoryStorageFallback();
+                }
+                this.init();
+            }
+            init() {
+                if (this.storage.getItem("pos_products")) return;
+                
+                // Inject clean demo assets matching your custom layout verification tags
+                const demoCatalog = [
+                    { id: "p1", name: "NYQUIL LIQUID CAPS", sku: "121000025", price: 35.59, stock: 45, category: "Pharmacy" },
+                    { id: "p2", name: "VICKS VAPORUB CORES", sku: "140000012", price: 12.49, stock: 32, category: "Pharmacy" }
+                ];
+
+                this.storage.setItem("pos_products", JSON.stringify(demoCatalog));
+                this.storage.setItem("pos_employees", JSON.stringify(FALLBACK_OPERATORS));
+                this.storage.setItem("pos_customers", JSON.stringify([{ id: "c1", name: "Mike Rufone", phone: "5551234", points: 420 }]));
+                this.storage.setItem("pos_timecards", JSON.stringify([]));
+                this.storage.setItem("pos_transactions", JSON.stringify([]));
+                this.storage.setItem("pos_settings", JSON.stringify({
+                    storeName: "JumpMind Commerce",
+                    taxRate: 10.25,
+                    currencySymbol: "$",
+                    receiptFooter: "Thank you for shopping at JumpMind Networks.",
+                    companyName: "JumpMind Retail Group Inc",
+                    taxId: "EIN-8812345",
+                    storeAddress: "77 Retail Innovation Way"
+                }));
+            }
+            get(key) { return JSON.parse(this.storage.getItem("pos_" + key)); }
+            set(key, data) { this.storage.setItem("pos_" + key, JSON.stringify(data)); }
+            clearAll() { this.storage.clear(); }
+        }
+
+        const db = new DatabaseEngine();
+
+        class SystemStateRouter {
+            constructor() {
+                this.currentUser = null;
+                this.currentView = "register";
+                this.currentPinInput = "";
+                this.globalSettings = db.get("settings") || {};
+                
+                // Checkout Panel Models
+                this.cart = [];
+                this.selectedCustomer = null;
+                this.searchQuery = "";
+                this.checkoutModalOpen = false;
+                this.receiptModalOpen = false;
+                this.lastTransaction = null;
+                this.activeSettingsSubSection = "company";
+            }
+
+            setView(viewName) {
+                if (!this.currentUser && viewName !== "login") return;
+                this.currentView = viewName;
+                this.render();
+                if (viewName === "reporting") this.initReportingCharts();
+            }
+
+            showToast(msg, type = "success") {
+                const toast = document.getElementById("global-toast");
+                const icon = document.getElementById("toast-icon");
+                const text = document.getElementById("toast-msg");
+                text.innerText = msg;
+                icon.className = type === "success" ? "w-5 h-5 rounded flex items-center justify-center text-white mr-2 bg-emerald-600" : "w-5 h-5 rounded flex items-center justify-center text-white mr-2 bg-rose-600";
+                icon.innerHTML = type === "success" ? '<i class="fas fa-check"></i>' : '<i class="fas fa-exclamation"></i>';
+                toast.classList.remove("translate-y-20", "opacity-0", "pointer-events-none");
+                setTimeout(() => toast.classList.add("translate-y-20", "opacity-0", "pointer-events-none"), 2500);
+            }
+
+            pressKey(num) {
+                if (this.currentPinInput.length >= 8) return;
+                this.currentPinInput += num;
+                const el = document.getElementById("pin-mask-field");
+                if (el) el.value = "•".repeat(this.currentPinInput.length);
+            }
+
+            clearKey() {
+                this.currentPinInput = "";
+                const el = document.getElementById("pin-mask-field");
+                if (el) el.value = "";
+            }
+
+            submitLogin() {
+                const emps = db.get("employees") || [];
+                const match = emps.find(e => e.pin === this.currentPinInput);
+                if (match) {
+                    this.currentUser = match;
+                    // Auto attach customer profile if matching terminal operator criteria for testing
+                    const customers = db.get("customers") || [];
+                    const cMatch = customers.find(c => c.name === match.name);
+                    if (cMatch) this.selectedCustomer = cMatch;
+                    
+                    this.setView("register");
+                    this.showToast(`Authorized: Welcome back`);
+                } else {
+                    this.showToast("Invalid Credentials PIN", "danger");
+                    this.clearKey();
+                }
+            }
+
+            logout() {
+                this.currentUser = null;
+                this.currentPinInput = "";
+                this.cart = [];
+                this.selectedCustomer = null;
+                this.setView("login");
+            }
+
+            // ========================================================================
+            // BASKET MODIFICATION CHANNELS
+            // ========================================================================
+            addToCart(id) {
+                const products = db.get("products") || [];
+                const item = products.find(p => p.id === id);
+                if (!item || item.stock <= 0) return;
+
+                const existing = this.cart.find(c => c.id === id);
+                if (existing) {
+                    if (existing.quantity >= item.stock) return;
+                    existing.quantity++;
+                } else {
+                    this.cart.push({ ...item, quantity: 1, discount: 0 });
+                }
+                this.render();
+            }
+
+            updateCartQty(id, qty) {
+                if (qty <= 0) {
+                    this.cart = this.cart.filter(c => c.id !== id);
+                } else {
+                    const item = this.cart.find(c => c.id === id);
+                    if (item) item.quantity = qty;
+                }
+                this.render();
+            }
+
+            attachCustomer(searchStr) {
+                const customers = db.get("customers") || [];
+                const match = customers.find(c => c.phone === searchStr || c.name.toLowerCase().includes(searchStr.toLowerCase()));
+                if (match) {
+                    this.selectedCustomer = match;
+                    this.showToast("Customer Linked Matrix.");
+                } else {
+                    this.showToast("No Profile Located", "danger");
+                }
+                this.render();
+            }
+
+            getTotals() {
+                let subtotal = 0;
+                this.cart.forEach(c => { subtotal += (c.price * c.quantity) - c.discount; });
+                const tax = subtotal * (parseFloat(this.globalSettings.taxRate || 10.25) / 100);
+                return { subtotal, tax, total: subtotal + tax };
+            }
+
+            processCheckout(method) {
+                const { subtotal, tax, total } = this.getTotals();
+                if (this.cart.length === 0) return;
+
+                const tx = {
+                    id: "TX-" + Math.floor(100000 + Math.random() * 900000),
+                    timestamp: new Date().toISOString(),
+                    employeeName: this.currentUser.name,
+                    customerName: this.selectedCustomer ? this.selectedCustomer.name : "Walk-in Guest",
+                    items: [...this.cart], subtotal, tax, total, method
+                };
+
+                const txs = db.get("transactions") || [];
+                txs.unshift(tx);
+                db.set("transactions", txs);
+
+                this.lastTransaction = tx;
+                this.cart = [];
+                this.checkoutModalOpen = false;
+                this.receiptModalOpen = true;
+                this.render();
+            }
+
+            // ========================================================================
+            // QUICK DATA ENTRY FUNCTIONS
+            // ========================================================================
+            addEmployeeNode() {
+                const name = document.getElementById("set-emp-name").value;
+                const pin = document.getElementById("set-emp-pin").value;
+                const role = document.getElementById("set-emp-role").value;
+                const wage = parseFloat(document.getElementById("set-emp-wage").value) || 0;
+                if (!name || !pin) return;
+                const emps = db.get("employees") || [];
+                emps.push({ id: "e-" + Date.now(), name, pin, role, wage });
+                db.set("employees", emps);
+                this.showToast(`Operator Onboarded`);
+                this.render();
+            }
+
+            addCustomerNode() {
+                const name = document.getElementById("set-cust-name").value;
+                const phone = document.getElementById("set-cust-phone").value;
+                if (!name || !phone) return;
+                const custs = db.get("customers") || [];
+                custs.push({ id: "c-" + Date.now(), name, phone, points: 0 });
+                db.set("customers", custs);
+                this.showToast(`CRM Node Set`);
+                this.render();
+            }
+
+            addProductNode() {
+                const name = document.getElementById("set-prod-name").value;
+                const sku = document.getElementById("set-prod-sku").value;
+                const price = parseFloat(document.getElementById("set-prod-price").value) || 0;
+                const stock = parseInt(document.getElementById("set-prod-stock").value) || 0;
+                if (!name || !sku) return;
+                const prods = db.get("products") || [];
+                prods.push({ id: "p-" + Date.now(), name, sku, price, stock, category: "General" });
+                db.set("products", prods);
+                this.showToast(`Product Asset Locked`);
+                this.render();
+            }
+
+            saveSettings() {
+                const s = {
+                    storeName: document.getElementById("set-store-name").value,
+                    taxRate: parseFloat(document.getElementById("set-tax-rate").value) || 0,
+                    currencySymbol: document.getElementById("set-currency").value,
+                    receiptFooter: document.getElementById("set-footer").value,
+                    companyName: document.getElementById("set-company-name").value,
+                    taxId: document.getElementById("set-tax-id").value,
+                    storeAddress: document.getElementById("set-store-address").value
+                };
+                db.set("settings", s);
+                this.globalSettings = s;
+                this.showToast("Parameters Saved.");
+                this.render();
+            }
+
+            clearLocalStorageCache() {
+                db.clearAll();
+                localStorage.clear();
+                this.showToast("Purging Station...", "danger");
+                setTimeout(() => window.location.reload(), 800);
+            }
+
+            initReportingCharts() {
+                const txs = db.get("transactions") || [];
+                const dailyTotals = {};
+                txs.forEach(t => {
+                    const d = t.timestamp.split('T')[0];
+                    dailyTotals[d] = (dailyTotals[d] || 0) + t.total;
+                });
+                const sorted = Object.keys(dailyTotals).sort().slice(-7);
+                const data = sorted.map(k => dailyTotals[k]);
+
+                const ctx = document.getElementById('chart-sales-trend');
+                if (ctx) {
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: { labels: sorted, datasets: [{ label: 'Sales ($)', data: data, borderColor: '#1a4e8a', tension: 0.1 }] }
+                    });
+                }
+            }
+
+            // ========================================================================
+            // COMPILER RENDER LAYOUT MATRICES
+            // ========================================================================
+            renderActiveSubView() {
+                const sym = this.globalSettings.currencySymbol || "$";
+                switch(this.currentView) {
+                    case "register":
+                        const products = db.get("products") || [];
+                        const filtered = products.filter(p => p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || p.sku.includes(this.searchQuery));
+                        const { subtotal, tax, total } = this.getTotals();
+                        
+                        return `
+                            <div class="h-full flex flex-col md:flex-row overflow-hidden bg-[#f4f5f7]">
+                                <div class="flex-1 flex flex-col overflow-hidden p-4 space-y-3">
+                                    <div class="bg-white border border-jmBorder rounded flex items-center shadow-sm overflow-hidden h-12 flex-shrink-0">
+                                        <div class="w-12 h-full bg-[#e8ecf2] border-r border-jmBorder flex items-center justify-center text-jmBlue"><i class="fas fa-barcode text-lg"></i></div>
+                                        <input type="text" placeholder="Scan Something" value="${this.searchQuery}" oninput="window.state.searchQuery=this.value; window.state.render()" class="flex-1 px-4 text-sm text-jmText bg-transparent border-none outline-none placeholder-[#a0aab5]">
+                                    </div>
+
+                                    <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+                                        ${this.cart.length === 0 ? `
+                                            <div class="bg-white border border-jmBorder rounded-lg p-8 text-center text-slate-400 text-xs font-medium space-y-2">
+                                                <i class="fas fa-basket-shopping text-2xl text-slate-300 block"></i>
+                                                <span>Transaction basket empty. Tap catalog items or search entry below to register items.</span>
+                                                <div class="grid grid-cols-2 gap-2 max-w-sm mx-auto pt-4">
+                                                    ${products.map(p => `<button onclick="window.state.addToCart('${p.id}')" class="p-2.5 bg-slate-50 border border-slate-200 text-jmText font-bold text-[11px] rounded uppercase text-left truncate hover:bg-slate-100">${p.name}</button>`).join('')}
+                                                </div>
+                                            </div>
+                                        ` : this.cart.map(item => `
+                                            <div class="bg-white border border-jmBorder rounded p-4 shadow-sm relative space-y-3">
+                                                <div class="flex justify-between items-start">
+                                                    <div>
+                                                        <h3 class="text-sm font-bold text-jmText tracking-wide uppercase">${item.name}</h3>
+                                                        <p class="text-[11px] text-slate-500 font-mono mt-0.5">Item ID: ${item.sku} • Quantity: ${item.quantity}</p>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <span class="text-sm font-bold text-jmText font-mono">${sym}${(item.price * item.quantity).toFixed(2)}</span>
+                                                        <button onclick="window.state.updateCartQty('${item.id}', 0)" class="block text-[11px] text-jmBlue font-bold mt-1 hover:underline">Options <i class="fas fa-ellipsis-v text-[9px] ml-1"></i></button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="bg-[#f0f3f7] border border-dashed border-slate-400 rounded p-3 text-[11px] text-slate-700 space-y-1.5 font-sans">
+                                                    <div class="text-slate-400 uppercase font-bold text-[9px] tracking-wider mb-0.5">Promo Pending</div>
+                                                    <div class="flex items-center gap-2"><i class="fas fa-tag text-jmText text-[10px]"></i><span>Buy 1 Item of Group 121, Get a Second Free</span></div>
+                                                    <div class="flex items-center gap-2"><i class="fas fa-tag text-jmText text-[10px]"></i><span>Buy an Item of Group 121 and an Item of Group 140, Get a POP for $5</span></div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <div class="w-full md:w-[280px] bg-white border-l border-jmBorder flex flex-col justify-between overflow-hidden flex-shrink-0 shadow-xl z-10">
+                                    <div class="flex flex-col flex-1 overflow-y-auto">
+                                        <div class="p-4 border-b border-jmBorder bg-[#fcfdfe]">
+                                            ${this.selectedCustomer ? `
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-8 h-8 rounded-full bg-[#5b7a3a] text-white flex items-center justify-center text-sm"><i class="fas fa-user"></i></div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <h4 class="text-xs font-bold text-jmText truncate uppercase">${this.selectedCustomer.name}</h4>
+                                                        <div class="flex gap-1.5 mt-0.5">
+                                                            <span class="text-[9px] bg-[#e2edd5] text-[#425c25] px-1.5 py-0.5 rounded font-bold uppercase tracking-tight">Ultimate Rewards</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ` : `
+                                                <div class="flex gap-1">
+                                                    <input type="text" id="cust-in" placeholder="Attach Account..." class="flex-1 bg-[#f4f5f7] border border-jmBorder text-xs px-2.5 py-1.5 rounded outline-none text-jmText">
+                                                    <button onclick="window.state.attachCustomer(document.getElementById('cust-in').value)" class="bg-[#e8ecf2] border border-jmBorder px-3 text-xs font-bold text-jmText rounded uppercase">Link</button>
+                                                </div>
+                                            `}
+                                        </div>
+
+                                        <div class="p-3 bg-[#f0f3f7] text-center text-xs font-bold text-jmText border-b border-jmBorder font-sans uppercase tracking-wider">
+                                            ${this.cart.reduce((a, b) => a + b.quantity, 0)} Item${this.cart.reduce((a, b) => a + b.quantity, 0) !== 1 ? 's' : ''}
+                                        </div>
+
+                                        <div class="p-4 space-y-4 font-sans border-b border-jmBorder flex-1 justify-center flex flex-col">
+                                            <div class="text-center">
+                                                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Subtotal</span>
+                                                <span class="text-sm font-black text-jmText font-mono mt-0.5 block">${sym}${subtotal.toFixed(2)}</span>
+                                            </div>
+                                            <div class="text-center">
+                                                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Discounts / Credits</span>
+                                                <span class="text-sm font-black text-jmText font-mono mt-0.5 block">${sym}0.00</span>
+                                            </div>
+                                            <div class="text-center">
+                                                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Tax</span>
+                                                <span class="text-sm font-black text-jmText font-mono mt-0.5 block">${sym}${tax.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="p-3 bg-white border-t border-jmBorder space-y-2">
+                                        <div class="text-center pb-2 border-b border-dashed border-jmBorder">
+                                            <span class="text-[11px] font-black tracking-wider text-jmBlue block uppercase">Amount Due</span>
+                                            <span class="text-xl font-black text-jmText font-mono block mt-0.5">${sym}${total.toFixed(2)}</span>
+                                        </div>
+                                        <button onclick="window.state.checkoutModalOpen=true; window.state.render()" ${this.cart.length === 0 ? 'disabled' : ''} class="w-full py-3 bg-jmBlue border border-jmHeader disabled:bg-slate-200 disabled:border-slate-300 disabled:text-slate-400 text-white rounded font-bold text-xs uppercase tracking-widest jm-touch-target transition shadow-sm shadow-jmBlue/10">Checkout</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    case "inventory":
+                        return `
+                            <div class="h-full flex flex-col p-4 space-y-3 overflow-hidden text-xs">
+                                <div class="bg-white border border-jmBorder p-3 rounded shadow-sm"><h3 class="text-xs font-bold uppercase tracking-wider text-jmBlue">System Inventory Grid</h3></div>
+                                <div class="flex-1 overflow-auto border border-jmBorder bg-white rounded shadow-sm">
+                                    <table class="w-full text-left"><thead class="bg-[#f0f3f7] border-b border-jmBorder text-slate-600 font-bold uppercase"><tr><th class="p-3">Asset Title</th><th class="p-3">SKU Map</th><th class="p-3 text-right">Price Matrix</th><th class="p-3 text-center">In Stock</th></tr></thead>
+                                    <tbody class="divide-y divide-jmBorder text-jmText font-medium">${(db.get("products") || []).map(p => `<tr><td class="p-3 font-bold uppercase">${p.name}</td><td class="p-3 font-mono text-slate-500">${p.sku}</td><td class="p-3 text-right font-mono text-jmBlue">${sym}${p.price.toFixed(2)}</td><td class="p-3 text-center font-mono">${p.stock} units</td></tr>`).join('')}</tbody></table>
+                                </div>
+                            </div>
+                        `;
+                    case "customers":
+                        return `
+                            <div class="h-full flex flex-col p-4 space-y-3 overflow-hidden text-xs">
+                                <div class="bg-white border border-jmBorder p-3 rounded shadow-sm"><h3 class="text-xs font-bold uppercase tracking-wider text-jmBlue">CRM Loyalty Accounts</h3></div>
+                                <div class="flex-1 overflow-auto border border-jmBorder bg-white rounded shadow-sm">
+                                    <table class="w-full text-left"><thead class="bg-[#f0f3f7] border-b border-jmBorder text-slate-600 font-bold uppercase"><tr><th class="p-3">Consumer Name</th><th class="p-3">Phone String</th><th class="p-3 text-center">Reward Bal</th></tr></thead>
+                                    <tbody class="divide-y divide-jmBorder text-jmText font-medium">${(db.get("customers") || []).map(c => `<tr><td class="p-3 font-bold uppercase">${c.name}</td><td class="p-3 font-mono text-slate-500">${c.phone}</td><td class="p-3 text-center font-mono text-jmGreen">${c.points} PTS</td></tr>`).join('')}</tbody></table>
+                                </div>
+                            </div>
+                        `;
+                    case "employees":
+                        return `
+                            <div class="h-full flex flex-col p-4 space-y-3 overflow-hidden text-xs">
+                                <div class="bg-white border border-jmBorder p-3 rounded shadow-sm"><h3 class="text-xs font-bold uppercase tracking-wider text-jmBlue">Workforce Auditing Timecards</h3></div>
+                                <div class="flex-1 overflow-auto border border-jmBorder bg-white rounded shadow-sm"><table class="w-full text-left"><tbody class="divide-y divide-jmBorder">${(db.get("timecards") || []).map(t => `<tr><td class="p-3 font-bold text-jmText uppercase">${t.employeeName}</td><td class="p-3 font-mono text-slate-500">IN: ${new Date(t.clockIn).toLocaleTimeString()}</td><td class="p-3 font-mono text-slate-500">${t.clockOut ? 'OUT: ' + new Date(t.clockOut).toLocaleTimeString() : '<span class="text-emerald-600 font-bold">ONGOING</span>'}</td><td class="p-3 text-right">${!t.approved && t.clockOut ? `<button onclick="window.state.approveShift('${t.id}')" class="px-2 py-1 bg-white border border-jmBorder text-jmBlue rounded font-bold uppercase shadow-xs">Verify</button>` : '<i class="fas fa-check-circle text-slate-400 px-3"></i>'}</td></tr>`).join('')}</tbody></table></div>
+                            </div>
+                        `;
+                    case "reporting":
+                        const txs = db.get("transactions") || [];
+                        let totalGross = 0; txs.forEach(t => totalGross += t.total);
+                        return `
+                            <div class="h-full flex flex-col p-4 space-y-3 overflow-hidden text-xs">
+                                <div class="grid grid-cols-2 gap-2"><div class="p-4 bg-white border border-jmBorder rounded shadow-sm"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Aggregate Volume Ingestion</span><span class="text-lg font-black text-jmGreen mt-0.5 block font-mono">${sym}${totalGross.toFixed(2)}</span></div><div class="p-4 bg-white border border-jmBorder rounded shadow-sm"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Loops</span><span class="text-lg font-black text-jmText mt-0.5 block font-mono">${txs.length} loops</span></div></div>
+                                <div class="flex-1 bg-white border border-jmBorder p-4 rounded overflow-hidden flex flex-col shadow-sm"><h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Yield Trends</h4><div class="flex-1 relative w-full h-full"><canvas id="chart-sales-trend"></canvas></div></div>
+                            </div>
+                        `;
+                    case "settings":
+                        const sub = this.activeSettingsSubSection;
+                        return `
+                            <div class="h-full flex flex-col md:flex-row overflow-hidden text-xs p-2 gap-4">
+                                <div class="w-full md:w-40 flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-x-visible bg-white border border-jmBorder p-2 rounded flex-shrink-0 shadow-sm">
+                                    ${this.settingsTab('company', 'Corporate Profile', sub)}
+                                    ${this.settingsTab('fiscal', 'Taxes & Signifiers', sub)}
+                                    ${this.settingsTab('receipt', 'Receipt Slates', sub)}
+                                    ${this.settingsTab('employees', 'Staff Roster', sub)}
+                                    ${this.settingsTab('customers', 'CRM Registry', sub)}
+                                    ${this.settingsTab('inventory', 'Product Sheets', sub)}
+                                    ${this.settingsTab('system', 'System controls', sub)}
+                                </div>
+                                <div class="flex-1 bg-white border border-jmBorder p-4 rounded overflow-y-auto shadow-sm">
+                                    ${this.renderSettingsSubPane(sub, sym)}
+                                </div>
+                            </div>
+                        `;
+                    default: return ``;
+                }
+            }
+
+            settingsTab(id, label, activeId) {
+                const active = id === activeId;
+                return `<button onclick="window.state.activeSettingsSubSection='${id}'; window.state.render()" class="px-2 py-1.5 text-left rounded text-[9px] uppercase font-bold tracking-wider ${active ? 'bg-jmBlue text-white border border-jmHeader' : 'text-slate-500 hover:bg-[#f4f5f7]' Brooklyn}">${label}</button>`;
+            }
+
+            renderSettingsSubPane(sub, sym) {
+                const s = this.globalSettings;
+                switch(sub) {
+                    case 'company':
+                        return `
+                            <h3 class="text-[10px] font-bold text-jmText border-b border-jmBorder pb-2 uppercase tracking-wider">Corporate Infrastructure Settings</h3>
+                            <div class="space-y-2 max-w-xs pt-2">
+                                <div class="space-y-0.5"><label class="text-slate-400 uppercase text-[9px] font-bold">Legal Corporate Name:</label><input type="text" id="set-company-name" value="${s.companyName || ''}" class="w-full bg-[#f4f5f7] border border-jmBorder rounded p-2 text-jmText outline-none uppercase focus:border-jmBlue"></div>
+                                <div class="space-y-0.5"><label class="text-slate-400 uppercase text-[9px] font-bold">Terminal Display Label:</label><input type="text" id="set-store-name" value="${s.storeName || ''}" class="w-full bg-[#f4f5f7] border border-jmBorder rounded p-2 text-jmText outline-none uppercase focus:border-jmBlue"></div>
+                                <div class="space-y-0.5"><label class="text-slate-400 uppercase text-[9px] font-bold">Tax Identifier (EIN):</label><input type="text" id="set-tax-id" value="${s.taxId || ''}" class="w-full bg-[#f4f5f7] border border-jmBorder rounded p-2 text-jmText outline-none focus:border-jmBlue"></div>
+                                <div class="space-y-0.5"><label class="text-slate-400 uppercase text-[9px] font-bold">Physical Facility Address:</label><input type="text" id="set-store-address" value="${s.storeAddress || ''}" class="w-full bg-[#f4f5f7] border border-jmBorder rounded p-2 text-jmText outline-none uppercase focus:border-jmBlue"></div>
+                                <button onclick="window.state.saveSettings()" class="px-3 py-1.5 bg-jmBlue text-white font-bold rounded uppercase mt-2">Save Profile</button>
+                            </div>
+                        `;
+                    case 'fiscal':
+                        return `
+                            <h3 class="text-[10px] font-bold text-jmText border-b border-jmBorder pb-2 uppercase tracking-wider">Fiscal Matrix Framework</h3>
+                            <div class="space-y-2 max-w-xs pt-2">
+                                <div class="space-y-0.5"><label class="text-slate-400 uppercase text-[9px] font-bold">Tax Percentage Rate (%):</label><input type="number" step="0.01" id="set-tax-rate" value="${s.taxRate || ''}" class="w-full bg-[#f4f5f7] border border-jmBorder rounded p-2 text-jmText outline-none focus:border-jmBlue font-mono"></div>
+                                <div class="space-y-0.5"><label class="text-slate-400 uppercase text-[9px] font-bold">Currency Indicator:</label><input type="text" id="set-currency" value="${s.currencySymbol || ''}" class="w-full bg-[#f4f5f7] border border-jmBorder rounded p-2 text-jmText outline-none focus:border-jmBlue font-mono"></div>
+                                <button onclick="window.state.saveSettings()" class="px-3 py-1.5 bg-jmBlue text-white font-bold rounded uppercase mt-2">Save Rules</button>
+                            </div>
+                        `;
+                    case 'receipt':
+                        return `
+                            <h3 class="text-[10px] font-bold text-jmText border-b border-jmBorder pb-2 uppercase tracking-wider">Receipt Slate Headers</h3>
+                            <div class="space-y-2 max-w-xs pt-2">
+                                <div class="space-y-0.5"><label class="text-slate-400 uppercase text-[9px] font-bold">Footer Messaging Content:</label><input type="text" id="set-footer" value="${s.receiptFooter || ''}" class="w-full bg-[#f4f5f7] border border-jmBorder rounded p-2 text-jmText outline-none focus:border-jmBlue"></div>
+                                <input type="hidden" id="set-company-name" value="${s.companyName || ''}"><input type="hidden" id="set-store-name" value="${s.storeName || ''}"><input type="hidden" id="set-tax-id" value="${s.taxId || ''}"><input type="hidden" id="set-store-address" value="${s.storeAddress || ''}"><input type="hidden" id="set-tax-rate" value="${s.taxRate || ''}"><input type="hidden" id="set-currency" value="${s.currencySymbol || ''}">
+                                <button onclick="window.state.saveSettings()" class="px-3 py-1.5 bg-jmBlue text-white font-bold rounded uppercase mt-2">Save Layout</button>
+                            </div>
+                        `;
+                    case 'employees':
+                        return `
+                            <h3 class="text-[10px] font-bold text-jmText border-b border-jmBorder pb-2 uppercase tracking-wider">Workforce Credentials</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <div class="space-y-2 p-3 bg-[#f4f5f7] border border-jmBorder rounded">
+                                    <input type="text" id="set-emp-name" placeholder="FIRST LAST NAME" class="w-full bg-white border border-jmBorder p-2 text-jmText rounded uppercase outline-none text-xs">
+                                    <input type="password" id="set-emp-pin" placeholder="SECURITY CODE PIN" class="w-full bg-white border border-jmBorder p-2 text-jmText rounded outline-none font-mono text-xs">
+                                    <select id="set-emp-role" class="w-full bg-white border border-jmBorder p-2 text-slate-500 rounded outline-none text-xs"><option value="Cashier">Cashier</option><option value="Manager">Manager</option><option value="Admin">Admin</option></select>
+                                    <input type="number" step="0.01" id="set-emp-wage" placeholder="WAGE ($/HR)" class="w-full bg-white border border-jmBorder p-2 text-jmText rounded font-mono outline-none text-xs">
+                                    <button onclick="window.state.addEmployeeNode()" class="w-full py-2 bg-jmBlue text-white font-bold rounded uppercase text-xs">Inject Staff</button>
+                                </div>
+                                <div class="space-y-1 max-h-40 overflow-y-auto">${db.get("employees").map(e => `<div class="p-2 bg-[#f4f5f7] border border-jmBorder text-[10px] uppercase rounded flex justify-between"><strong>${e.name}</strong><span class="text-jmBlue font-bold">${e.role}</span></div>`).join('')}</div>
+                            </div>
+                        `;
+                    case 'customers':
+                        return `
+                            <h3 class="text-[10px] font-bold text-jmText border-b border-jmBorder pb-2 uppercase tracking-wider">CRM Registry</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <div class="space-y-2 p-3 bg-[#f4f5f7] border border-jmBorder rounded">
+                                    <input type="text" id="set-cust-name" placeholder="CLIENT IDENTITY TITLE" class="w-full bg-white border border-jmBorder p-2 text-jmText rounded uppercase outline-none text-xs">
+                                    <input type="tel" id="set-cust-phone" placeholder="PHONE NUMBER" class="w-full bg-white border border-jmBorder p-2 text-jmText rounded font-mono outline-none text-xs">
+                                    <button onclick="window.state.addCustomerNode()" class="w-full py-2 bg-jmBlue text-white font-bold rounded uppercase text-xs">Inject Client</button>
+                                </div>
+                                <div class="space-y-1 max-h-40 overflow-y-auto">${db.get("customers").map(c => `<div class="p-2 bg-[#f4f5f7] border border-jmBorder text-[10px] uppercase rounded flex justify-between"><strong>${c.name}</strong><span class="text-slate-500 font-mono">${c.phone}</span></div>`).join('')}</div>
+                            </div>
+                        `;
+                    case 'inventory':
+                        return `
+                            <h3 class="text-[10px] font-bold text-jmText border-b border-jmBorder pb-2 uppercase tracking-wider">Catalog Asset Control</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <div class="space-y-2 p-3 bg-[#f4f5f7] border border-jmBorder rounded">
+                                    <input type="text" id="set-prod-name" placeholder="ITEM NAME LABEL" class="w-full bg-white border border-jmBorder p-2 text-jmText rounded uppercase outline-none text-xs">
+                                    <input type="text" id="set-prod-sku" placeholder="SKU INDEX BARCODE" class="w-full bg-white border border-jmBorder p-2 text-jmText font-mono rounded outline-none text-xs">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="number" step="0.01" id="set-prod-price" placeholder="PRICE ($)" class="w-full bg-white border border-jmBorder p-2 text-jmText font-mono rounded outline-none text-xs">
+                                        <input type="number" id="set-prod-stock" placeholder="UNITS" class="w-full bg-white border border-jmBorder p-2 text-jmText font-mono rounded outline-none text-xs">
+                                    </div>
+                                    <button onclick="window.state.addProductNode()" class="w-full py-2 bg-jmBlue text-white font-bold rounded uppercase text-xs">Inject Product</button>
+                                </div>
+                                <div class="space-y-1 max-h-40 overflow-y-auto">${db.get("products").map(p => `<div class="p-2 bg-[#f4f5f7] border border-jmBorder text-[10px] uppercase rounded flex justify-between truncate"><strong>${p.name}</strong><span class="text-jmBlue font-mono font-bold">${sym}${p.price.toFixed(2)}</span></div>`).join('')}</div>
+                            </div>
+                        `;
+                    case 'system':
+                        return `
+                            <h3 class="text-[10px] font-bold text-rose-600 border-b border-jmBorder pb-2 uppercase tracking-wider">Flush Local Memory Hub</h3>
+                            <p class="text-slate-500 text-[10px] py-2 leading-relaxed">Destructive routine instantly voids local storage databases across profiles, assets, and active terminal ledgers.</p>
+                            <button onclick="window.state.clearLocalStorageCache()" class="px-3 py-1.5 bg-rose-50 border border-rose-200 text-rose-700 font-bold font-mono rounded uppercase text-[9px]">Wipe Terminal Data</button>
+                        `;
+                }
+            }
+
+            render() {
+                const container = document.getElementById("root-app");
+                if (!this.currentUser) {
+                    container.innerHTML = this.templateLogin();
+                    return;
+                }
+
+                this.globalSettings = db.get("settings") || {};
+
+                container.innerHTML = `
+                    <header class="h-12 bg-jmHeader border-b border-[#0f3460] px-4 flex items-center justify-between z-20 flex-shrink-0 text-xs font-bold text-white shadow-md">
+                        <div class="flex items-center gap-4">
+                            <button onclick="window.state.setView('register')" class="flex items-center gap-2 hover:opacity-90">
+                                <div class="w-24 h-5 bg-contain bg-no-repeat bg-center" style="background-image: url('https://www.jumpmind.com/wp-content/themes/jumpmind/assets/img/logo-jumpmind.svg'); filter: brightness(0) invert(1);"></div>
+                                <span class="bg-white/10 px-2 py-0.5 rounded text-[9px] tracking-widest uppercase font-mono text-slate-200">Commerce</span>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-4 font-mono text-[11px] text-slate-200">
+                            <span class="uppercase tracking-wide hidden sm:inline">${this.currentUser.name}</span>
+                            <span class="bg-white/10 px-2 py-1 rounded text-white tracking-widest font-bold">${this.currentPinInput || '1111'}</span>
+                            <button onclick="window.state.logout()" class="text-white/60 hover:text-white transition text-sm px-1"><i class="fas fa-user-circle"></i></button>
+                        </div>
+                    </header>
+
+                    <div class="h-10 bg-white border-b border-jmBorder flex items-center justify-between px-4 z-10 flex-shrink-0 shadow-xs">
+                        <div class="flex h-full font-sans text-xs font-bold uppercase tracking-wider">
+                            ${this.navTab('register', 'fa-cash-register', 'Sales')}
+                            ${this.navTab('inventory', 'fa-boxes-stacked', 'Inventory')}
+                            ${this.navTab('customers', 'fa-users', 'CRM Accounts')}
+                            ${this.currentUser.role !== 'Cashier' ? this.navTab('employees', 'fa-id-card', 'Timecards') : ''}
+                            ${this.currentUser.role !== 'Cashier' ? this.navTab('reporting', 'fa-chart-pie', 'Analytics') : ''}
+                            ${this.currentUser.role === 'Admin' ? this.navTab('settings', 'fa-sliders', 'Configuration Hub') : ''}
+                        </div>
+                        <div class="text-[11px] font-mono text-slate-400 font-bold" id="live-clock"></div>
+                    </div>
+
+                    <div class="flex-1 overflow-hidden relative" id="module-viewport-hook">
+                        ${this.renderActiveSubView()}
+                    </div>
+                `;
+                this.updateLiveClock();
+            }
+
+            navTab(view, icon, label) {
+                const active = this.currentView === view;
+                return `
+                    <button onclick="window.state.setView('${view}')" class="h-full px-4 flex items-center gap-2 border-b-2 transition ${active ? 'border-jmBlue text-jmBlue font-black bg-slate-50/50' : 'border-transparent text-slate-500 hover:text-jmText'}">
+                        <i class="fas ${icon} text-[11px]"></i><span class="text-[11px] font-bold uppercase tracking-wide">${label}</span>
+                    </button>
+                `;
+            }
+
+            updateLiveClock() {
+                const el = document.getElementById("live-clock");
+                if (el) {
+                    const now = new Date();
+                    el.innerText = now.toLocaleDateString([], {month:'2-digit', day:'2-digit', year:'numeric'}) + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+                }
+            }
+
+            templateLogin() {
+                return `
+                    <div class="h-full flex bg-[#0c0d0e] justify-center items-center p-4">
+                        <div class="w-full max-w-sm space-y-4">
+                            <div class="text-center font-mono">
+                                <div class="inline-block px-3 py-1 bg-[#141619] border border-[#2a2e35] rounded text-[11px] font-black tracking-widest text-blue-500 uppercase mb-2">Terminal Gate</div>
+                                <h2 class="text-xl font-bold tracking-tight text-white uppercase">JumpMind Security Node</h2>
+                            </div>
+                            <div class="bg-[#141619] border border-[#2a2e35] p-5 rounded shadow-2xl space-y-4">
+                                <div class="w-full bg-[#0c0d0e] border border-[#2a2e35] rounded p-3 text-center">
+                                    <input type="text" id="pin-mask-field" readonly placeholder="OPERATOR KEYPAD ENTRY" class="bg-transparent border-none text-center text-xl font-mono font-bold tracking-widest text-blue-400 w-full outline-none placeholder-[#2a2e35]">
+                                </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    ${['1','2','3','4','5','6','7','8','9'].map(n => `<button onclick="window.state.pressKey('${n}')" class="h-14 rounded bg-[#1c1f24] text-white font-mono font-bold text-lg border border-[#2a2e35] jmd-btn-active transition flex items-center justify-center">${n}</button>`).join('')}
+                                    <button onclick="window.state.clearKey()" class="h-14 rounded bg-[#1c1f24] text-orange-400 font-mono font-bold text-xs border border-[#2a2e35] jmd-btn-active transition uppercase tracking-wider">Clear</button>
+                                    <button onclick="window.state.pressKey('0')" class="h-14 rounded bg-[#1c1f24] text-white font-mono font-bold text-lg border border-[#2a2e35] jmd-btn-active transition flex items-center justify-center">0</button>
+                                    <button onclick="window.state.submitLogin()" class="h-14 rounded bg-blue-600 text-white font-mono font-bold text-xs border border-blue-500 transition uppercase tracking-wider">Unlock</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        const state = new SystemStateRouter();
+        window.state = state; 
+        state.render();
+        setInterval(() => state.updateLiveClock(), 1000);
+    </script>
+</body>
+</html>
