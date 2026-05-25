@@ -35,10 +35,107 @@
             background-color: var(--bg-dark);
             color: var(--text-light);
             height: 100vh;
-            display: none; /* Stays hidden until native iOS login passes */
+            display: flex;
             flex-direction: column;
             overflow: hidden;
             padding-top: env(safe-area-inset-top);
+        }
+
+        /* Full Screen Register Keypad Overlay */
+        #auth-gate {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--bg-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .keypad-container {
+            background: var(--surface-dark);
+            padding: 30px;
+            border-radius: 24px;
+            border: 1px solid var(--border-dark);
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+        }
+
+        .keypad-container h2 {
+            font-size: 1.4rem;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .keypad-container p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        /* The hidden dots indicator */
+        .pin-dots {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            height: 20px;
+            align-items: center;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: #3f3f46;
+            transition: background-color 0.1s;
+        }
+
+        .dot.active {
+            background-color: var(--accent-blue);
+            box-shadow: 0 0 8px var(--accent-blue);
+        }
+
+        /* Touch Button Grid */
+        .grid-keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .key-btn {
+            background-color: var(--surface-card);
+            border: 1px solid var(--border-dark);
+            color: var(--text-light);
+            border-radius: 16px;
+            padding: 20px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.05s, transform 0.05s;
+        }
+
+        .key-btn:active {
+            background-color: #3f3f46;
+            transform: scale(0.95);
+        }
+
+        .key-btn.action-clear { color: var(--accent-red); font-size: 1.1rem; }
+        .key-btn.action-enter { color: var(--accent-green); font-size: 1.1rem; }
+
+        /* App Layout (Hidden by default) */
+        #app-workspace {
+            display: none; 
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
         }
 
         header {
@@ -167,55 +264,105 @@
 </head>
 <body>
 
-    <header>
-        <h1>Register Terminal 01</h1>
-        <div class="metrics-pill" id="live-sales-tracker">Today's Sales: $0.00</div>
-    </header>
-
-    <div class="app-container">
-        <section class="products-section">
-            <div class="products-grid" id="catalog-hook"></div>
-        </section>
-
-        <aside class="cart-sidebar">
-            <div class="cart-header">
-                <span>Current Order</span>
-                <button class="clear-btn" onclick="clearActiveOrder()">Clear All</button>
+    <div id="auth-gate">
+        <div class="keypad-container">
+            <h2>Terminal Locked</h2>
+            <p>Enter Station PIN Code</p>
+            
+            <div class="pin-dots">
+                <div class="dot" id="dot-0"></div>
+                <div class="dot" id="dot-1"></div>
+                <div class="dot" id="dot-2"></div>
+                <div class="dot" id="dot-3"></div>
+                <div class="dot" id="dot-4"></div>
+                <div class="dot" id="dot-5"></div>
+                <div class="dot" id="dot-6"></div>
             </div>
-            <div class="cart-items-list" id="cart-hook"></div>
-            <div class="cart-checkout-footer">
-                <div class="ledger-line"><span>Subtotal</span><span id="calc-subtotal">$0.00</span></div>
-                <div class="ledger-line"><span>Estimated Tax (7%)</span><span id="calc-tax">$0.00</span></div>
-                <div class="ledger-line total-bold"><span>Total</span><span id="calc-total">$0.00</span></div>
-                <button class="charge-button" onclick="checkoutOrder()">Charge &amp; Complete</button>
+
+            <div class="grid-keypad">
+                <div class="key-btn" onclick="pressNum('1')">1</div>
+                <div class="grid-keypad"></div>
+                <div class="key-btn" onclick="pressNum('2')">2</div>
+                <div class="key-btn" onclick="pressNum('3')">3</div>
+                
+                <div class="key-btn" onclick="pressNum('4')">4</div>
+                <div class="key-btn" onclick="pressNum('5')">5</div>
+                <div class="key-btn" onclick="pressNum('6')">6</div>
+                
+                <div class="key-btn" onclick="pressNum('7')">7</div>
+                <div class="key-btn" onclick="pressNum('8')">8</div>
+                <div class="key-btn" onclick="pressNum('9')">9</div>
+                
+                <div class="key-btn action-clear" onclick="pressClear()">Clear</div>
+                <div class="key-btn" onclick="pressNum('0')">0</div>
+                <div class="key-btn action-enter" onclick="pressEnter()">Enter</div>
             </div>
-        </aside>
+        </div>
+    </div>
+
+    <div id="app-workspace">
+        <header>
+            <h1>Register Terminal 01</h1>
+            <div class="metrics-pill" id="live-sales-tracker">Today's Sales: $0.00</div>
+        </header>
+
+        <div class="app-container">
+            <section class="products-section">
+                <div class="products-grid" id="catalog-hook"></div>
+            </section>
+
+            <aside class="cart-sidebar">
+                <div class="cart-header">
+                    <span>Current Order</span>
+                    <button class="clear-btn" onclick="clearActiveOrder()">Clear All</button>
+                </div>
+                <div class="cart-items-list" id="cart-hook"></div>
+                <div class="cart-checkout-footer">
+                    <div class="ledger-line"><span>Subtotal</span><span id="calc-subtotal">$0.00</span></div>
+                    <div class="ledger-line"><span>Estimated Tax (7%)</span><span id="calc-tax">$0.00</span></div>
+                    <div class="ledger-line total-bold"><span>Total</span><span id="calc-total">$0.00</span></div>
+                    <button class="charge-button" onclick="checkoutOrder()">Charge &amp; Complete</button>
+                </div>
+            </aside>
+        </div>
     </div>
 
     <script>
-        // Set your password right here
+        // Secret code target
         const ACCESS_SECRET = "9091237"; 
+        let currentPinInput = "";
 
-        // Uses native iPad pop-up gate immediately on page render
-        function runGatekeeper() {
-            let authenticated = false;
-            while (!authenticated) {
-                const userInput = prompt("Terminal Locked. Enter your access pin code:");
-                
-                // If they hit cancel
-                if (userInput === null) {
-                    alert("Access Denied.");
-                    window.location.reload();
-                    return;
-                }
+        function pressNum(num) {
+            if (currentPinInput.length >= 7) return; // Matches the max 7 characters
+            currentPinInput += num;
+            updateDots();
+        }
 
-                if (userInput === ACCESS_SECRET) {
-                    authenticated = true;
-                    // Reveal the layout view
-                    document.body.style.display = 'flex';
-                    startupPOS();
+        function pressClear() {
+            currentPinInput = "";
+            updateDots();
+        }
+
+        function pressEnter() {
+            if (currentPinInput === ACCESS_SECRET) {
+                // Instantly remove lockscreen and trigger layout
+                document.getElementById('auth-gate').style.display = 'none';
+                document.getElementById('app-workspace').style.display = 'flex';
+                startupPOS();
+            } else {
+                // Visual shake/reset on bad entry
+                alert("Invalid terminal access authorization.");
+                pressClear();
+            }
+        }
+
+        function updateDots() {
+            for (let i = 0; i < 7; i++) {
+                const dotElement = document.getElementById(`dot-${i}`);
+                if (i < currentPinInput.length) {
+                    dotElement.classList.add('active');
                 } else {
-                    alert("Invalid access code. Try again.");
+                    dotElement.classList.remove('active');
                 }
             }
         }
@@ -305,9 +452,6 @@
         function refreshHistoricalDisplay() {
             document.getElementById('live-sales-tracker').innerText = `Today's Sales: $${runningSalesTotal.toFixed(2)}`;
         }
-
-        // Fire the iPad system text prompt immediately on page mount
-        window.onload = runGatekeeper;
     </script>
 </body>
 </html>
