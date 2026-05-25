@@ -41,7 +41,6 @@
             padding-top: env(safe-area-inset-top);
         }
 
-        /* Full Screen Register Keypad Overlay */
         #auth-gate {
             position: fixed;
             top: 0;
@@ -77,7 +76,6 @@
             margin-bottom: 20px;
         }
 
-        /* The hidden dots indicator */
         .pin-dots {
             display: flex;
             justify-content: center;
@@ -100,7 +98,7 @@
             box-shadow: 0 0 8px var(--accent-blue);
         }
 
-        /* Touch Button Grid */
+        /* Clean, perfectly aligned 3x4 grid matrix */
         .grid-keypad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -130,7 +128,6 @@
         .key-btn.action-clear { color: var(--accent-red); font-size: 1.1rem; }
         .key-btn.action-enter { color: var(--accent-green); font-size: 1.1rem; }
 
-        /* App Layout (Hidden by default) */
         #app-workspace {
             display: none; 
             flex-direction: column;
@@ -281,7 +278,6 @@
 
             <div class="grid-keypad">
                 <div class="key-btn" onclick="pressNum('1')">1</div>
-                <div class="grid-keypad"></div>
                 <div class="key-btn" onclick="pressNum('2')">2</div>
                 <div class="key-btn" onclick="pressNum('3')">3</div>
                 
@@ -328,12 +324,11 @@
     </div>
 
     <script>
-        // Secret code target
         const ACCESS_SECRET = "9091237"; 
         let currentPinInput = "";
 
         function pressNum(num) {
-            if (currentPinInput.length >= 7) return; // Matches the max 7 characters
+            if (currentPinInput.length >= 7) return;
             currentPinInput += num;
             updateDots();
         }
@@ -345,12 +340,10 @@
 
         function pressEnter() {
             if (currentPinInput === ACCESS_SECRET) {
-                // Instantly remove lockscreen and trigger layout
                 document.getElementById('auth-gate').style.display = 'none';
                 document.getElementById('app-workspace').style.display = 'flex';
                 startupPOS();
             } else {
-                // Visual shake/reset on bad entry
                 alert("Invalid terminal access authorization.");
                 pressClear();
             }
