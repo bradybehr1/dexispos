@@ -172,11 +172,14 @@ export class RegisterModule {
             <div class="fixed inset-0 bg-[#0c0d0e]/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
                 <div class="bg-[#141619] border border-[#2a2e35] p-5 rounded w-full max-w-sm space-y-3 shadow-2xl">
                     <div class="bg-[#e2e4e6] text-[#0c0d0e] p-4 rounded font-mono text-[10px] space-y-2 shadow-inner">
-                        <div class="text-center border-b border-slate-400 pb-1 font-black uppercase tracking-tight">${this.router.globalSettings.storeName}</div>
+                        <div class="text-center border-b border-slate-400 pb-1 font-black uppercase tracking-tight">${this.router.globalSettings.storeName || 'Terminal Node'}</div>
                         ${this.router.globalSettings.companyName ? `<div class="text-center font-bold text-[9px] uppercase border-b border-slate-300 pb-1 mb-1">${this.router.globalSettings.companyName}</div>` : ''}
-                        <p>TRANSACTION: ${this.lastTransaction.id}</p><p>OPERATOR: ${this.lastTransaction.employeeName}</p>
+                        ${this.router.globalSettings.storeAddress ? `<div class="text-center text-[8px] text-slate-500 uppercase mb-2 leading-tight">${this.router.globalSettings.storeAddress}</div>` : ''}
+                        ${this.router.globalSettings.taxId ? `<div class="text-left text-[8px] text-slate-500 font-mono mb-1">TAX ID: ${this.router.globalSettings.taxId}</div>` : ''}
+                        <p>TRANSACTION: ${this.lastTransaction.id}</p>
+                        <p>OPERATOR: ${this.lastTransaction.employeeName}</p>
                         <div class="border-t border-b border-slate-400 py-1 font-bold flex justify-between text-xs"><span>TOTAL COLLECTED:</span><span>${this.router.globalSettings.currencySymbol}${this.lastTransaction.total.toFixed(2)}</span></div>
-                        <div class="text-center text-[9px] text-slate-500 pt-1">${this.router.globalSettings.receiptFooter}</div>
+                        <div class="text-center text-[9px] text-slate-500 pt-1">${this.router.globalSettings.receiptFooter || ''}</div>
                     </div>
                     <button onclick="window.registerModuleRef.receiptModalOpen=false; window.state.render()" class="w-full py-2.5 bg-blue-600 text-white border border-blue-500 rounded text-xs font-mono font-bold uppercase tracking-wider transition">Commit Terminal Loop</button>
                 </div>
