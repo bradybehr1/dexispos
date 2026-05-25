@@ -1,149 +1,86 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<html lang="en" class="h-full bg-[#0c0d0e] text-[#e2e4e6]">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Aegis POS Enterprise</title>
+    <title>Jumpmind Ensembles Terminal Node</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Aegis POS">
+    <meta name="apple-mobile-web-app-title" content="Store POS">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        slate: {
-                            950: '#030712',
-                        }
-                    }
-                }
+            theme: { 
+                extend: { 
+                    colors: { 
+                        jmd: {
+                            black: '#0c0d0e',
+                            surface: '#141619',
+                            card: '#1c1f24',
+                            border: '#2a2e35',
+                            blue: '#0070f3',
+                            green: '#00b0ff',
+                            orange: '#ff9100'
+                        } 
+                    } 
+                } 
             }
         }
     </script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
-        * {
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-touch-callout: none;
-        }
-        input, textarea, select {
-            -webkit-user-select: text !important;
-            user-select: text !important;
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1e293b;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #475569;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
-        }
-        .safe-bottom {
-            padding-bottom: env(safe-area-inset-bottom);
-        }
+        * { -webkit-user-select: none; user-select: none; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        input, textarea, select { -webkit-user-select: text !important; user-select: text !important; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0c0d0e; }
+        ::-webkit-scrollbar-thumb { background: #2a2e35; border-radius: 2px; }
+        /* Jumpmind High-Throughput Touch Target Optimizations */
+        .jmd-btn-active:active { transform: scale(0.97); background-color: #2a2e35 !important; }
+        .jmd-action-active:active { transform: scale(0.97); filter: brightness(1.2); }
     </style>
 </head>
-<body class="h-full overflow-hidden font-sans antialiased">
+<body class="h-full overflow-hidden antialiased bg-[#0c0d0e]">
 
-    <div id="global-toast" class="fixed top-6 right-6 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 flex items-center p-4 rounded-xl shadow-2xl border bg-slate-800 border-slate-700 max-w-sm">
-        <div id="toast-icon" class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3"></div>
-        <div>
-            <p id="toast-msg" class="text-sm font-semibold text-slate-200"></p>
-        </div>
+    <div id="global-toast" class="fixed top-4 right-4 z-[9999] transform translate-y-20 opacity-0 pointer-events-none transition-all duration-200 flex items-center p-3 rounded-lg shadow-xl border bg-[#141619] border-[#2a2e35] max-w-xs">
+        <div id="toast-icon" class="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center text-white mr-2 text-xs"></div>
+        <div><p id="toast-msg" class="text-xs font-bold font-mono tracking-tight text-slate-300"></p></div>
     </div>
 
     <div id="root-app" class="h-full flex flex-col"></div>
 
-    <script>
-        //------------------------------------------------------------------------
-        // DATA MODELS, PERSISTENCE ENGINE & RECONCILIATION SEEDING
-        //------------------------------------------------------------------------
-        const DEFAULT_PRODUCTS = [
-            { id: "p1", name: "Premium Tier Gift Box", sku: "88811101", price: 45.00, cost: 18.50, stock: 59, category: "Gifts" },
-            { id: "p2", name: "Standard Luxury Pack A", sku: "88811102", price: 25.00, cost: 11.00, stock: 112, category: "Bundles" },
-            { id: "p3", name: "Standard Fragrance Pack B", sku: "88811103", price: 15.00, cost: 6.25, stock: 84, category: "Fragrance" },
-            { id: "p4", name: "Essential Aromatherapy Upgrade", sku: "88811104", price: 10.00, cost: 3.10, stock: 240, category: "Upgrades" },
-            { id: "p5", name: "Elegance Collection Kit", sku: "88811105", price: 30.00, cost: 12.00, stock: 45, category: "Bundles" },
-            { id: "p6", name: "Custom Counter Top Display Svc", sku: "88811106", price: 65.00, cost: 0.00, stock: 999, category: "Services" },
-            { id: "p7", name: "Mini Sample Gift Tray", sku: "88811107", price: 5.50, cost: 1.75, stock: 14, category: "Gifts" },
-            { id: "p8", name: "Deluxe Executive Streetwear Trunk", sku: "88811108", price: 85.00, cost: 39.00, stock: 32, category: "Gifts" }
-        ];
-
-        const DEFAULT_EMPLOYEES = [
-            { id: "e1", name: "Brady Behrendt", pin: "9091237", role: "Admin", wage: 34.50 },
-            { id: "e2", name: "Eduardo Sanchez", pin: "1111", role: "Manager", wage: 26.00 },
-            { id: "e3", name: "Alex Mercer", pin: "2222", role: "Cashier", wage: 16.50 }
-        ];
-
-        const DEFAULT_CUSTOMERS = [
-            { id: "c1", name: "John Miller", phone: "3205550192", email: "jmiller@gmail.com", spend: 340.50, points: 120 },
-            { id: "c2", name: "Sarah Jenkins", phone: "6125559843", email: "sjenkins@yahoo.com", spend: 1250.00, points: 450 },
-            { id: "c3", name: "Marcus Brody", phone: "7635552311", email: "mbrody@outlook.com", spend: 45.50, points: 15 }
-        ];
+    <script type="module">
+        import { initialProducts, initialEmployees, initialCustomers } from './database.js';
+        import { RegisterModule } from './modules/register.js';
+        import { CustomersModule } from './modules/customers.js';
+        import { InventoryModule } from './modules/inventory.js';
+        import { EmployeesModule } from './modules/employees.js';
+        import { ReportingModule } from './modules/reporting.js';
+        import { SettingsModule } from './modules/settings.js';
 
         class DatabaseEngine {
             constructor() { this.init(); }
-            init() { if (!localStorage.getItem("pos_initialized")) { this.seed(); } }
-            seed() {
-                localStorage.setItem("pos_products", JSON.stringify(DEFAULT_PRODUCTS));
-                localStorage.setItem("pos_employees", JSON.stringify(DEFAULT_EMPLOYEES));
-                localStorage.setItem("pos_customers", JSON.stringify(DEFAULT_CUSTOMERS));
+            init() {
+                if (localStorage.getItem("pos_products")) return;
+                localStorage.setItem("pos_products", JSON.stringify(initialProducts));
+                localStorage.setItem("pos_employees", JSON.stringify(initialEmployees));
+                localStorage.setItem("pos_customers", JSON.stringify(initialCustomers));
                 localStorage.setItem("pos_timecards", JSON.stringify([]));
-                
-                const txHistory = [];
-                const baseDate = new Date();
-                for (let i = 30; i >= 0; i--) {
-                    const txDate = new Date(baseDate.getTime() - (i * 24 * 60 * 60 * 1000));
-                    const dayVolume = Math.floor(Math.random() * 8) + 3; 
-                    for (let j = 0; j < dayVolume; j++) {
-                        const prod = DEFAULT_PRODUCTS[Math.floor(Math.random() * DEFAULT_PRODUCTS.length)];
-                        const emp = DEFAULT_EMPLOYEES[Math.floor(Math.random() * DEFAULT_EMPLOYEES.length)];
-                        const cust = DEFAULT_CUSTOMERS[Math.floor(Math.random() * DEFAULT_CUSTOMERS.length)];
-                        const qty = Math.floor(Math.random() * 2) + 1;
-                        const subtotal = prod.price * qty;
-                        const tax = subtotal * 0.07;
-                        const total = subtotal + tax;
-
-                        txHistory.push({
-                            id: "TX-" + Math.floor(100000 + Math.random() * 900000),
-                            timestamp: txDate.toISOString(),
-                            employeeId: emp.id,
-                            employeeName: emp.name,
-                            customerId: cust.id,
-                            customerName: cust.name,
-                            items: [{ id: prod.id, name: prod.name, price: prod.price, quantity: qty, discount: 0 }],
-                            subtotal: subtotal,
-                            tax: tax,
-                            total: total,
-                            paymentMethod: Math.random() > 0.3 ? "Card (Auth: 4821)" : "Cash"
-                        });
-                    }
-                }
-                localStorage.setItem("pos_transactions", JSON.stringify(txHistory));
+                localStorage.setItem("pos_transactions", JSON.stringify([]));
                 localStorage.setItem("pos_settings", JSON.stringify({
-                    storeName: "Aegis OS Terminal",
+                    storeName: "Jumpmind Store Node",
                     taxRate: 7.00,
                     currencySymbol: "$",
-                    receiptFooter: "Thank you for shopping at Aegis Retail Network."
+                    receiptFooter: "Thank you for shopping.",
+                    companyName: "Aegis Retail Enterprise",
+                    taxId: "88-1234567",
+                    storeAddress: "100 Retail Way, Minneapolis, MN"
                 }));
-                localStorage.setItem("pos_initialized", "true");
             }
             get(key) { return JSON.parse(localStorage.getItem("pos_" + key)); }
             set(key, data) { localStorage.setItem("pos_" + key, JSON.stringify(data)); }
@@ -151,68 +88,82 @@
 
         const db = new DatabaseEngine();
 
-        //------------------------------------------------------------------------
-        // STATE ENGINE SYSTEM CONTROLLER
-        //------------------------------------------------------------------------
-        class StateMachine {
+        class StateRouter {
             constructor() {
                 this.currentUser = null;
-                this.currentView = "register"; 
-                this.cart = [];
-                this.selectedCustomer = null;
+                this.currentView = "register";
+                this.currentPinInput = "";
                 this.globalSettings = db.get("settings");
-                this.searchQuery = "";
-                this.currentCategory = "All";
-                this.html5QrScanner = null;
-                this.checkoutModalOpen = false;
-                this.receiptModalOpen = false;
-                this.lastTransaction = null;
+                
+                this.modules = {
+                    register: new RegisterModule(db, this),
+                    customers: new CustomersModule(db, this),
+                    inventory: new InventoryModule(db, this),
+                    employees: new EmployeesModule(db, this),
+                    reporting: new ReportingModule(db, this),
+                    settings: new SettingsModule(db, this)
+                };
             }
 
             setView(viewName) {
                 if (!this.currentUser && viewName !== "login") return;
                 this.currentView = viewName;
                 this.render();
-                if (viewName === "reporting") { this.initReportingCharts(); }
+                if (this.modules[viewName] && typeof this.modules[viewName].onMount === 'function') {
+                    this.modules[viewName].onMount();
+                }
             }
 
             showToast(msg, type = "success") {
                 const toast = document.getElementById("global-toast");
                 const icon = document.getElementById("toast-icon");
                 const text = document.getElementById("toast-msg");
-                
                 text.innerText = msg;
                 if (type === "success") {
-                    icon.className = "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3 bg-emerald-500";
-                    icon.innerHTML = '<i class="fas fa-check-circle"></i>';
-                } else if (type === "danger") {
-                    icon.className = "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3 bg-rose-500";
-                    icon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                    icon.className = "w-5 h-5 rounded flex items-center justify-center text-white mr-2 bg-blue-600";
+                    icon.innerHTML = '<i class="fas fa-check"></i>';
                 } else {
-                    icon.className = "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3 bg-blue-500";
-                    icon.innerHTML = '<i class="fas fa-info-circle"></i>';
+                    icon.className = "w-5 h-5 rounded flex items-center justify-center text-white mr-2 bg-orange-600";
+                    icon.innerHTML = '<i class="fas fa-exclamation"></i>';
                 }
-                
                 toast.classList.remove("translate-y-20", "opacity-0", "pointer-events-none");
-                setTimeout(() => { toast.classList.add("translate-y-20", "opacity-0", "pointer-events-none"); }, 3000);
+                setTimeout(() => toast.classList.add("translate-y-20", "opacity-0", "pointer-events-none"), 2500);
             }
 
-            login(pin) {
+            pressKey(num) {
+                if (this.currentPinInput.length >= 8) return;
+                this.currentPinInput += num;
+                this.updatePinDisplay();
+            }
+
+            clearKey() {
+                this.currentPinInput = "";
+                this.updatePinDisplay();
+            }
+
+            updatePinDisplay() {
+                const el = document.getElementById("pin-mask-field");
+                if (el) el.value = "•".repeat(this.currentPinInput.length);
+            }
+
+            submitLogin() {
                 const employees = db.get("employees");
-                const match = employees.find(e => e.pin === pin);
+                // Authentication validates strictly against the modular database pin parameters
+                const match = employees.find(e => e.pin === this.currentPinInput);
                 if (match) {
                     this.currentUser = match;
                     this.setView("register");
-                    this.showToast(`Authorized: Welcome ${match.name}`);
+                    this.showToast(`Operator Authed: ${match.name}`);
                 } else {
-                    this.showToast("Invalid Credentials PIN", "danger");
+                    this.showToast("Invalid Operator Token", "danger");
+                    this.clearKey();
                 }
             }
 
             logout() {
                 this.currentUser = null;
+                this.currentPinInput = "";
                 this.setView("login");
-                this.showToast("Session disconnected.");
             }
 
             toggleClock() {
@@ -223,354 +174,15 @@
                 if (openCardIndex !== -1) {
                     timecards[openCardIndex].clockOut = now;
                     db.set("timecards", timecards);
-                    this.showToast("Clock Out logged successfully.");
+                    this.showToast("Shift Log Completed.");
                 } else {
-                    timecards.push({
-                        id: "TC-" + Date.now(),
-                        employeeId: this.currentUser.id,
-                        employeeName: this.currentUser.name,
-                        clockIn: now,
-                        clockOut: null,
-                        approved: false
-                    });
+                    timecards.push({ id: "TC-" + Date.now(), employeeId: this.currentUser.id, employeeName: this.currentUser.name, clockIn: now, clockOut: null, approved: false });
                     db.set("timecards", timecards);
-                    this.showToast("Clock In logged successfully.");
+                    this.showToast("Shift Log Activated.");
                 }
                 this.render();
             }
 
-            //------------------------------------------------------------------------
-            // TRANSACTION REGISTRATION HOOKS
-            //------------------------------------------------------------------------
-            addToCart(productId) {
-                const products = db.get("products");
-                const item = products.find(p => p.id === productId);
-                if (!item) return;
-                if (item.stock <= 0) {
-                    this.showToast("Item out of stock!", "danger");
-                    return;
-                }
-                const existing = this.cart.find(c => c.id === productId);
-                if (existing) {
-                    if (existing.quantity >= item.stock) {
-                        this.showToast("Cannot exceed physical stock inventory.", "danger");
-                        return;
-                    }
-                    existing.quantity++;
-                } else {
-                    this.cart.push({ ...item, quantity: 1, discount: 0 });
-                }
-                this.render();
-            }
-
-            updateCartQty(productId, qty) {
-                const products = db.get("products");
-                const targetProd = products.find(p => p.id === productId);
-                const item = this.cart.find(c => c.id === productId);
-                if (!item) return;
-
-                if (qty <= 0) {
-                    this.cart = this.cart.filter(c => c.id !== productId);
-                } else {
-                    if (qty > targetProd.stock) {
-                        this.showToast("Insufficient stock allocation.", "danger");
-                        return;
-                    }
-                    item.quantity = qty;
-                }
-                this.render();
-            }
-
-            applyLineDiscount(productId, amt) {
-                const item = this.cart.find(c => c.id === productId);
-                if (!item) return;
-                item.discount = Math.max(0, parseFloat(amt) || 0);
-                this.render();
-            }
-
-            attachCustomer(phoneOrName) {
-                const customers = db.get("customers");
-                const match = customers.find(c => c.phone === phoneOrName || c.name.toLowerCase().includes(phoneOrName.toLowerCase()));
-                if (match) {
-                    this.selectedCustomer = match;
-                    this.showToast(`Customer connected: ${match.name}`);
-                } else {
-                    this.showToast("No consumer profile record matched.", "danger");
-                }
-                this.render();
-            }
-
-            detachCustomer() {
-                this.selectedCustomer = null;
-                this.render();
-            }
-
-            getTotals() {
-                let subtotal = 0;
-                this.cart.forEach(c => { subtotal += (c.price * c.quantity) - c.discount; });
-                const tax = subtotal * (parseFloat(this.globalSettings.taxRate) / 100);
-                const total = subtotal + tax;
-                return { subtotal, tax, total };
-            }
-
-            processCheckout(paymentMethod) {
-                const { subtotal, tax, total } = this.getTotals();
-                if (this.cart.length === 0) return;
-
-                let methodString = paymentMethod;
-
-                // 4-DIGIT CARD CARD SEGMENTATION PROMPT INTERCEPT HOOK
-                if (paymentMethod === "Card") {
-                    let lastFour = "";
-                    let isValid = false;
-                    
-                    while (!isValid) {
-                        const input = prompt("Swipe/Insert Card. Enter the last 4 digits of card number to authorize transaction:");
-                        if (input === null) {
-                            this.showToast("Card processing canceled.", "info");
-                            return;
-                        }
-                        if (/^\d{4}$/.test(input.trim())) {
-                            lastFour = input.trim();
-                            isValid = true;
-                        } else {
-                            alert("Invalid input parameters. Must enter exactly 4 numbers.");
-                        }
-                    }
-                    methodString = `Card (Last 4: ${lastFour})`;
-                }
-
-                if (paymentMethod === "Rewards") {
-                    if (!this.selectedCustomer || this.selectedCustomer.points < Math.floor(total * 10)) {
-                        this.showToast("Insufficient loyalty rewards matrix balance.", "danger");
-                        return;
-                    }
-                }
-
-                const products = db.get("products");
-                this.cart.forEach(c => {
-                    const p = products.find(prod => prod.id === c.id);
-                    if (p) p.stock = Math.max(0, p.stock - c.quantity);
-                });
-                db.set("products", products);
-
-                const customers = db.get("customers");
-                if (this.selectedCustomer) {
-                    const cMatch = customers.find(cust => cust.id === this.selectedCustomer.id);
-                    if (cMatch) {
-                        if (paymentMethod === "Rewards") {
-                            cMatch.points -= Math.floor(total * 10);
-                        } else {
-                            cMatch.points += Math.floor(total);
-                            cMatch.spend += total;
-                        }
-                        db.set("customers", customers);
-                        this.selectedCustomer = cMatch;
-                    }
-                }
-
-                const tx = {
-                    id: "TX-" + Math.floor(100000 + Math.random() * 900000),
-                    timestamp: new Date().toISOString(),
-                    employeeId: this.currentUser.id,
-                    employeeName: this.currentUser.name,
-                    customerId: this.selectedCustomer ? this.selectedCustomer.id : null,
-                    customerName: this.selectedCustomer ? this.selectedCustomer.name : "Walk-in Guest",
-                    items: [...this.cart],
-                    subtotal: subtotal,
-                    tax: tax,
-                    total: total,
-                    paymentMethod: methodString
-                };
-
-                const txs = db.get("transactions");
-                txs.unshift(tx);
-                db.set("transactions", txs);
-
-                this.lastTransaction = tx;
-                this.cart = [];
-                this.checkoutModalOpen = false;
-                this.receiptModalOpen = true;
-                this.showToast("Transaction processing sequence completed.");
-                this.render();
-            }
-
-            //------------------------------------------------------------------------
-            // INVENTORY MANAGEMENT METRICS
-            //------------------------------------------------------------------------
-            saveProduct(prodData) {
-                const prods = db.get("products");
-                if (prodData.id) {
-                    const idx = prods.findIndex(p => p.id === prodData.id);
-                    if (idx !== -1) prods[idx] = prodData;
-                } else {
-                    prodData.id = "p-" + Date.now();
-                    prods.push(prodData);
-                }
-                db.set("products", prods);
-                this.showToast("Product master manifest updated.");
-                this.render();
-            }
-
-            deleteProduct(id) {
-                let prods = db.get("products");
-                prods = prods.filter(p => p.id !== id);
-                db.set("products", prods);
-                this.showToast("Product item dropped from storage nodes.", "danger");
-                this.render();
-            }
-
-            simulateBarcodeScan(sku) {
-                const prods = db.get("products");
-                const match = prods.find(p => p.sku === sku);
-                if (match) {
-                    this.addToCart(match.id);
-                    this.showToast(`Scanned: ${match.name}`);
-                } else {
-                    this.showToast(`SKU match failure: ${sku}`, "danger");
-                }
-            }
-
-            //------------------------------------------------------------------------
-            // CUSTOMER STORAGE DELETIONS AND CREATIONS (CRUD COMPLETE)
-            //------------------------------------------------------------------------
-            saveCustomer(custData) {
-                const custs = db.get("customers");
-                if (custData.id) {
-                    const idx = custs.findIndex(c => c.id === custData.id);
-                    if (idx !== -1) custs[idx] = custData;
-                } else {
-                    custData.id = "c-" + Date.now();
-                    custData.spend = 0;
-                    custData.points = 0;
-                    custs.push(custData);
-                }
-                db.set("customers", custs);
-                this.showToast("Customer database logs locked.");
-                this.render();
-            }
-
-            deleteCustomer(id) {
-                if (!confirm("Are you sure you want to completely erase this customer profile node from historical relational data systems?")) return;
-                let custs = db.get("customers");
-                custs = custs.filter(c => c.id !== id);
-                db.set("customers", custs);
-                if (this.selectedCustomer && this.selectedCustomer.id === id) { this.selectedCustomer = null; }
-                this.showToast("Consumer profile detached and dropped.", "danger");
-                this.render();
-            }
-
-            //------------------------------------------------------------------------
-            // STAFF MANAGEMENT MUTATORS AND CRITICAL DELETIONS (CRUD COMPLETE)
-            //------------------------------------------------------------------------
-            saveEmployee(empData) {
-                const emps = db.get("employees");
-                if (empData.id) {
-                    const idx = emps.findIndex(e => e.id === empData.id);
-                    if (idx !== -1) emps[idx] = empData;
-                } else {
-                    empData.id = "e-" + Date.now();
-                    emps.push(empData);
-                }
-                db.set("employees", emps);
-                this.showToast("Employee roster matrix modified.");
-                this.render();
-            }
-
-            deleteEmployee(id) {
-                if (this.currentUser.id === id) {
-                    this.showToast("Cannot drop active system node identity.", "danger");
-                    return;
-                }
-                if (!confirm("Are you sure you want to drop this employee profile and terminate system credentials access codes?")) return;
-                let emps = db.get("employees");
-                emps = emps.filter(e => e.id !== id);
-                db.set("employees", emps);
-                this.showToast("Staff resource token revoked and purged.", "danger");
-                this.render();
-            }
-
-            updateTimecard(tcId, clockIn, clockOut, approved) {
-                const tcs = db.get("timecards");
-                const idx = tcs.findIndex(t => t.id === tcId);
-                if (idx !== -1) {
-                    tcs[idx].clockIn = clockIn;
-                    tcs[idx].clockOut = clockOut;
-                    tcs[idx].approved = approved;
-                    db.set("timecards", tcs);
-                    this.showToast("Time card verified and modified.");
-                    this.render();
-                }
-            }
-
-            //------------------------------------------------------------------------
-            // ANALYTICS & VISUAL DATA CHARTS ENGINE
-            //------------------------------------------------------------------------
-            initReportingCharts() {
-                const txs = db.get("transactions");
-                const dailyTotals = {};
-                txs.forEach(t => {
-                    const dateStr = t.timestamp.split('T')[0];
-                    dailyTotals[dateStr] = (dailyTotals[dateStr] || 0) + t.total;
-                });
-                const sortedDates = Object.keys(dailyTotals).sort().slice(-7);
-                const dailyData = sortedDates.map(d => dailyTotals[d]);
-
-                const ctxSales = document.getElementById('chart-sales-trend');
-                if (ctxSales) {
-                    new Chart(ctxSales, {
-                        type: 'line',
-                        data: {
-                            labels: sortedDates,
-                            datasets: [{
-                                data: dailyData,
-                                borderColor: '#3b82f6',
-                                tension: 0.2,
-                                fill: false
-                            }]
-                        },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-                    });
-                }
-
-                const itemQtyMap = {};
-                txs.forEach(t => { t.items.forEach(i => { itemQtyMap[i.name] = (itemQtyMap[i.name] || 0) + i.quantity; }); });
-                const topItems = Object.keys(itemQtyMap).sort((a,b) => itemQtyMap[b] - itemQtyMap[a]).slice(0, 5);
-                const topItemQtys = topItems.map(it => itemQtyMap[it]);
-
-                const ctxProd = document.getElementById('chart-top-products');
-                if (ctxProd) {
-                    new Chart(ctxProd, {
-                        type: 'bar',
-                        data: {
-                            labels: topItems,
-                            datasets: [{ data: topItemQtys, backgroundColor: ['#22c55e', '#3b82f6', '#eab308', '#a855f7', '#6366f1'] }]
-                        },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-                    });
-                }
-            }
-
-            exportCSV() {
-                const txs = db.get("transactions");
-                let csv = "Transaction ID,Timestamp,Employee,Customer,Total,Payment Method\n";
-                txs.forEach(t => { csv += `${t.id},${t.timestamp},${t.employeeName},${t.customerName},${t.total.toFixed(2)},${t.paymentMethod}\n`; });
-                console.log("--- SYSTEM METRIC EXPORT COMPLETED ---\n", csv);
-                this.showToast("CSV stream generated to debugger log console layout pane.");
-            }
-
-            resetDatabase() {
-                db.seed();
-                this.globalSettings = db.get("settings");
-                this.cart = [];
-                this.selectedCustomer = null;
-                this.showToast("Enterprise transaction data tables seeded.");
-                this.render();
-            }
-
-            //------------------------------------------------------------------------
-            // MAIN STRUCTURE COMPILERS & TEMPLATE ENGINES
-            //------------------------------------------------------------------------
             render() {
                 const container = document.getElementById("root-app");
                 if (!this.currentUser) {
@@ -579,64 +191,50 @@
                 }
 
                 container.innerHTML = `
-                    <div class="flex h-full overflow-hidden">
-                        <aside class="w-20 md:w-64 bg-slate-950 border-r border-slate-800 flex flex-col justify-between z-10">
-                            <div>
-                                <div class="h-16 flex items-center px-6 border-b border-slate-800 gap-3">
-                                    <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">A</div>
-                                    <span class="font-bold text-lg hidden md:inline tracking-tight text-slate-200">${this.globalSettings.storeName}</span>
-                                </div>
-                                <nav class="p-4 space-y-1">
-                                    ${this.navItem("register", "fa-cash-register", "Register Terminal")}
-                                    ${this.navItem("inventory", "fa-boxes-stacked", "Inventory Master")}
-                                    ${this.navItem("customers", "fa-users", "Loyalty Database")}
-                                    ${this.currentUser.role !== 'Cashier' ? this.navItem("employees", "fa-id-card", "Staff & Timecards") : ''}
-                                    ${this.currentUser.role !== 'Cashier' ? this.navItem("reporting", "fa-chart-pie", "Analytics Ledger") : ''}
-                                    ${this.currentUser.role === 'Admin' ? this.navItem("settings", "fa-sliders", "Global Configurations") : ''}
-                                </nav>
+                    <header class="h-12 bg-[#141619] border-b border-[#2a2e35] px-4 flex items-center justify-between z-20 flex-shrink-0 text-xs font-bold select-none">
+                        <div class="flex items-center gap-6">
+                            <div class="flex items-center gap-2 text-white">
+                                <div class="w-4 h-4 rounded bg-blue-600 flex items-center justify-center font-black text-[10px]">E</div>
+                                <span class="tracking-wider uppercase font-mono text-slate-300">${this.globalSettings.storeName}</span>
                             </div>
-                            <div class="p-4 border-t border-slate-800 space-y-3">
-                                <div class="hidden md:flex items-center gap-3 px-2">
-                                    <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-blue-400 font-semibold border border-slate-700">
-                                        ${this.currentUser.name.charAt(0)}
-                                    </div>
-                                    <div class="overflow-hidden">
-                                        <h4 class="text-xs font-semibold text-slate-200 truncate">${this.currentUser.name}</h4>
-                                        <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">${this.currentUser.role}</p>
-                                    </div>
-                                </div>
-                                <button onclick="state.logout()" class="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-rose-400 bg-rose-950/20 border border-rose-900/30 rounded-xl hover:bg-rose-950/40 transition">
-                                    <i class="fas fa-sign-out-alt"></i>
-                                    <span class="hidden md:inline">Disconnect</span>
+                            <div class="hidden sm:flex items-center gap-4 text-[#8a94a6] font-mono text-[11px] border-l border-[#2a2e35] pl-4">
+                                <span>TERM: <strong class="text-slate-300">001</strong></span>
+                                <span>OP: <strong class="text-blue-400 uppercase">${this.currentUser.name}</strong></span>
+                                <span>TIER: <strong class="text-slate-300 uppercase">${this.currentUser.role}</strong></span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 font-mono text-[11px]">
+                            <div class="flex items-center gap-2 bg-[#0c0d0e] border border-[#2a2e35] px-3 py-1 rounded">
+                                <div class="w-1.5 h-1.5 rounded-full ${db.get("timecards").some(t => t.employeeId === this.currentUser.id && !t.clockOut) ? 'bg-emerald-500' : 'bg-slate-600'}"></div>
+                                <button onclick="window.state.toggleClock()" class="text-slate-400 hover:text-white transition">
+                                    ${db.get("timecards").some(t => t.employeeId === this.currentUser.id && !t.clockOut) ? 'SHIFT: ACTIVE (CLOCK-OUT)' : 'SHIFT: OFF (CLOCK-IN)'}
                                 </button>
                             </div>
-                        </aside>
+                            <span class="text-slate-400" id="live-clock"></span>
+                        </div>
+                    </header>
 
-                        <main class="flex-1 flex flex-col bg-slate-900 overflow-hidden">
-                            <header class="h-16 bg-slate-950 border-b border-slate-800 px-6 flex items-center justify-between z-10 flex-shrink-0">
-                                <div class="flex items-center gap-4">
-                                    <h2 class="text-xl font-bold tracking-tight text-slate-100 capitalize">${this.currentView} Panel</h2>
-                                </div>
-                                <div class="flex items-center gap-4">
-                                    <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 px-4 py-1.5 rounded-xl shadow-inner">
-                                        <div class="w-2 h-2 rounded-full ${db.get("timecards").some(t => t.employeeId === this.currentUser.id && !t.clockOut) ? 'bg-emerald-500 animate-pulse' : 'bg-slate-600'}"></div>
-                                        <span class="text-xs font-medium text-slate-400">Shift Tracker Log:</span>
-                                        <button onclick="state.toggleClock()" class="text-xs font-bold text-blue-400 hover:underline">
-                                            ${db.get("timecards").some(t => t.employeeId === this.currentUser.id && !t.clockOut) ? 'Clock Out' : 'Clock In'}
-                                        </button>
-                                    </div>
-                                    <div class="text-sm font-semibold text-slate-300" id="live-clock"></div>
-                                </div>
-                            </header>
-
-                            <div class="flex-1 overflow-hidden relative">
-                                ${this.renderActiveSubView()}
+                    <div class="flex-1 flex overflow-hidden">
+                        <nav class="w-16 md:w-56 bg-[#141619] border-r border-[#2a2e35] flex flex-col justify-between z-10 flex-shrink-0 select-none">
+                            <div class="p-2 space-y-1">
+                                ${this.navItem("register", "fa-cash-register", "Sales Terminal")}
+                                ${this.navItem("inventory", "fa-boxes-stacked", "Inventory Engine")}
+                                ${this.navItem("customers", "fa-users", "CRM Accounts")}
+                                ${this.currentUser.role !== 'Cashier' ? this.navItem("employees", "fa-id-card", "Workforce Auditing") : ''}
+                                ${this.currentUser.role !== 'Cashier' ? this.navItem("reporting", "fa-chart-pie", "Analytics Ledgers") : ''}
+                                ${this.currentUser.role === 'Admin' ? this.navItem("settings", "fa-sliders", "System Settings") : ''}
                             </div>
+                            <div class="p-2 border-t border-[#2a2e35]">
+                                <button onclick="window.state.logout()" class="w-full flex items-center justify-center gap-2 py-3 rounded text-xs font-bold uppercase tracking-wider bg-orange-950/20 text-orange-400 border border-orange-900/40 hover:bg-orange-950/40 transition">
+                                    <i class="fas fa-power-off"></i><span class="hidden md:inline ml-1">Lock Node</span>
+                                </button>
+                            </div>
+                        </nav>
+
+                        <main class="flex-1 bg-[#0c0d0e] overflow-hidden relative" id="module-viewport-hook">
+                            ${this.modules[this.currentView] ? this.modules[this.currentView].render() : ''}
                         </main>
                     </div>
-
-                    ${this.checkoutModalOpen ? this.templateCheckoutModal() : ''}
-                    ${this.receiptModalOpen ? this.templateReceiptModal() : ''}
                 `;
                 this.updateLiveClock();
             }
@@ -644,426 +242,46 @@
             navItem(view, icon, label) {
                 const active = this.currentView === view;
                 return `
-                    <button onclick="state.setView('${view}')" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition ${active ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}">
-                        <i class="fas ${icon} text-base"></i>
-                        <span class="hidden md:inline">${label}</span>
+                    <button onclick="window.state.setView('${view}')" class="w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded text-xs font-bold uppercase font-mono tracking-wider transition ${active ? 'bg-blue-600 text-white shadow-md shadow-blue-600/10 border border-blue-500' : 'text-slate-400 hover:bg-[#1c1f24] hover:text-slate-200'}">
+                        <i class="fas ${icon} text-sm w-4 text-center"></i><span class="hidden md:inline">${label}</span>
                     </button>
                 `;
             }
 
             updateLiveClock() {
                 const el = document.getElementById("live-clock");
-                if (el) { el.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
-            }
-
-            renderActiveSubView() {
-                switch(this.currentView) {
-                    case "register": return this.viewRegister();
-                    case "inventory": return this.viewInventory();
-                    case "customers": return this.viewCustomers();
-                    case "employees": return this.viewEmployees();
-                    case "reporting": return this.viewReporting();
-                    case "settings": return this.viewSettings();
-                    default: return ``;
-                }
+                if (el) el.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
             }
 
             templateLogin() {
                 return `
-                    <div class="h-full flex flex-col md:flex-row bg-slate-950 overflow-hidden">
-                        <div class="hidden md:flex md:w-1/2 bg-gradient-to-tr from-slate-950 via-slate-900 to-blue-950 p-12 flex-col justify-between border-r border-slate-800">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-xl">A</div>
-                                <span class="font-bold text-xl tracking-tight text-slate-200">Aegis OS Architecture</span>
+                    <div class="h-full flex bg-[#0c0d0e] justify-center items-center p-4">
+                        <div class="w-full max-w-sm space-y-4">
+                            <div class="text-center font-mono">
+                                <div class="inline-block px-3 py-1 bg-[#141619] border border-[#2a2e35] rounded text-[11px] font-black tracking-widest text-blue-500 uppercase mb-2">System Locked</div>
+                                <h2 class="text-xl font-bold tracking-tight text-white uppercase">Operator Entry Terminal</h2>
                             </div>
-                            <div class="space-y-4">
-                                <span class="text-blue-500 font-semibold text-sm uppercase tracking-wider">Enterprise Endpoint POS</span>
-                                <h1 class="text-4xl lg:text-5xl font-extrabold text-white leading-tight tracking-tight">Unified Point of Sale Management System</h1>
-                                <p class="text-slate-400 text-base max-w-md">Multi-layered security node, conversion optimization metrics, and relational state tracking built for retail terminals.</p>
-                            </div>
-                            <p class="text-xs text-slate-500">&copy; 2026 Aegis Security Networks Inc. All node operations authenticated.</p>
-                        </div>
-                        <div class="flex-1 flex flex-col justify-center items-center p-6 sm:p-12">
-                            <div class="w-full max-w-sm space-y-8">
-                                <div class="text-center md:text-left">
-                                    <h2 class="text-3xl font-bold tracking-tight text-white">System Authorization</h2>
-                                    <p class="mt-2 text-sm text-slate-400">Input terminal authorization PIN parameter to unlock workspace console node</p>
+                            <div class="bg-[#141619] border border-[#2a2e35] p-5 rounded shadow-2xl space-y-4 select-none">
+                                <div class="w-full bg-[#0c0d0e] border border-[#2a2e35] rounded p-3 text-center">
+                                    <input type="text" id="pin-mask-field" readonly placeholder="TERMINAL LOCKED" class="bg-transparent border-none text-center text-xl font-mono font-bold tracking-widest text-blue-400 w-full outline-none placeholder-[#2a2e35]">
                                 </div>
-                                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-                                    <div class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-center mb-6">
-                                        <input type="password" id="login-pin-display" readonly placeholder="••••••••" class="bg-transparent border-none text-center text-2xl font-bold tracking-widest text-blue-400 w-full outline-none placeholder-slate-700">
-                                    </div>
-                                    <div class="grid grid-cols-3 gap-3">
-                                        ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="state.pressLoginNum('${n}')" class="h-16 rounded-xl bg-slate-800 text-white font-bold text-xl border border-slate-700/50 hover:bg-slate-700 active:scale-95 transition flex items-center justify-center">${n}</button>`).join('')}
-                                        <button onclick="state.clearLoginNum()" class="h-16 rounded-xl bg-slate-800 text-rose-400 font-bold text-sm border border-slate-700/50 hover:bg-rose-950/30 active:scale-95 transition flex items-center justify-center uppercase tracking-wider">Clear</button>
-                                        <button onclick="state.pressLoginNum('0')" class="h-16 rounded-xl bg-slate-800 text-white font-bold text-xl border border-slate-700/50 hover:bg-slate-700 active:scale-95 transition flex items-center justify-center">0</button>
-                                        <button onclick="state.submitLogin()" class="h-16 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 active:scale-95 transition flex items-center justify-center uppercase tracking-wider shadow-lg">Unlock</button>
-                                    </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    ${['1','2','3','4','5','6','7','8','9'].map(n => `<button onclick="window.state.pressKey('${n}')" class="h-14 rounded bg-[#1c1f24] text-white font-mono font-bold text-lg border border-[#2a2e35] jmd-btn-active transition flex items-center justify-center">${n}</button>`).join('')}
+                                    <button onclick="window.state.clearKey()" class="h-14 rounded bg-[#1c1f24] text-orange-400 font-mono font-bold text-xs border border-[#2a2e35] jmd-btn-active transition uppercase tracking-wider">Clear</button>
+                                    <button onclick="window.state.pressKey('0')" class="h-14 rounded bg-[#1c1f24] text-white font-mono font-bold text-lg border border-[#2a2e35] jmd-btn-active transition flex items-center justify-center">0</button>
+                                    <button onclick="window.state.submitLogin()" class="h-14 rounded bg-blue-600 text-white font-mono font-bold text-xs border border-blue-500 jmd-action-active transition uppercase tracking-wider shadow-lg shadow-blue-600/10">Auth</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
             }
+        }
 
-            pressLoginNum(n) {
-                const el = document.getElementById("login-pin-display");
-                if (el && el.value.length < 8) el.value += n;
-            }
-            clearLoginNum() { const el = document.getElementById("login-pin-display"); if (el) el.value = ""; }
-            submitLogin() { const el = document.getElementById("login-pin-display"); if (el) this.login(el.value); }
-
-            viewRegister() {
-                const products = db.get("products");
-                const categories = ["All", ...new Set(products.map(p => p.category))];
-                const filteredProducts = products.filter(p => {
-                    const matchesCat = this.currentCategory === "All" || p.category === this.currentCategory;
-                    const matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || p.sku.includes(this.searchQuery);
-                    return matchesCat && matchesSearch;
-                });
-                const { subtotal, tax, total } = this.getTotals();
-
-                return `
-                    <div class="h-full flex flex-col lg:flex-row overflow-hidden">
-                        <div class="flex-1 flex flex-col overflow-hidden border-r border-slate-800">
-                            <div class="p-4 bg-slate-950/50 border-b border-slate-800 space-y-3 flex-shrink-0">
-                                <div class="flex gap-3">
-                                    <div class="relative flex-1">
-                                        <i class="fas fa-search absolute left-4 top-3.5 text-slate-500 text-sm"></i>
-                                        <input type="text" placeholder="Search catalog by title or SKU code identifier..." value="${this.searchQuery}" oninput="state.searchQuery=this.value; state.render()" class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium placeholder-slate-500 outline-none focus:border-blue-500 text-slate-200">
-                                    </div>
-                                    <button onclick="state.toggleScannerModal()" class="px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-blue-400 hover:bg-slate-700 transition flex items-center gap-2 text-sm font-bold shadow-sm">
-                                        <i class="fas fa-camera"></i>
-                                        <span class="hidden sm:inline">Camera Scan</span>
-                                    </button>
-                                </div>
-                                <div class="flex gap-2 overflow-x-auto pb-1">
-                                    ${categories.map(cat => `<button onclick="state.currentCategory='${cat}'; state.render()" class="px-4 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${this.currentCategory === cat ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 border border-slate-700/50 hover:text-slate-200'}">${cat}</button>`).join('')}
-                                </div>
-                            </div>
-                            <div class="flex-1 overflow-y-auto p-4 bg-slate-900/40">
-                                <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-                                    ${filteredProducts.map(p => `
-                                        <div onclick="state.addToCart('${p.id}')" class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-md hover:border-slate-700 active:scale-95 transition cursor-pointer relative overflow-hidden group min-h-[140px]">
-                                            ${p.stock <= 15 ? `<span class="absolute top-2 right-2 px-2 py-0.5 bg-amber-950 border border-amber-800 text-amber-400 rounded-md text-[10px] font-bold uppercase tracking-wider animate-pulse">Low: ${p.stock}</span>` : ''}
-                                            <div>
-                                                <h4 class="font-bold text-sm text-slate-200 group-hover:text-blue-400 transition line-clamp-2 leading-snug">${p.name}</h4>
-                                                <p class="text-[10px] text-slate-500 font-mono mt-1 uppercase tracking-wider">${p.sku}</p>
-                                            </div>
-                                            <div class="flex items-center justify-between mt-4 border-t border-slate-900 pt-3">
-                                                <span class="text-base font-extrabold text-slate-100">${this.globalSettings.currencySymbol}${p.price.toFixed(2)}</span>
-                                                <div class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition"><i class="fas fa-plus"></i></div>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="w-full lg:w-[420px] bg-slate-950 flex flex-col justify-between overflow-hidden flex-shrink-0 border-t lg:border-t-0 border-slate-800">
-                            <div class="p-4 border-b border-slate-800 bg-slate-950/40 flex-shrink-0">
-                                ${this.selectedCustomer ? `
-                                    <div class="bg-blue-950/40 border border-blue-900/50 p-3 rounded-xl flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-9 h-9 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-800 flex items-center justify-center text-sm"><i class="fas fa-user"></i></div>
-                                            <div>
-                                                <h4 class="text-sm font-bold text-slate-200">${this.selectedCustomer.name}</h4>
-                                                <p class="text-[11px] text-slate-400 font-semibold flex items-center gap-2">
-                                                    <span><i class="fas fa-star text-amber-400 mr-1"></i>${this.selectedCustomer.points} pts</span>
-                                                    <span>•</span>
-                                                    <span>Spend: ${this.globalSettings.currencySymbol}${this.selectedCustomer.spend.toFixed(0)}</span>
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <button onclick="state.detachCustomer()" class="text-slate-500 hover:text-rose-400 p-2 text-sm transition"><i class="fas fa-user-minus"></i></button>
-                                    </div>
-                                ` : `
-                                    <div class="flex gap-2">
-                                        <div class="relative flex-1">
-                                            <i class="fas fa-user-plus absolute left-3.5 top-2.5 text-slate-500 text-xs"></i>
-                                            <input type="text" id="cust-lookup-input" placeholder="Attach customer by phone or name..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs font-medium text-slate-200 outline-none focus:border-blue-500">
-                                        </div>
-                                        <button onclick="state.attachCustomer(document.getElementById('cust-lookup-input').value)" class="px-4 py-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 transition rounded-xl text-xs font-bold text-slate-300">Link</button>
-                                    </div>
-                                `}
-                            </div>
-                            <div class="flex-1 overflow-y-auto p-4 space-y-3">
-                                ${this.cart.length === 0 ? `
-                                    <div class="h-full flex flex-col items-center justify-center text-center p-8 text-slate-600">
-                                        <i class="fas fa-receipt text-4xl mb-3 opacity-30"></i>
-                                        <p class="text-sm font-semibold">Active transaction ticket empty</p>
-                                    </div>
-                                ` : this.cart.map(item => `
-                                    <div class="bg-slate-900/70 border border-slate-800 p-3 rounded-xl space-y-2">
-                                        <div class="flex justify-between items-start gap-4">
-                                            <h5 class="text-sm font-bold text-slate-200 line-clamp-1 leading-tight">${item.name}</h5>
-                                            <button onclick="state.updateCartQty('${item.id}', 0)" class="text-slate-600 hover:text-rose-400 transition text-xs"><i class="fas fa-trash"></i></button>
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5">
-                                                <button onclick="state.updateCartQty('${item.id}', ${item.quantity - 1})" class="w-7 h-7 flex items-center justify-center text-xs text-slate-500 hover:text-slate-200 active:bg-slate-900 rounded-md transition"><i class="fas fa-minus"></i></button>
-                                                <span class="w-8 text-center text-xs font-mono font-bold text-slate-300">${item.quantity}</span>
-                                                <button onclick="state.updateCartQty('${item.id}', ${item.quantity + 1})" class="w-7 h-7 flex items-center justify-center text-xs text-slate-500 hover:text-slate-200 active:bg-slate-900 rounded-md transition"><i class="fas fa-plus"></i></button>
-                                            </div>
-                                            <div class="text-right">
-                                                <span class="text-sm font-mono font-bold text-slate-200">${this.globalSettings.currencySymbol}${((item.price * item.quantity) - item.discount).toFixed(2)}</span>
-                                                <p class="text-[10px] text-slate-500">${this.globalSettings.currencySymbol}${item.price.toFixed(2)} unit</p>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center justify-end gap-2 pt-1 border-t border-slate-950">
-                                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Markdown:</span>
-                                            <input type="number" step="0.01" value="${item.discount || ''}" placeholder="0.00" onchange="state.applyLineDiscount('${item.id}', this.value)" class="w-16 bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-right font-mono text-xs text-amber-500 outline-none focus:border-amber-600">
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                            <div class="p-4 bg-slate-950/80 border-t border-slate-800 space-y-3 flex-shrink-0 safe-bottom">
-                                <div class="space-y-1.5 font-mono text-xs text-slate-400">
-                                    <div class="flex justify-between"><span>SUBTOTAL:</span><span class="text-slate-200 font-bold">${this.globalSettings.currencySymbol}${subtotal.toFixed(2)}</span></div>
-                                    <div class="flex justify-between"><span>TAX (${this.globalSettings.taxRate}%):</span><span class="text-slate-200 font-bold">${this.globalSettings.currencySymbol}${tax.toFixed(2)}</span></div>
-                                    <div class="flex justify-between text-base font-bold text-slate-100 border-t border-slate-800/80 pt-2 mt-2"><span>TOTAL DUE:</span><span class="text-emerald-400 font-mono">${this.globalSettings.currencySymbol}${total.toFixed(2)}</span></div>
-                                </div>
-                                <button onclick="state.openCheckout()" ${this.cart.length === 0 ? 'disabled' : ''} class="w-full py-4 bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-500 transition uppercase tracking-wider flex items-center justify-center gap-2"><i class="fas fa-credit-card"></i><span>Process Checkout</span></button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="scanner-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
-                            <button onclick="state.toggleScannerModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
-                            <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2"><i class="fas fa-camera text-blue-500"></i>Camera Scanning Node</h3>
-                            <div class="w-full bg-slate-950 rounded-xl aspect-video mb-4 border border-slate-800 overflow-hidden flex flex-col items-center justify-center text-slate-600 relative">
-                                <div id="interactive-reader" class="w-full h-full"></div>
-                                <div id="fallback-scanner-ui" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 p-4 text-center">
-                                    <i class="fas fa-barcode text-4xl mb-2 text-slate-700 animate-pulse"></i>
-                                    <span class="text-xs font-semibold text-slate-400">Camera Stream Interface Suspended</span>
-                                </div>
-                            </div>
-                            <div class="border-t border-slate-800/60 pt-4 space-y-2">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">SKU Input Override:</label>
-                                <div class="flex gap-2">
-                                    <input type="text" id="manual-sku-mock" placeholder="e.g., 88811101" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500">
-                                    <button onclick="state.simulateBarcodeScan(document.getElementById('manual-sku-mock').value); state.toggleScannerModal();" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold text-white transition">Inject</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            toggleScannerModal() {
-                const modal = document.getElementById("scanner-modal");
-                if (modal) {
-                    if (modal.classList.contains("hidden")) {
-                        modal.classList.remove("hidden");
-                        this.startCameraStream();
-                    } else {
-                        modal.classList.add("hidden");
-                        this.stopCameraStream();
-                    }
-                }
-            }
-
-            startCameraStream() {
-                setTimeout(() => {
-                    const qrEl = document.getElementById("interactive-reader");
-                    if (qrEl) {
-                        this.html5QrScanner = new Html5Qrcode("interactive-reader");
-                        this.html5QrScanner.start(
-                            { facingMode: "environment" },
-                            { fps: 10, qrbox: { width: 250, height: 100 } },
-                            (decodedText) => { this.simulateBarcodeScan(decodedText); this.toggleScannerModal(); },
-                            () => {}
-                        ).then(() => { document.getElementById("fallback-scanner-ui").style.display = "none"; })
-                        .catch(() => { document.getElementById("fallback-scanner-ui").style.display = "flex"; });
-                    }
-                }, 100);
-            }
-
-            stopCameraStream() { if (this.html5QrScanner) { this.html5QrScanner.stop().then(() => { this.html5QrScanner = null; }).catch(() => {}); } }
-            openCheckout() { this.checkoutModalOpen = true; this.render(); }
-            closeCheckout() { this.checkoutModalOpen = false; this.render(); }
-
-            viewInventory() {
-                const products = db.get("products");
-                return `
-                    <div class="h-full flex flex-col overflow-hidden p-6 space-y-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-950 p-4 border border-slate-800 rounded-2xl shadow-sm flex-shrink-0">
-                            <div>
-                                <h3 class="text-base font-bold text-white">Product Inventory Ledger Manifest</h3>
-                                <p class="text-xs text-slate-400">Add, delete, and modify system structural catalog arrays</p>
-                            </div>
-                            <button onclick="state.openProductModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 uppercase tracking-wider"><i class="fas fa-plus"></i>Create Product</button>
-                        </div>
-                        <div class="flex-1 overflow-auto border border-slate-800 bg-slate-950/20 rounded-2xl">
-                            <table class="w-full border-collapse text-left text-sm text-slate-300">
-                                <thead class="bg-slate-950 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 border-b border-slate-800">
-                                    <tr>
-                                        <th class="px-6 py-4">Title / Identifier</th>
-                                        <th class="px-6 py-4">SKU Code</th>
-                                        <th class="px-6 py-4">Category</th>
-                                        <th class="px-6 py-4 text-right">Debit Price</th>
-                                        <th class="px-6 py-4 text-right">Acquisition Cost</th>
-                                        <th class="px-6 py-4 text-center">In-Stock Quant</th>
-                                        <th class="px-6 py-4 text-right">Operations</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-800/60 font-medium">
-                                    ${products.map(p => `
-                                        <tr class="hover:bg-slate-900/40 transition">
-                                            <td class="px-6 py-4 font-bold text-slate-200">${p.name}</td>
-                                            <td class="px-6 py-4 font-mono text-xs text-slate-400 uppercase tracking-wider">${p.sku}</td>
-                                            <td class="px-6 py-4"><span class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-md text-[11px] font-bold text-slate-400">${p.category}</span></td>
-                                            <td class="px-6 py-4 text-right font-mono font-bold">${this.globalSettings.currencySymbol}${p.price.toFixed(2)}</td>
-                                            <td class="px-6 py-4 text-right font-mono text-slate-400">${this.globalSettings.currencySymbol}${p.cost.toFixed(2)}</td>
-                                            <td class="px-6 py-4 text-center"><span class="px-3 py-1 font-mono font-bold text-xs rounded-lg ${p.stock <= 15 ? 'bg-rose-950/50 border border-rose-900 text-rose-400 animate-pulse' : 'bg-slate-900 text-slate-300 border border-slate-800'}">${p.stock} units</span></td>
-                                            <td class="px-6 py-4 text-right space-x-1">
-                                                <button onclick="state.openProductModal('${p.id}')" class="p-2 text-blue-400 hover:bg-slate-900 rounded-lg transition"><i class="fas fa-edit"></i></button>
-                                                <button onclick="state.deleteProduct('${p.id}')" class="p-2 text-rose-400 hover:bg-slate-900 rounded-lg transition"><i class="fas fa-trash"></i></button>
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div id="product-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative">
-                            <button onclick="state.closeProductModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
-                            <h3 id="prod-modal-title" class="text-base font-bold text-white mb-4">Modify Catalog Schema</h3>
-                            <form id="prod-form" onsubmit="event.preventDefault(); state.submitProductForm();" class="space-y-4">
-                                <input type="hidden" id="prod-id">
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Product Master Title Name:</label>
-                                    <input type="text" id="prod-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-200">
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">SKU Code Ident:</label>
-                                        <input type="text" id="prod-sku" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Catalog Category Grouping:</label>
-                                        <input type="text" id="prod-category" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-200">
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-4">
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Retail Price Debit:</label>
-                                        <input type="number" step="0.01" id="prod-price" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cost Acquisition Basis:</label>
-                                        <input type="number" step="0.01" id="prod-cost" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Inventory Unit Allocation:</label>
-                                        <input type="number" id="prod-stock" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
-                                    </div>
-                                </div>
-                                <div class="flex justify-end gap-3 border-t border-slate-800/60 pt-4 mt-6">
-                                    <button type="button" onclick="state.closeProductModal()" class="px-4 py-2.5 bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 rounded-xl text-xs font-bold uppercase tracking-wider">Cancel</button>
-                                    <button type="submit" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider">Commit Records</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                `;
-            }
-
-            openProductModal(id = null) {
-                const modal = document.getElementById("product-modal");
-                const form = document.getElementById("prod-form");
-                const title = document.getElementById("prod-modal-title");
-                form.reset();
-                document.getElementById("prod-id").value = "";
-                if (id) {
-                    title.innerText = "Edit Catalog Product Entity Record";
-                    const p = db.get("products").find(prod => prod.id === id);
-                    if (p) {
-                        document.getElementById("prod-id").value = p.id;
-                        document.getElementById("prod-name").value = p.name;
-                        document.getElementById("prod-sku").value = p.sku;
-                        document.getElementById("prod-category").value = p.category;
-                        document.getElementById("prod-price").value = p.price;
-                        document.getElementById("prod-cost").value = p.cost;
-                        document.getElementById("prod-stock").value = p.stock;
-                    }
-                } else { title.innerText = "Inject New Product Configuration Entity"; }
-                modal.classList.remove("hidden");
-            }
-            closeProductModal() { document.getElementById("product-modal").classList.add("hidden"); }
-            submitProductForm() {
-                const pData = {
-                    id: document.getElementById("prod-id").value || null,
-                    name: document.getElementById("prod-name").value,
-                    sku: document.getElementById("prod-sku").value,
-                    category: document.getElementById("prod-category").value,
-                    price: parseFloat(document.getElementById("prod-price").value),
-                    cost: parseFloat(document.getElementById("prod-cost").value),
-                    stock: parseInt(document.getElementById("prod-stock").value)
-                };
-                this.saveProduct(pData);
-                this.closeProductModal();
-            }
-
-            //------------------------------------------------------------------------
-            // CONTAINER MODULE VIEW 4: CUSTOMER DASHBOARDS W/ DELETION OPERATION
-            //------------------------------------------------------------------------
-            viewCustomers() {
-                const customers = db.get("customers");
-                return `
-                    <div class="h-full flex flex-col overflow-hidden p-6 space-y-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-950 p-4 border border-slate-800 rounded-2xl shadow-sm flex-shrink-0">
-                            <div>
-                                <h3 class="text-base font-bold text-white">CRM Engagement Loyalty Core Node</h3>
-                                <p class="text-xs text-slate-400">Track consumer loyalty tier distributions, spend levels, and profile logs</p>
-                            </div>
-                            <button onclick="state.openCustomerModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 uppercase tracking-wider"><i class="fas fa-user-plus"></i>Provision CRM Record</button>
-                        </div>
-                        <div class="flex-1 overflow-auto border border-slate-800 bg-slate-950/20 rounded-2xl">
-                            <table class="w-full border-collapse text-left text-sm text-slate-300">
-                                <thead class="bg-slate-950 text-xs font-bold text-slate-400 uppercase tracking-wider calendar sticky top-0 border-b border-slate-800">
-                                    <tr>
-                                        <th class="px-6 py-4">Customer Designation</th>
-                                        <th class="px-6 py-4">Phone String</th>
-                                        <th class="px-6 py-4">Secure Email Account</th>
-                                        <th class="px-6 py-4 text-right">Lifetime Aggregate Value</th>
-                                        <th class="px-6 py-4 text-center">Loyalty Points</th>
-                                        <th class="px-6 py-4 text-center">Tier Configuration</th>
-                                        <th class="px-6 py-4 text-right">Operations</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-800/60 font-medium">
-                                    ${customers.map(c => {
-                                        const tier = c.spend >= 1000 ? 'Gold Elite Tier' : (c.spend >= 300 ? 'Silver Preferred' : 'Base Member');
-                                        const tierClass = c.spend >= 1000 ? 'bg-amber-950 border-amber-800 text-amber-400' : (c.spend >= 300 ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-900 border-slate-800 text-slate-400');
-                                        return `
-                                            <tr class="hover:bg-slate-900/40 transition">
-                                                <td class="px-6 py-4 font-bold text-slate-200">${c.name}</td>
-                                                <td class="px-6 py-4 font-mono text-xs text-slate-400">${c.phone}</td>
-                                                <td class="px-6 py-4 text-slate-400 font-normal">${c.email}</td>
-                                                <td class="px-6 py-4 text-right font-mono font-bold text-slate-200">${this.globalSettings.currencySymbol}${c.spend.toFixed(2)}</td>
-                                                <td class="px-6 py-4 text-center font-mono font-bold text-blue-400">${c.points} pts</td>
-                                                <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 border rounded-md text-[10px] font-bold uppercase tracking-wider ${tierClass}">${tier}</span></td>
-                                                <td class="px-6 py-4 text-right space-x-1">
-                                                    <button onclick="state.openCustomerModal('${c.id}')" class="p-2 text-blue-400 hover:bg-slate-900 rounded-lg transition"><i class="fas fa-edit"></i></button>
-                                                    <button onclick="state.deleteCustomer('${c.id}')" class="p-2 text-rose-400 hover:bg-slate-900 rounded-lg transition"><i class="fas fa-trash"></i></button>
-                                                </td>
-                                            </tr>
-                                        `;
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div id="customer-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
-                            <button onclick="state.closeCustomerModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
-                            <h3 id="cust-modal-title" class="text-base font-bold text-white mb-4">Modify CRM User Map Node</h3>
-                            <form id="cust-form" onsubmit="event.preventDefault(); state.submitCustomerForm();" class="space-y-4">
-                                <input type="hidden" id="cust-id">
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Full Legal Consumer Identification Name:</label>
-                                    <input type="text" id="cust-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py
+        const state = new StateRouter();
+        window.state = state; 
+        state.render();
+        setInterval(() => state.updateLiveClock(), 1000);
+    </script>
+</body>
+</html>
