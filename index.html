@@ -1,14 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-[#0c0d0e] text-[#e2e4e6]">
 <head>
-    <script>
-    window.addEventListener('error', function(e) {
-        alert('CRITICAL POS BREAK FOUND:\n' + e.message + '\nFile: ' + e.filename + '\nLine: ' + e.lineno);
-    });
-</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Store POS Node</title>
+    <title>Jumpmind Ensembles Terminal Node</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -43,27 +38,28 @@
         ::-webkit-scrollbar-track { background: #0c0d0e; }
         ::-webkit-scrollbar-thumb { background: #2a2e35; border-radius: 2px; }
         .jmd-btn-active:active { transform: scale(0.97); background-color: #2a2e35 !important; }
+        .jmd-action-active:active { transform: scale(0.97); filter: brightness(1.2); }
     </style>
 </head>
 <body class="h-full overflow-hidden antialiased bg-[#0c0d0e]">
 
     <div id="global-toast" class="fixed top-4 right-4 z-[9999] transform translate-y-20 opacity-0 pointer-events-none transition-all duration-200 flex items-center p-3 rounded-lg shadow-xl border bg-[#141619] border-[#2a2e35] max-w-xs">
         <div id="toast-icon" class="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-white mr-2 text-xs"></div>
-        <div><p id="toast-msg" class="text-xs font-bold font-mono text-slate-300"></p></div>
+        <div><p id="toast-msg" class="text-xs font-bold font-mono tracking-tight text-slate-300"></p></div>
     </div>
 
     <div id="root-app" class="h-full flex flex-col"></div>
 
-    <script type="module">
-        import { initialProducts, initialEmployees, initialCustomers } from './database.js';
-        import { RegisterModule } from './modules/register.js';
-        import { CustomersModule } from './modules/customers.js';
-        import { InventoryModule } from './modules/inventory.js';
-        import { EmployeesModule } from './modules/employees.js';
-        import { ReportingModule } from './modules/reporting.js';
-        import { SettingsModule } from './modules/settings.js';
+    <script>
+        // ========================================================================
+        // HARD-CODED MASTER SECURITY AUTHORIZATION FALLBACKS
+        // ========================================================================
+        const INITIAL_EMPLOYEES = [
+            { id: "e1", name: "Brady Behrendt", pin: "9091237", role: "Admin", wage: 35.00 },
+            { id: "e2", name: "Eduardo Sanchez", pin: "1111", role: "Manager", wage: 25.00 }
+        ];
 
-        // --- SAFARI PRIVATE BROWSING PROTECTION LAYER ---
+        // --- SAFARI PRIVATE MODE MEMORY FALLBACK ENGAGEMENT SHIELDS ---
         class MemoryStorageFallback {
             constructor() { this.store = {}; }
             getItem(key) { return this.store[key] || null; }
@@ -75,20 +71,18 @@
             constructor() {
                 this.storage = window.localStorage;
                 try {
-                    // Test if storage is write-locked (Safari Private Tab test)
                     window.localStorage.setItem("__pos_test", "1");
                     window.localStorage.removeItem("__pos_test");
                 } catch (e) {
-                    // Safe Fallback activation if Safari blocks localStorage writes
                     this.storage = new MemoryStorageFallback();
                 }
                 this.init();
             }
             init() {
                 if (this.storage.getItem("pos_products")) return;
-                this.storage.setItem("pos_products", JSON.stringify(initialProducts));
-                this.storage.setItem("pos_employees", JSON.stringify(initialEmployees));
-                this.storage.setItem("pos_customers", JSON.stringify(initialCustomers));
+                this.storage.setItem("pos_products", JSON.stringify([]));
+                this.storage.setItem("pos_employees", JSON.stringify(INITIAL_EMPLOYEES));
+                this.storage.setItem("pos_customers", JSON.stringify([]));
                 this.storage.setItem("pos_timecards", JSON.stringify([]));
                 this.storage.setItem("pos_transactions", JSON.stringify([]));
                 this.storage.setItem("pos_settings", JSON.stringify({
@@ -115,23 +109,21 @@
                 this.currentPinInput = "";
                 this.globalSettings = db.get("settings") || { storeName: "Terminal Node 01", currencySymbol: "$", taxRate: 7.00, receiptFooter: "" };
                 
-                this.modules = {
-                    register: new RegisterModule(db, this),
-                    customers: new CustomersModule(db, this),
-                    inventory: new InventoryModule(db, this),
-                    employees: new EmployeesModule(db, this),
-                    reporting: new ReportingModule(db, this),
-                    settings: new SettingsModule(db, this)
-                };
+                // Transactional View Variables
+                this.cart = [];
+                this.selectedCustomer = null;
+                this.searchQuery = "";
+                this.checkoutModalOpen = false;
+                this.receiptModalOpen = false;
+                this.lastTransaction = null;
+                this.activeSettingsSubSection = "company";
             }
 
             setView(viewName) {
                 if (!this.currentUser && viewName !== "login") return;
                 this.currentView = viewName;
                 this.render();
-                if (this.modules[viewName] && typeof this.modules[viewName].onMount === 'function') {
-                    this.modules[viewName].onMount();
-                }
+                if (viewName === "reporting") this.initReportingCharts();
             }
 
             showToast(msg, type = "success") {
@@ -172,7 +164,7 @@
                 if (match) {
                     this.currentUser = match;
                     this.setView("register");
-                    this.showToast(`Operator: ${match.name}`);
+                    this.showToast(`Operator Authed: ${match.name}`);
                 } else {
                     this.showToast("Access Denied", "danger");
                     this.clearKey();
@@ -193,13 +185,389 @@
                 if (openCardIndex !== -1) {
                     timecards[openCardIndex].clockOut = now;
                     db.set("timecards", timecards);
-                    this.showToast("Shift Log Out Recorded.");
+                    this.showToast("Shift Clock Out Logged.");
                 } else {
                     timecards.push({ id: "TC-" + Date.now(), employeeId: this.currentUser.id, employeeName: this.currentUser.name, clockIn: now, clockOut: null, approved: false });
                     db.set("timecards", timecards);
-                    this.showToast("Shift Log In Recorded.");
+                    this.showToast("Shift Clock In Logged.");
                 }
                 this.render();
+            }
+
+            // ========================================================================
+            // TRANSACTION REGISTRATION LIFE CYCLES
+            // ========================================================================
+            addToCart(productId) {
+                const products = db.get("products") || [];
+                const item = products.find(p => p.id === productId);
+                if (!item || item.stock <= 0) return;
+
+                const existing = this.cart.find(c => c.id === productId);
+                if (existing) {
+                    if (existing.quantity >= item.stock) return;
+                    existing.quantity++;
+                } else {
+                    this.cart.push({ ...item, quantity: 1, discount: 0 });
+                }
+                this.render();
+            }
+
+            updateCartQty(productId, qty) {
+                const products = db.get("products") || [];
+                const targetProd = products.find(p => p.id === productId);
+                if (qty <= 0) {
+                    this.cart = this.cart.filter(c => c.id !== productId);
+                } else {
+                    const item = this.cart.find(c => c.id === productId);
+                    if (qty > targetProd.stock) return;
+                    item.quantity = qty;
+                }
+                this.render();
+            }
+
+            attachCustomer(phoneOrName) {
+                const customers = db.get("customers") || [];
+                const match = customers.find(c => c.phone === phoneOrName || c.name.toLowerCase().includes(phoneOrName.toLowerCase()));
+                if (match) { this.selectedCustomer = match; }
+                else { this.showToast("CRM Lookup Error", "danger"); }
+                this.render();
+            }
+
+            getTotals() {
+                let subtotal = 0;
+                this.cart.forEach(c => { subtotal += (c.price * c.quantity) - c.discount; });
+                const tax = subtotal * (parseFloat(this.globalSettings.taxRate || 7.00) / 100);
+                return { subtotal, tax, total: subtotal + tax };
+            }
+
+            processCheckout(paymentMethod) {
+                const { subtotal, tax, total } = this.getTotals();
+                if (this.cart.length === 0) return;
+
+                const products = db.get("products") || [];
+                this.cart.forEach(c => {
+                    const p = products.find(prod => prod.id === c.id);
+                    if (p) p.stock = Math.max(0, p.stock - c.quantity);
+                });
+                db.set("products", products);
+
+                const tx = {
+                    id: "TX-" + Math.floor(100000 + Math.random() * 900000),
+                    timestamp: new Date().toISOString(),
+                    employeeName: this.currentUser.name,
+                    customerName: this.selectedCustomer ? this.selectedCustomer.name : "Walk-in Guest",
+                    items: [...this.cart], subtotal, tax, total, paymentMethod
+                };
+
+                const txs = db.get("transactions") || [];
+                txs.unshift(tx);
+                db.set("transactions", txs);
+
+                this.lastTransaction = tx;
+                this.cart = [];
+                this.checkoutModalOpen = false;
+                this.receiptModalOpen = true;
+                this.render();
+            }
+
+            // ========================================================================
+            // INVENTORY / CRM MOD MUTATORS (FROM SETTINGS PANE)
+            // ========================================================================
+            addEmployeeNode() {
+                const name = document.getElementById("set-emp-name").value;
+                const pin = document.getElementById("set-emp-pin").value;
+                const role = document.getElementById("set-emp-role").value;
+                const wage = parseFloat(document.getElementById("set-emp-wage").value) || 0;
+                if (!name || !pin) return;
+                const emps = db.get("employees");
+                emps.push({ id: "e-" + Date.now(), name, pin, role, wage });
+                db.set("employees", emps);
+                this.showToast(`Staff Added: ${name}`);
+                this.render();
+            }
+
+            addCustomerNode() {
+                const name = document.getElementById("set-cust-name").value;
+                const phone = document.getElementById("set-cust-phone").value;
+                if (!name || !phone) return;
+                const custs = db.get("customers");
+                custs.push({ id: "c-" + Date.now(), name, phone, email: "walkin@pos.local", spend: 0, points: 0 });
+                db.set("customers", custs);
+                this.showToast(`Customer Added: ${name}`);
+                this.render();
+            }
+
+            addProductNode() {
+                const name = document.getElementById("set-prod-name").value;
+                const sku = document.getElementById("set-prod-sku").value;
+                const price = parseFloat(document.getElementById("set-prod-price").value) || 0;
+                const stock = parseInt(document.getElementById("set-prod-stock").value) || 0;
+                if (!name || !sku) return;
+                const prods = db.get("products");
+                prods.push({ id: "p-" + Date.now(), name, sku, price, cost: price * 0.4, stock, category: "General" });
+                db.set("products", prods);
+                this.showToast(`Product Added: ${name}`);
+                this.render();
+            }
+
+            saveSettings() {
+                const s = {
+                    storeName: document.getElementById("set-store-name").value,
+                    taxRate: parseFloat(document.getElementById("set-tax-rate").value) || 0,
+                    currencySymbol: document.getElementById("set-currency").value,
+                    receiptFooter: document.getElementById("set-footer").value,
+                    companyName: document.getElementById("set-company-name").value,
+                    taxId: document.getElementById("set-tax-id").value,
+                    storeAddress: document.getElementById("set-store-address").value
+                };
+                db.set("settings", s);
+                this.globalSettings = s;
+                this.showToast("Parameters Committed.");
+                this.render();
+            }
+
+            clearLocalStorageCache() {
+                db.clearAll();
+                localStorage.clear();
+                this.showToast("Cache Cleared. Reloading...", "danger");
+                setTimeout(() => window.location.reload(), 800);
+            }
+
+            approveShift(id) {
+                const tcs = db.get("timecards");
+                const idx = tcs.findIndex(t => t.id === id);
+                if (idx !== -1) { tcs[idx].approved = true; db.set("timecards", tcs); }
+                this.render();
+            }
+
+            initReportingCharts() {
+                const txs = db.get("transactions") || [];
+                const dailyTotals = {};
+                txs.forEach(t => {
+                    const dateStr = t.timestamp.split('T')[0];
+                    dailyTotals[dateStr] = (dailyTotals[dateStr] || 0) + t.total;
+                });
+                const sortedDates = Object.keys(dailyTotals).sort().slice(-7);
+                const dailyData = sortedDates.map(d => dailyTotals[d]);
+
+                const ctxSales = document.getElementById('chart-sales-trend');
+                if (ctxSales) {
+                    new Chart(ctxSales, {
+                        type: 'line',
+                        data: { 
+                            labels: sortedDates.length ? sortedDates : ['No Entries'], 
+                            datasets: [{ label: 'Sales ($)', data: dailyData.length ? dailyData : [0], borderColor: '#0070f3', tension: 0.1 }] 
+                        }
+                    });
+                }
+            }
+
+            // ========================================================================
+            // MAIN VIEW MATRIX LAYOUT COMPILERS
+            // ========================================================================
+            renderActiveSubView() {
+                const sym = this.globalSettings.currencySymbol || "$";
+                switch(this.currentView) {
+                    case "register":
+                        const products = db.get("products") || [];
+                        const filtered = products.filter(p => p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || p.sku.includes(this.searchQuery));
+                        const { subtotal, tax, total } = this.getTotals();
+                        return `
+                            <div class="h-full flex flex-col lg:flex-row overflow-hidden select-none">
+                                <div class="flex-1 flex flex-col overflow-hidden border-r border-[#2a2e35]">
+                                    <div class="p-3 bg-[#141619] border-b border-[#2a2e35] flex items-center gap-2">
+                                        <i class="fas fa-barcode text-xs text-slate-500 font-mono pl-2"></i>
+                                        <input type="text" placeholder="BARCODE / MANUAL SKU ENTRY DISPATCHER" value="${this.searchQuery}" oninput="window.state.searchQuery=this.value; window.state.render()" class="w-full bg-[#0c0d0e] border border-[#2a2e35] font-mono text-xs text-slate-200 outline-none p-2 rounded focus:border-blue-500 uppercase">
+                                    </div>
+                                    <div class="flex-1 overflow-y-auto p-3 bg-[#0c0d0e]">
+                                        <div class="grid grid-cols-2 xl:grid-cols-3 gap-2">
+                                            ${filtered.map(p => `
+                                                <div onclick="window.state.addToCart('${p.id}')" class="bg-[#141619] border border-[#2a2e35] p-3 rounded flex flex-col justify-between hover:border-slate-500 transition cursor-pointer min-h-[95px]">
+                                                    <div><h4 class="font-bold text-xs text-slate-300 font-mono tracking-wide uppercase line-clamp-2">${p.name}</h4></div>
+                                                    <div class="flex items-end justify-between mt-2 font-mono"><span class="text-xs font-black text-blue-400">${sym}${p.price.toFixed(2)}</span><span class="text-[10px] text-slate-500">QTY: ${p.stock}</span></div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="w-full lg:w-[360px] bg-[#141619] flex flex-col justify-between overflow-hidden flex-shrink-0 border-t lg:border-t-0 border-[#2a2e35]">
+                                    <div class="p-3 border-b border-[#2a2e35] bg-[#0c0d0e]/40">
+                                        ${this.selectedCustomer ? `
+                                            <div class="bg-[#1c1f24] border border-[#2a2e35] p-2 rounded flex justify-between items-center font-mono text-[11px]">
+                                                <div><span class="text-slate-500 block">CUSTOMER PROFILE</span><strong class="text-slate-200 uppercase">${this.selectedCustomer.name}</strong></div>
+                                                <button onclick="window.state.selectedCustomer=null; window.state.render()" class="text-slate-500 hover:text-orange-400 p-1"><i class="fas fa-times-circle"></i></button>
+                                            </div>
+                                        ` : `
+                                            <div class="flex gap-2">
+                                                <input type="text" id="cust-in" placeholder="CRM SEARCH MATRIX" class="flex-1 bg-[#0c0d0e] border border-[#2a2e35] rounded p-2 text-xs font-mono text-slate-200 outline-none focus:border-blue-500 uppercase">
+                                                <button onclick="window.state.attachCustomer(document.getElementById('cust-in').value)" class="px-3 bg-[#1c1f24] border border-[#2a2e35] hover:bg-[#2a2e35] rounded text-xs font-bold font-mono tracking-wider text-slate-300 uppercase">Query</button>
+                                            </div>
+                                        `}
+                                    </div>
+                                    <div class="flex-1 overflow-y-auto p-3 space-y-1">
+                                        ${this.cart.map(item => `
+                                            <div class="bg-[#1c1f24] border border-[#2a2e35] p-2.5 rounded font-mono text-[11px] flex justify-between items-center">
+                                                <div class="max-w-[180px]"><h5 class="font-bold text-slate-300 uppercase truncate">${item.name}</h5><span class="text-[10px] text-slate-500">${sym}${item.price.toFixed(2)} x ${item.quantity}</span></div>
+                                                <div class="flex items-center gap-3">
+                                                    <div class="flex items-center bg-[#0c0d0e] border border-[#2a2e35] rounded p-0.5">
+                                                        <button onclick="window.state.updateCartQty('${item.id}', ${item.quantity - 1})" class="w-5 h-5 text-[10px] text-slate-500"><i class="fas fa-minus"></i></button>
+                                                        <span class="w-6 text-center font-bold text-slate-300">${item.quantity}</span>
+                                                        <button onclick="window.state.updateCartQty('${item.id}', ${item.quantity + 1})" class="w-5 h-5 text-[10px] text-slate-500"><i class="fas fa-plus"></i></button>
+                                                    </div>
+                                                    <span class="font-bold text-slate-200 w-16 text-right">${sym}${((item.price * item.quantity) - item.discount).toFixed(2)}</span>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <div class="p-3 bg-[#0c0d0e] border-t border-[#2a2e35] space-y-3">
+                                        <div class="space-y-1 font-mono text-[11px] text-slate-400">
+                                            <div class="flex justify-between"><span>SUBTOTAL FLUSH:</span><span class="text-slate-300">${sym}${subtotal.toFixed(2)}</span></div>
+                                            <div class="flex justify-between border-t border-[#2a2e35] pt-2 text-xs font-black text-slate-200"><span>BAL DUE VALUE:</span><span class="text-blue-400 font-bold">${sym}${total.toFixed(2)}</span></div>
+                                        </div>
+                                        <button onclick="window.state.checkoutModalOpen=true; window.state.render()" ${this.cart.length === 0 ? 'disabled' : ''} class="w-full py-3 bg-blue-600 disabled:bg-[#1c1f24] border border-blue-500 text-white rounded font-mono font-bold text-xs uppercase tracking-widest transition">Tender Settlement</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    case "inventory":
+                        return `
+                            <div class="h-full flex flex-col p-4 space-y-3 overflow-hidden font-mono text-xs">
+                                <div class="flex justify-between items-center bg-[#141619] p-3 border border-[#2a2e35] rounded"><h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Live Item Catalog</h3></div>
+                                <div class="flex-1 overflow-auto border border-[#2a2e35] bg-[#141619]/20 rounded">
+                                    <table class="w-full text-left"><thead class="bg-[#141619] border-b border-[#2a2e35] text-slate-500"><tr><th class="p-3">Title</th><th class="p-3">SKU</th><th class="p-3 text-right">Price</th><th class="p-3 text-center">Stock</th></tr></thead>
+                                    <tbody class="divide-y divide-[#2a2e35]/60 text-slate-300">${(db.get("products") || []).map(p => `<tr><td class="p-3 font-bold uppercase">${p.name}</td><td class="p-3 text-slate-500">${p.sku}</td><td class="p-3 text-right text-blue-400">${sym}${p.price.toFixed(2)}</td><td class="p-3 text-center">${p.stock} units</td></tr>`).join('')}</tbody></table>
+                                </div>
+                            </div>
+                        `;
+                    case "customers":
+                        return `
+                            <div class="h-full flex flex-col p-4 space-y-3 overflow-hidden font-mono text-xs">
+                                <div class="flex justify-between items-center bg-[#141619] p-3 border border-[#2a2e35] rounded"><h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">CRM Accounts Index</h3></div>
+                                <div class="flex-1 overflow-auto border border-[#2a2e35] bg-[#141619]/20 rounded">
+                                    <table class="w-full text-left"><thead class="bg-[#141619] border-b border-[#2a2e35] text-slate-500"><tr><th class="p-3">Name</th><th class="p-3">Phone</th><th class="p-3 text-center">Points</th></tr></thead>
+                                    <tbody class="divide-y divide-[#2a2e35]/60 text-slate-300">${(db.get("customers") || []).map(c => `<tr><td class="p-3 font-bold uppercase">${c.name}</td><td class="p-3 text-slate-500">${c.phone}</td><td class="p-3 text-center text-blue-400">${c.points} PTS</td></tr>`).join('')}</tbody></table>
+                                </div>
+                            </div>
+                        `;
+                    case "employees":
+                        return `
+                            <div class="h-full flex flex-col p-4 space-y-4 overflow-hidden font-mono text-xs">
+                                <div class="flex-1 flex flex-col overflow-hidden bg-[#141619] border border-[#2a2e35] rounded"><div class="p-3 border-b border-[#2a2e35]"><h4 class="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Shift Log Manager</h4></div>
+                                <div class="flex-1 overflow-auto"><table class="w-full text-left"><tbody class="divide-y divide-[#2a2e35]">${(db.get("timecards") || []).map(t => `<tr class="hover:bg-[#1c1f24]"><td class="p-3 font-sans font-bold text-slate-200 uppercase">${t.employeeName}</td><td class="p-3">IN: ${new Date(t.clockIn).toLocaleTimeString()}</td><td class="p-3">${t.clockOut ? 'OUT: ' + new Date(t.clockOut).toLocaleTimeString() : '<span class="text-blue-400 font-bold">ACTIVE</span>'}</td><td class="p-3 text-right">${!t.approved && t.clockOut ? `<button onclick="window.state.approveShift('${t.id}')" class="px-2 py-1 bg-[#1c1f24] border border-[#2a2e35] text-blue-400 rounded font-bold uppercase">Verify</button>` : '<i class="fas fa-check-double text-slate-700 px-3"></i>'}</td></tr>`).join('')}</tbody></table></div></div>
+                            </div>
+                        `;
+                    case "reporting":
+                        const txs = db.get("transactions") || [];
+                        let gross = 0; txs.forEach(t => gross += t.total);
+                        return `
+                            <div class="h-full flex flex-col p-4 space-y-3 overflow-hidden font-mono text-xs">
+                                <div class="grid grid-cols-2 gap-2 flex-shrink-0"><div class="p-4 bg-[#141619] border border-[#2a2e35] rounded"><span class="text-[10px] font-bold text-slate-500 uppercase block">Total Volume Ingest</span><span class="text-lg font-bold text-blue-400 mt-1 block">${sym}${gross.toFixed(2)}</span></div><div class="p-4 bg-[#141619] border border-[#2a2e35] rounded"><span class="text-[10px] font-bold text-slate-500 uppercase block">Loops</span><span class="text-lg font-bold text-slate-300 mt-1 block">${txs.length} total</span></div></div>
+                                <div class="flex-1 bg-[#141619] border border-[#2a2e35] p-4 rounded overflow-hidden flex flex-col"><h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Ensembles Performance Matrix</h4><div class="flex-1 relative w-full h-full"><canvas id="chart-sales-trend"></canvas></div></div>
+                            </div>
+                        `;
+                    case "settings":
+                        const sub = this.activeSettingsSubSection;
+                        return `
+                            <div class="h-full flex flex-col md:flex-row overflow-hidden font-mono text-xs p-2 gap-4">
+                                <div class="w-full md:w-40 flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-x-visible bg-[#141619] border border-[#2a2e35] p-2 rounded flex-shrink-0">
+                                    <button onclick="window.state.activeSettingsSubSection='company'; window.state.render()" class="px-2 py-1.5 text-left rounded text-[9px] uppercase font-bold tracking-wider ${sub === 'company' ? 'bg-blue-600 text-white border border-blue-500':''}">Profile</button>
+                                    <button onclick="window.state.activeSettingsSubSection='fiscal'; window.state.render()" class="px-2 py-1.5 text-left rounded text-[9px] uppercase font-bold tracking-wider ${sub === 'fiscal' ? 'bg-blue-600 text-white border border-blue-500':''}">Taxes</button>
+                                    <button onclick="window.state.activeSettingsSubSection='receipt'; window.state.render()" class="px-2 py-1.5 text-left rounded text-[9px] uppercase font-bold tracking-wider ${sub === 'receipt' ? 'bg-blue-600 text-white border border-blue-500':''}">Receipts</button>
+                                    <button onclick="window.state.activeSettingsSubSection='employees'; window.state.render()" class="px-2 py-1.5 text-left rounded text-[9px] uppercase font-bold tracking-wider ${sub === 'employees' ? 'bg-blue-600 text-white border border-blue-500':''}">Staff</button>
+                                    <button onclick="window.state.activeSettingsSubSection='customers'; window.state.render()" class="px-2 py-1.5 text-left rounded text-[9px] uppercase font-bold tracking-wider ${sub === 'customers' ? 'bg-blue-600 text-white border border-blue-500':''}">CRM</button>
+                                    <button onclick="window.state.activeSettingsSubSection='inventory'; window.state.render()" class="px-2 py-1.5 text-left rounded text-[9px] uppercase font-bold tracking-wider ${sub === 'inventory' ? 'bg-blue-600 text-white border border-blue-500':''}">Products</button>
+                                    <button onclick="window.state.activeSettingsSubSection='system'; window.state.render()" class="px-2 py-1.5 text-left rounded text-[9px] uppercase font-bold tracking-wider ${sub === 'system' ? 'bg-blue-600 text-white border border-blue-500':''}">Wipe</button>
+                                </div>
+                                <div class="flex-1 bg-[#141619] border border-[#2a2e35] p-4 rounded overflow-y-auto shadow-inner">
+                                    ${this.renderSettingsSubPane(sub, sym)}
+                                </div>
+                            </div>
+                        `;
+                    default: return ``;
+                }
+            }
+
+            renderSettingsSubPane(sub, sym) {
+                const s = this.globalSettings;
+                switch(sub) {
+                    case 'company':
+                        return `
+                            <h3 class="text-[10px] font-bold text-white border-b border-[#2a2e35] pb-2 uppercase tracking-wider">Enterprise Profiles</h3>
+                            <div class="space-y-2 max-w-xs pt-2">
+                                <div class="space-y-0.5"><label class="text-slate-500 uppercase text-[9px]">Corporate Legal Name:</label><input type="text" id="set-company-name" value="${s.companyName || ''}" class="w-full bg-[#0c0d0e] border border-[#2a2e35] rounded p-2 text-slate-200 outline-none uppercase focus:border-blue-500"></div>
+                                <div class="space-y-0.5"><label class="text-slate-500 uppercase text-[9px]">Terminal Node Name:</label><input type="text" id="set-store-name" value="${s.storeName || ''}" class="w-full bg-[#0c0d0e] border border-[#2a2e35] rounded p-2 text-slate-200 outline-none uppercase focus:border-blue-500"></div>
+                                <div class="space-y-0.5"><label class="text-slate-500 uppercase text-[9px]">Corporate Tax ID (EIN):</label><input type="text" id="set-tax-id" value="${s.taxId || ''}" class="w-full bg-[#0c0d0e] border border-[#2a2e35] rounded p-2 text-slate-200 outline-none focus:border-blue-500"></div>
+                                <div class="space-y-0.5"><label class="text-slate-500 uppercase text-[9px]">Store Facility Address:</label><input type="text" id="set-store-address" value="${s.storeAddress || ''}" class="w-full bg-[#0c0d0e] border border-[#2a2e35] rounded p-2 text-slate-200 outline-none uppercase focus:border-blue-500"></div>
+                                <button onclick="window.state.saveSettings()" class="px-3 py-1.5 bg-blue-600 border border-blue-500 text-white font-bold rounded uppercase mt-2">Save Profile</button>
+                            </div>
+                        `;
+                    case 'fiscal':
+                        return `
+                            <h3 class="text-[10px] font-bold text-white border-b border-[#2a2e35] pb-2 uppercase tracking-wider">Accounting Systems</h3>
+                            <div class="space-y-2 max-w-xs pt-2">
+                                <div class="space-y-0.5"><label class="text-slate-500 uppercase text-[9px]">Tax Rate (%):</label><input type="number" step="0.01" id="set-tax-rate" value="${s.taxRate || ''}" class="w-full bg-[#0c0d0e] border border-[#2a2e35] rounded p-2 text-slate-200 outline-none focus:border-blue-500"></div>
+                                <div class="space-y-0.5"><label class="text-slate-500 uppercase text-[9px]">Currency Symbol:</label><input type="text" id="set-currency" value="${s.currencySymbol || ''}" class="w-full bg-[#0c0d0e] border border-[#2a2e35] rounded p-2 text-slate-200 outline-none focus:border-blue-500"></div>
+                                <button onclick="window.state.saveSettings()" class="px-3 py-1.5 bg-blue-600 border border-blue-500 text-white font-bold rounded uppercase mt-2">Save Rules</button>
+                            </div>
+                        `;
+                    case 'receipt':
+                        return `
+                            <h3 class="text-[10px] font-bold text-white border-b border-[#2a2e35] pb-2 uppercase tracking-wider">Receipt Layout Footer</h3>
+                            <div class="space-y-2 max-w-xs pt-2">
+                                <div class="space-y-0.5"><label class="text-slate-500 uppercase text-[9px]">Footer Text Message String:</label><input type="text" id="set-footer" value="${s.receiptFooter || ''}" class="w-full bg-[#0c0d0e] border border-[#2a2e35] rounded p-2 text-slate-200 outline-none focus:border-blue-500"></div>
+                                <input type="hidden" id="set-company-name" value="${s.companyName || ''}"><input type="hidden" id="set-store-name" value="${s.storeName || ''}"><input type="hidden" id="set-tax-id" value="${s.taxId || ''}"><input type="hidden" id="set-store-address" value="${s.storeAddress || ''}"><input type="hidden" id="set-tax-rate" value="${s.taxRate || ''}"><input type="hidden" id="set-currency" value="${s.currencySymbol || ''}">
+                                <button onclick="window.state.saveSettings()" class="px-3 py-1.5 bg-blue-600 border border-blue-500 text-white font-bold rounded uppercase mt-2">Save Layout</button>
+                            </div>
+                        `;
+                    case 'employees':
+                        return `
+                            <h3 class="text-[10px] font-bold text-white border-b border-[#2a2e35] pb-2 uppercase tracking-wider">Staff Configurations</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <div class="space-y-2 p-3 bg-[#0c0d0e] border border-[#2a2e35] rounded">
+                                    <input type="text" id="set-emp-name" placeholder="OPERATOR FIRST LAST" class="w-full bg-[#141619] border border-[#2a2e35] p-2 text-slate-200 rounded uppercase outline-none">
+                                    <input type="password" id="set-emp-pin" placeholder="ACCESS KEYPAD PIN" class="w-full bg-[#141619] border border-[#2a2e35] p-2 text-slate-200 rounded outline-none font-mono">
+                                    <select id="set-emp-role" class="w-full bg-[#141619] border border-[#2a2e35] p-2 text-slate-400 rounded outline-none"><option value="Cashier">Cashier</option><option value="Manager">Manager</option><option value="Admin">Admin</option></select>
+                                    <input type="number" step="0.01" id="set-emp-wage" placeholder="HOURLY WAGE SCALE" class="w-full bg-[#141619] border border-[#2a2e35] p-2 text-slate-200 rounded font-mono outline-none">
+                                    <button onclick="window.state.addEmployeeNode()" class="w-full py-2 bg-blue-600 text-white font-bold rounded uppercase">Add Staff Asset</button>
+                                </div>
+                                <div class="space-y-1 max-h-40 overflow-y-auto">${db.get("employees").map(e => `<div class="p-2 bg-[#0c0d0e] border border-[#2a2e35] text-[10px] uppercase rounded flex justify-between"><strong>${e.name}</strong><span class="text-blue-400">${e.role}</span></div>`).join('')}</div>
+                            </div>
+                        `;
+                    case 'customers':
+                        return `
+                            <h3 class="text-[10px] font-bold text-white border-b border-[#2a2e35] pb-2 uppercase tracking-wider">CRM Registries</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <div class="space-y-2 p-3 bg-[#0c0d0e] border border-[#2a2e35] rounded">
+                                    <input type="text" id="set-cust-name" placeholder="CLIENT FIRST LAST" class="w-full bg-[#141619] border border-[#2a2e35] p-2 text-slate-200 rounded uppercase outline-none">
+                                    <input type="tel" id="set-cust-phone" placeholder="PHONE LINE NUM" class="w-full bg-[#141619] border border-[#2a2e35] p-2 text-slate-200 rounded font-mono outline-none">
+                                    <button onclick="window.state.addCustomerNode()" class="w-full py-2 bg-blue-600 text-white font-bold rounded uppercase">Add Account</button>
+                                </div>
+                                <div class="space-y-1 max-h-40 overflow-y-auto">${db.get("customers").map(c => `<div class="p-2 bg-[#0c0d0e] border border-[#2a2e35] text-[10px] uppercase rounded flex justify-between"><strong>${c.name}</strong><span class="text-slate-500">${c.phone}</span></div>`).join('')}</div>
+                            </div>
+                        `;
+                    case 'inventory':
+                        return `
+                            <h3 class="text-[10px] font-bold text-white border-b border-[#2a2e35] pb-2 uppercase tracking-wider">Stock Injection Catalogs</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <div class="space-y-2 p-3 bg-[#0c0d0e] border border-[#2a2e35] rounded">
+                                    <input type="text" id="set-prod-name" placeholder="PRODUCT ITEM TITLE" class="w-full bg-[#141619] border border-[#2a2e35] p-2 text-slate-200 rounded uppercase outline-none">
+                                    <input type="text" id="set-prod-sku" placeholder="SKU CODE BARCODE" class="w-full bg-[#141619] border border-[#2a2e35] p-2 text-slate-200 font-mono rounded outline-none">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="number" step="0.01" id="set-prod-price" placeholder="PRICE ($)" class="w-full bg-[#141619] border border-[#2a2e35] p-2 text-slate-200 font-mono rounded outline-none">
+                                        <input type="number" id="set-prod-stock" placeholder="STOCK BATCH COUNT" class="w-full bg-[#141619] border border-[#2a2e35] p-2 text-slate-200 font-mono rounded outline-none">
+                                    </div>
+                                    <button onclick="window.state.addProductNode()" class="w-full py-2 bg-blue-600 text-white font-bold rounded uppercase">Add SKU</button>
+                                </div>
+                                <div class="space-y-1 max-h-40 overflow-y-auto">${db.get("products").map(p => `<div class="p-2 bg-[#0c0d0e] border border-[#2a2e35] text-[10px] uppercase rounded flex justify-between truncate"><strong>${p.name}</strong><span class="text-blue-400 font-mono">${sym}${p.price.toFixed(2)}</span></div>`).join('')}</div>
+                            </div>
+                        `;
+                    case 'system':
+                        return `
+                            <h3 class="text-[10px] font-bold text-orange-400 border-b border-orange-950 pb-2 uppercase tracking-wider">Wipe Local Storage Vault</h3>
+                            <p class="text-slate-500 text-[10px] py-2 leading-relaxed">Clears running sessions, registered products, and timecard logs stored inside this iPad device memory layer.</p>
+                            <button onclick="window.state.clearLocalStorageCache()" class="px-3 py-1.5 bg-orange-950/20 border border-orange-900 text-orange-400 font-bold font-mono rounded uppercase text-[9px]">Flush Vault</button>
+                        `;
+                }
             }
 
             render() {
@@ -251,7 +619,7 @@
                             </div>
                         </nav>
                         <main class="flex-1 bg-[#0c0d0e] overflow-hidden relative" id="module-viewport-hook">
-                            ${this.modules[this.currentView] ? this.modules[this.currentView].render() : ''}
+                            ${this.renderActiveSubView()}
                         </main>
                     </div>
                 `;
@@ -300,6 +668,7 @@
         const state = new StateRouter();
         window.state = state; 
         state.render();
+        setInterval(() => state.updateLiveClock(), 1000);
     </script>
 </body>
 </html>
