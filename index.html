@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-[#0c0d0e] text-[#e2e4e6]">
 <head>
+    <script>
+    window.addEventListener('error', function(e) {
+        alert('CRITICAL POS BREAK FOUND:\n' + e.message + '\nFile: ' + e.filename + '\nLine: ' + e.lineno);
+    });
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Store POS Node</title>
