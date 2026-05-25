@@ -3,22 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro Dark POS Terminal</title>
+    <title>POS Terminal</title>
     
-    <!-- iOS Native App Optimization -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Pro POS">
-
-    <!-- Embedded Barcode Scanning Engine -->
-    <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
         :root {
             --bg-dark: #09090b;
             --surface-dark: #18181b;
             --surface-card: #27272a;
-            --border-dark: #3f3f46;
+            --border-dark: #27272a;
             --text-light: #f4f4f5;
             --text-dim: #a1a1aa;
             --accent-blue: #3b82f6;
@@ -32,610 +28,379 @@
             padding: 0;
             -webkit-user-select: none;
             user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
+
+        /* Essential rule to allow input boxes to function on iOS touch screens */
         input {
-    -webkit-user-select: text !important;
-    user-select: text !important;
-}
+            -webkit-user-select: text !important;
+            user-select: text !important;
+        }
+
         body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-light);
             height: 100vh;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
             padding-top: env(safe-area-inset-top);
         }
 
-        /* Login Screen Overlay */
-        #login-overlay {
+        /* Authorization Screen Layout */
+        #auth-gate {
             position: fixed;
-            inset: 0;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             background-color: var(--bg-dark);
-            z-index: 999;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
+            z-index: 9999;
         }
 
-        .login-box {
-            background-color: var(--surface-dark);
+        .login-card {
+            background: var(--surface-dark);
             padding: 40px;
-            border-radius: 16px;
+            border-radius: 20px;
             border: 1px solid var(--border-dark);
             text-align: center;
-            width: 340px;
+            width: 100%;
+            max-width: 400px;
         }
 
-        .pin-dots {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 20px 0;
+        .login-card h2 {
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+            font-weight: 700;
         }
 
-        .dot {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            border: 2px solid var(--border-dark);
+        .login-card p {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            margin-bottom: 24px;
         }
 
-        .dot.active {
-            background-color: var(--accent-blue);
+        .login-card input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-dark);
+            font-size: 1.3rem;
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            outline: none;
+            letter-spacing: 4px;
+        }
+
+        .login-card input:focus {
             border-color: var(--accent-blue);
         }
 
-        .pin-pad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-        }
-
-        .btn-pin {
-            background-color: var(--surface-card);
-            border: 1px solid var(--border-dark);
-            color: var(--text-light);
-            font-size: 1.5rem;
-            padding: 15px;
-            border-radius: 50%;
-            width: 65px;
-            height: 65px;
-            margin: 0 auto;
+        .login-btn {
+            width: 100%;
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
             cursor: pointer;
         }
 
-        .btn-pin:active { background-color: var(--border-dark); }
-
-        /* Core Application Frame */
-        .app-frame {
-            display: grid;
-            grid-template-columns: 80px 1fr 400px;
-            height: 100%;
+        .login-btn:active {
+            background-color: #1d4ed8;
         }
 
-        /* Left Navigation Icons bar */
-        nav {
+        .error-msg {
+            color: var(--accent-red);
+            font-size: 0.95rem;
+            margin-top: 14px;
+            font-weight: 500;
+            display: none;
+        }
+
+        /* POS Core Screen Workspace (Hidden until logged in) */
+        #app-workspace {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+
+        header {
             background-color: var(--surface-dark);
-            border-right: 1px solid var(--border-dark);
+            padding: 18px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-dark);
+        }
+
+        header h1 { font-size: 1.3rem; font-weight: 700; }
+
+        .metrics-pill {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+            background: #1e3a8a;
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .products-section {
+            padding: 24px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background-color: var(--surface-dark);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--border-dark);
+            cursor: pointer;
+            transition: transform 0.08s, background-color 0.08s;
+            min-height: 130px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 20px 0;
-            gap: 25px;
+            justify-content: space-between;
         }
 
-        .nav-icon {
-            color: var(--text-dim);
-            font-size: 0.8rem;
-            cursor: pointer;
-            text-align: center;
-            width: 100%;
-            padding: 10px 0;
+        .product-card:active {
+            transform: scale(0.95);
+            background-color: var(--surface-card);
         }
 
-        .nav-icon.active {
-            color: var(--accent-blue);
-            border-left: 3px solid var(--accent-blue);
-        }
+        .product-name { font-weight: 600; font-size: 1rem; }
+        .product-price { color: var(--accent-blue); font-weight: 700; font-size: 1.15rem; }
 
-        /* Center Content Space */
-        main {
-            padding: 20px;
-            overflow-y: auto;
-            display: block;
-        }
-
-        .view-panel { display: none; }
-        .view-panel.active { display: block; }
-
-        .section-title {
-            font-size: 1.4rem;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-
-        /* Grid View Layouts */
-        .grid-layout {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 15px;
-        }
-
-        .item-card {
-            background-color: var(--surface-dark);
-            border: 1px solid var(--border-dark);
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .item-card:active { background-color: var(--surface-card); }
-
-        /* Right Sidebar Order Panel */
-        .order-sidebar {
+        .cart-sidebar {
             background-color: var(--surface-dark);
             border-left: 1px solid var(--border-dark);
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
-        .sidebar-widget {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border-dark);
-        }
-
-        .input-dark {
-            width: 100%;
-            background-color: var(--bg-dark);
-            border: 1px solid var(--border-dark);
-            color: var(--text-light);
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .cart-scroller {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px 20px;
-        }
-
-        .cart-row {
+        .cart-header {
+            padding: 20px 24px;
+            font-weight: 700;
             display: flex;
             justify-content: space-between;
-            padding: 12px 0;
+            align-items: center;
             border-bottom: 1px solid var(--border-dark);
         }
 
-        /* Checkout Action Drawer */
-        .checkout-box {
-            padding: 20px;
+        .clear-btn { background: none; border: none; color: var(--accent-red); font-weight: 600; cursor: pointer; }
+        .cart-items-list { flex: 1; overflow-y: auto; padding: 10px 24px; }
+
+        .cart-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-dark);
+        }
+
+        .item-details h4 { font-size: 1rem; font-weight: 600; }
+        .item-details p { font-size: 0.85rem; color: var(--text-dim); }
+        .item-price-final { font-weight: 700; }
+
+        .cart-checkout-footer {
+            padding: 24px;
             background-color: var(--bg-dark);
             border-top: 1px solid var(--border-dark);
         }
 
-        .action-row {
+        .ledger-line { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .ledger-line.total-bold {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
+            margin-top: 16px;
+            font-size: 1.4rem;
+            font-weight: 800;
+            border-top: 1px solid var(--border-dark);
+            padding-top: 16px;
+            margin-bottom: 20px;
         }
 
-        .btn-action {
+        .charge-button {
             width: 100%;
-            padding: 16px;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 1.1rem;
+            background-color: var(--accent-green);
+            color: white;
             border: none;
+            padding: 18px;
+            border-radius: 14px;
+            font-size: 1.2rem;
+            font-weight: 700;
             cursor: pointer;
-        }
-
-        .btn-pay { background-color: var(--accent-blue); color: white; }
-        .btn-green { background-color: var(--accent-green); color: white; }
-
-        /* Modals & Scanning Drawers */
-        .modal-screen {
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0,0,0,0.85);
-            z-index: 100;
-            display: none;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: var(--surface-dark);
-            border: 1px solid var(--border-dark);
-            border-radius: 16px;
-            padding: 30px;
-            width: 450px;
-            max-width: 90%;
-        }
-
-        .flex-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        /* Camera Box sizing */
-        #scanner-view {
-            width: 100%;
-            background: #000;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <!-- 1. PIN LOCK OVERLAY -->
-    <div id="login-overlay">
-        <div class="login-box">
-            <h2 style="margin-bottom:10px;">Terminal Locked</h2>
-            <p id="login-msg" style="color:var(--text-dim); font-size:0.9rem;">Select associate or type pin</p>
-            <div class="pin-dots">
-                <div class="dot" id="dot1"></div>
-                <div class="dot" id="dot2"></div>
-                <div class="dot" id="dot3"></div>
-                <div class="dot" id="dot4"></div>
-            </div>
-            <div class="pin-pad">
-                <button class="btn-pin" onclick="pressPin('1')">1</button>
-                <button class="btn-pin" onclick="pressPin('2')">2</button>
-                <button class="btn-pin" onclick="pressPin('3')">3</button>
-                <button class="btn-pin" onclick="pressPin('4')">4</button>
-                <button class="btn-pin" onclick="pressPin('5')">5</button>
-                <button class="btn-pin" onclick="pressPin('6')">6</button>
-                <button class="btn-pin" onclick="pressPin('7')">7</button>
-                <button class="btn-pin" onclick="pressPin('8')">8</button>
-                <button class="btn-pin" onclick="pressPin('9')">9</button>
-                <button class="btn-pin" style="font-size:1rem; color:var(--accent-red);" onclick="clearPin()">CLR</button>
-                <button class="btn-pin" onclick="pressPin('0')">0</button>
-                <button class="btn-pin" style="font-size:1rem; color:var(--accent-green);" onclick="submitPin()">OK</button>
-            </div>
+    <div id="auth-gate">
+        <div class="login-card">
+            <h2>Terminal Locked</h2>
+            <p>Please enter your access pin code</p>
+            <input type="password" id="pin-input" placeholder="••••••••" inputmode="numeric">
+            <button class="login-btn" onclick="checkCredentials()">Authorize Access</button>
+            <div class="error-msg" id="login-error">Invalid access code. Access Denied.</div>
         </div>
     </div>
 
-    <!-- 2. NATIVE MAIN APPLICATION VIEW FRAME -->
-    <div class="app-frame">
-        
-        <!-- Navigation Panel -->
-        <nav>
-            <div class="nav-icon active" id="nav-pos" onclick="switchView('pos')">🛒<br>Register</div>
-            <div class="nav-icon" id="nav-inv" onclick="switchView('inv')">📦<br>Inventory</div>
-            <div class="nav-icon" style="margin-top:auto; color:var(--accent-red);" onclick="lockSystem()">🔒<br>Lock</div>
-        </nav>
+    <div id="app-workspace">
+        <header>
+            <h1>Register Terminal 01</h1>
+            <div class="metrics-pill" id="live-sales-tracker">Today's Sales: $0.00</div>
+        </header>
 
-        <!-- Dynamic Main Workspace -->
-        <main>
-            <!-- REGISTER PANEL -->
-            <div id="view-pos" class="view-panel active">
-                <div class="section-title">Catalog Layout</div>
-                <div class="grid-layout" id="catalog-target"></div>
-            </div>
+        <div class="app-container">
+            <section class="products-section">
+                <div class="products-grid" id="catalog-hook"></div>
+            </section>
 
-            <!-- INVENTORY & PRODUCT SETUP PANEL -->
-            <div id="view-inv" class="view-panel">
-                <div class="section-title">Terminal Stock & Master Pricing</div>
-                <button class="btn-action btn-pay" style="padding:10px; margin-bottom:15px; width:auto;" onclick="openInventoryScanner()">📷 Scan Barcode to Edit</button>
-                <div id="inventory-list-target"></div>
-            </div>
-        </main>
-
-        <!-- Right System Sidebar Panel -->
-        <aside class="order-sidebar">
-            <!-- Customer Rewards Lookup widget -->
-            <div class="sidebar-widget">
-                <label style="font-size:0.8rem; color:var(--text-dim); display:block; margin-bottom:5px;">Loyalty Account Search</label>
-                <input type="tel" class="input-dark" id="cust-search" placeholder="Enter Phone Number..." onkeyup="lookupCustomer()">
-                <div id="cust-status" style="font-size:0.85rem; margin-top:5px; color:var(--accent-blue);"></div>
-            </div>
-
-            <!-- Scrollable Cart Area -->
-            <div class="cart-scroller" id="cart-target"></div>
-
-            <!-- Totals & Transaction Actions Workspace -->
-            <div class="checkout-box">
-                <div class="action-row"><span>Subtotal</span><span id="txt-subtotal">$0.00</span></div>
-                <div class="action-row"><span>Tax (7%)</span><span id="txt-tax">$0.00</span></div>
-                <div class="action-row" style="font-size:1.3rem; font-weight:700; border-top:1px solid var(--border-dark); padding-top:10px;">
-                    <span>Total Due</span><span id="txt-total">$0.00</span>
+            <aside class="cart-sidebar">
+                <div class="cart-header">
+                    <span>Current Order</span>
+                    <button class="clear-btn" onclick="clearActiveOrder()">Clear All</button>
                 </div>
-                <button class="btn-action btn-pay" onclick="openPaymentModal()">Process Payment</button>
-            </div>
-        </aside>
-    </div>
-
-    <!-- 3. INTERACTIVE DIALOG MODALS & WIDGETS -->
-    <!-- Payment Type Selector Modal -->
-    <div id="modal-payment" class="modal-screen">
-        <div class="modal-content">
-            <h3>Select Payment Architecture</h3>
-            <button class="btn-action btn-green" style="margin-top:15px;" onclick="handleCashPayment()">💵 Cash Tender</button>
-            <button class="btn-action btn-pay" style="margin-top:12px;" onclick="handleCardPayment()">💳 Credit / Debit</button>
-            <button class="btn-action btn-green" style="margin-top:12px; background-color:#a855f7;" onclick="handleGiftCardPayment()">🎁 Gift Card Option</button>
-            <button class="btn-action" style="margin-top:15px; background:none; color:var(--text-dim);" onclick="closeModals()">Cancel</button>
+                <div class="cart-items-list" id="cart-hook"></div>
+                <div class="cart-checkout-footer">
+                    <div class="ledger-line"><span>Subtotal</span><span id="calc-subtotal">$0.00</span></div>
+                    <div class="ledger-line"><span>Estimated Tax (7%)</span><span id="calc-tax">$0.00</span></div>
+                    <div class="ledger-line total-bold"><span>Total</span><span id="calc-total">$0.00</span></div>
+                    <button class="charge-button" onclick="checkoutOrder()">Charge &amp; Complete</button>
+                </div>
+            </aside>
         </div>
     </div>
 
-    <!-- Universal Camera Barcode Scanner View Box -->
-    <div id="modal-scanner" class="modal-screen">
-        <div class="modal-content">
-            <h3 id="scanner-title">Align Barcode</h3>
-            <div id="scanner-view"></div>
-            <button class="btn-action" style="margin-top:15px; background-color:var(--accent-red);" onclick="closeScanner()">Close Camera</button>
-        </div>
-    </div>
-
-    <!-- Order Finalized & Receipt Matrix Options Drawer -->
-    <div id="modal-receipt" class="modal-screen">
-        <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--accent-green);">✔ Charge Success</h2>
-            <p style="margin:10px 0; color:var(--text-dim);">How would the guest prefer their itemized invoice?</p>
-            <div class="flex-buttons">
-                <button class="btn-action btn-pay" onclick="finalizeTransaction('Print')">🖨 Print</button>
-                <button class="btn-action btn-green" onclick="finalizeTransaction('Email')">📧 Email</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- APPLICATION CONTROL LOGIC MATRIX -->
     <script>
-        // Data Vault Mock Initialization
-        let products = JSON.parse(localStorage.getItem('pos_inv')) || [
-            { id: "101", barcode: "1111", name: "Premium Scented Candle", price: 26.50 },
-            { id: "102", barcode: "2222", name: "Hydrating Body Lotion", price: 18.00 },
-            { id: "103", barcode: "3333", name: "Fine Fragrance Mist", price: 19.50 },
-            { id: "104", barcode: "4444", name: "Gentle Foaming Soap", price: 9.00 }
+        // Secret PIN setup: Change this to whatever code you want!
+        const ACCESS_SECRET = "9091237"; 
+
+        function checkCredentials() {
+            const userInput = document.getElementById('pin-input').value;
+            if (userInput === ACCESS_SECRET) {
+                document.getElementById('auth-gate').style.display = 'none';
+                document.getElementById('app-workspace').style.display = 'flex';
+                startupPOS();
+            } else {
+                const err = document.getElementById('login-error');
+                err.style.display = 'block';
+                document.getElementById('pin-input').value = '';
+            }
+        }
+
+        document.getElementById('pin-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') checkCredentials();
+        });
+
+        const productCatalog = [
+            { id: 1, name: "Premium Tier Box", price: 45.00 },
+            { id: 2, name: "Standard Option A", price: 25.00 },
+            { id: 3, name: "Standard Option B", price: 15.00 },
+            { id: 4, name: "Add-On Upgrade", price: 10.00 },
+            { id: 5, name: "Essential Pack", price: 30.00 },
+            { id: 6, name: "Custom Setup Svc", price: 65.00 },
+            { id: 7, name: "Mini Gift Item", price: 5.50 },
+            { id: 8, name: "Deluxe Bundle Kit", price: 85.00 }
         ];
 
-        let customers = {
-            "7635550199": { name: "Brady Allen", points: 450, tier: "Platinum Elite" },
-            "6125550244": { name: "Eduardo Sanchez", points: 890, tier: "Diamond VIP" }
-        ];
-
-        let currentPin = "";
-        const masterPin = "1237"; // Secure Access Terminal PIN
         let activeCart = [];
-        let activeCustomerNum = null;
-        let html5QrcodeScanner = null;
-        let scanningMode = ""; // "GIFTCARD" or "INVENTORY"
+        let runningSalesTotal = parseFloat(localStorage.getItem('pos_running_sales')) || 0;
 
-        // PIN Security Processing Architecture
-        function pressPin(num) {
-            if (currentPin.length < 4) {
-                currentPin += num;
-                document.getElementById(`dot${currentPin.length}`).classList.add('active');
-            }
-        }
-        function clearPin() {
-            currentPin = "";
-            for(let i=1; i<=4; i++) document.getElementById(`dot${i}`).classList.remove('active');
-        }
-        function submitPin() {
-            if (currentPin === masterPin) {
-                document.getElementById('login-overlay').style.display = 'none';
-                clearPin();
-                initTerminal();
-            } else {
-                document.getElementById('login-msg').innerText = "INVALID PIN - RETRY";
-                document.getElementById('login-msg').style.color = 'var(--accent-red)';
-                clearPin();
-            }
-        }
-        function lockSystem() { document.getElementById('login-overlay').style.display = 'flex'; }
-
-        // Navigation Pane Routing engine
-        function switchView(view) {
-            document.querySelectorAll('.view-panel').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-icon').forEach(n => n.classList.remove('active'));
-            document.getElementById(`view-${view}`).classList.add('active');
-            document.getElementById(`nav-${view}`).classList.add('active');
-            if(view === 'inv') renderInventoryManagement();
-        }
-
-        // Initialize Core Grid UI Assemblies
-        function initTerminal() {
-            const target = document.getElementById('catalog-target');
-            target.innerHTML = '';
-            products.forEach(p => {
+        function startupPOS() {
+            const gridContainer = document.getElementById('catalog-hook');
+            gridContainer.innerHTML = '';
+            
+            productCatalog.forEach(item => {
                 const card = document.createElement('div');
-                card.className = 'item-card';
-                card.onclick = () => addToCart(p.id);
-                card.innerHTML = `<h4 style="margin-bottom:5px;">${p.name}</h4><span style="color:var(--accent-blue);font-weight:700;">$${p.price.toFixed(2)}</span>`;
-                target.appendChild(card);
-            });
-            updateCartDisplay();
-        }
-
-        // Cart Actions Implementation
-        function addToCart(id) {
-            const item = products.find(p => p.id === id);
-            const match = activeCart.find(c => c.id === id);
-            if(match) match.qty++; else activeCart.push({...item, qty: 1});
-            updateCartDisplay();
-        }
-
-        function updateCartDisplay() {
-            const target = document.getElementById('cart-target');
-            target.innerHTML = '';
-            let subtotal = 0;
-
-            activeCart.forEach(c => {
-                subtotal += (c.price * c.qty);
-                const r = document.createElement('div');
-                r.className = 'cart-row';
-                r.innerHTML = `<div><h4>${c.name}</h4><p style="color:var(--text-dim);font-size:0.85rem;">$${c.price.toFixed(2)} x ${c.qty}</p></div><div>$${(c.price*c.qty).toFixed(2)}</div>`;
-                target.appendChild(r);
-            });
-
-            let tax = subtotal * 0.07;
-            let total = subtotal + tax;
-
-            document.getElementById('txt-subtotal').innerText = `$${subtotal.toFixed(2)}`;
-            document.getElementById('txt-tax').innerText = `$${tax.toFixed(2)}`;
-            document.getElementById('txt-total').innerText = `$${total.toFixed(2)}`;
-        }
-
-        // Loyalty Profile Account Search Implementation
-        function lookupCustomer() {
-            const num = document.getElementById('cust-search').value.trim();
-            const status = document.getElementById('cust-status');
-            if (customers[num]) {
-                activeCustomerNum = num;
-                status.innerHTML = `👤 Match: <strong>${customers[num].name}</strong> (${customers[num].tier}) <br> Current Balance: ${customers[num].points} Tier Perks`;
-                status.style.color = 'var(--accent-green)';
-            } else {
-                activeCustomerNum = null;
-                status.innerText = num.length >= 10 ? "No Account Found" : "";
-                status.style.color = 'var(--accent-red)';
-            }
-        }
-
-        // Payment Handling Modules
-        function openPaymentModal() {
-            if(activeCart.length === 0) return alert("Register cart state is empty.");
-            document.getElementById('modal-payment').style.display = 'flex';
-        }
-        function closeModals() { document.getElementById('modal-payment').style.display = 'none'; }
-
-        function handleCashPayment() {
-            closeModals();
-            document.getElementById('modal-receipt').style.display = 'flex';
-        }
-
-        function handleCardPayment() {
-            let lastFour = prompt("Swipe/Insert Card or Enter Last 4 Digits manually:");
-            if(!lastFour || lastFour.length !== 4 || isNaN(lastFour)) return alert("Invalid entry. Transaction aborted.");
-            closeModals();
-            document.getElementById('modal-receipt').style.display = 'flex';
-        }
-
-        function handleGiftCardPayment() {
-            closeModals();
-            let gcNum = prompt("Enter full 16-Digit Gift Card code sequence:");
-            if(!gcNum) return;
-            
-            // Open camera scanner validation sequence
-            scanningMode = "GIFTCARD";
-            document.getElementById('scanner-title').innerText = "Scan Gift Card Barcode Verification";
-            document.getElementById('modal-scanner').style.display = 'flex';
-            startCameraEngine();
-        }
-
-        // Hardware Camera Scanner Sub-Routines
-        function startCameraEngine() {
-            html5QrcodeScanner = new Html5Qrcode("scanner-view");
-            html5QrcodeScanner.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 150 } },
-                onScanSuccess
-            ).catch(err => {
-                alert("Camera interface access denied or missing dynamic hardware permissions.");
-                closeScanner();
-            });
-        }
-
-        function onScanSuccess(decodedText, decodedResult) {
-            closeScanner();
-            if (scanningMode === "GIFTCARD") {
-                // Mock dynamic balance calculation API callback checks
-                alert(`Gift Card Validated!\nCode: ${decodedText}\nAvailable Balance: $100.00\nProcessing Balance...`);
-                document.getElementById('modal-receipt').style.display = 'flex';
-            } else if (scanningMode === "INVENTORY") {
-                const match = products.find(p => p.barcode === decodedText);
-                if (match) {
-                    editProductPrompt(match.id);
-                } else {
-                    let createNew = confirm(`No matching sku variant for [${decodedText}]. Create new stock entry?`);
-                    if(createNew) {
-                        let name = prompt("Enter product display name configuration:");
-                        let price = parseFloat(prompt("Enter catalog pricing tier value:"));
-                        if(name && price) {
-                            products.push({ id: Date.now().toString(), barcode: decodedText, name: name, price: price });
-                            localStorage.setItem('pos_inv', JSON.stringify(products));
-                            renderInventoryManagement();
-                            initTerminal();
-                        }
-                    }
-                }
-            }
-        }
-
-        function closeScanner() {
-            if(html5QrcodeScanner) {
-                html5QrcodeScanner.stop().then(() => {
-                    document.getElementById('modal-scanner').style.display = 'none';
-                }).catch(() => {
-                    document.getElementById('modal-scanner').style.display = 'none';
-                });
-            } else {
-                document.getElementById('modal-scanner').style.display = 'none';
-            }
-        }
-
-        // Transaction Finalization Pipeline & Rewards Ledger Ledger Tracking
-        function finalizeTransaction(method) {
-            if (activeCustomerNum && customers[activeCustomerNum]) {
-                // Automatically allocate 10 points per checkout interaction context balance rules
-                customers[activeCustomerNum].points += 10;
-                alert(`Loyalty points profile updated! 10 points added to account.`);
-            }
-            alert(`Receipt routing completed via [${method}]. Terminal database flushing layout...`);
-            activeCart = [];
-            activeCustomerNum = null;
-            document.getElementById('cust-search').value = "";
-            document.getElementById('cust-status').innerText = "";
-            document.getElementById('modal-receipt').style.display = 'none';
-            updateCartDisplay();
-        }
-
-        // Live Inventory Back-Office Component Rendering Engine
-        function renderInventoryManagement() {
-            const container = document.getElementById('inventory-list-target');
-            container.innerHTML = '';
-            products.forEach(p => {
-                const row = document.createElement('div');
-                row.style.cssText = "background:var(--surface-dark); border:1px solid var(--border-dark); padding:15px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;";
-                row.innerHTML = `
-                    <div>
-                        <strong>${p.name}</strong><br>
-                        <span style="color:var(--text-dim); font-size:0.85rem;">SKU Barcode: ${p.barcode} | ID: ${p.id}</span>
-                    </div>
-                    <div>
-                        <span style="font-weight:700; margin-right:15px; color:var(--accent-blue);">$${p.price.toFixed(2)}</span>
-                        <button class="btn-action btn-pay" style="width:auto; padding:6px 12px; font-size:0.85rem;" onclick="editProductPrompt('${p.id}')">Edit Data</button>
-                    </div>
+                card.className = 'product-card';
+                card.onclick = () => addItemToOrder(item.id);
+                card.innerHTML = `
+                    <div class="product-name">${item.name}</div>
+                    <div class="product-price">$${item.price.toFixed(2)}</div>
                 `;
-                container.appendChild(row);
+                gridContainer.appendChild(card);
             });
+            refreshHistoricalDisplay();
         }
 
-        function openInventoryScanner() {
-            scanningMode = "INVENTORY";
-            document.getElementById('scanner-title').innerText = "Scan Product Barcode to Edit Details";
-            document.getElementById('modal-scanner').style.display = 'flex';
-            startCameraEngine();
+        function addItemToOrder(itemId) {
+            const catalogItem = productCatalog.find(p => p.id === itemId);
+            const matchesInCart = activeCart.find(cartItem => cartItem.id === itemId);
+            if (matchesInCart) { matchesInCart.quantity += 1; } 
+            else { activeCart.push({ ...catalogItem, quantity: 1 }); }
+            refreshCartUI();
         }
 
-        function editProductPrompt(id) {
-            const item = products.find(p => p.id === id);
-            if(!item) return;
-            let nextName = prompt("Modify Variant Name Display Configuration:", item.name);
-            let nextPrice = prompt("Modify Pricing Numeric Configuration:", item.price);
-            
-            if(nextName) item.name = nextName;
-            if(nextPrice && !isNaN(nextPrice)) item.price = parseFloat(nextPrice);
+        function clearActiveOrder() { activeCart = []; refreshCartUI(); }
 
-            localStorage.setItem('pos_inv', JSON.stringify(products));
-            renderInventoryManagement();
-            initTerminal();
+        function refreshCartUI() {
+            const listContainer = document.getElementById('cart-hook');
+            listContainer.innerHTML = '';
+            let structuralSubtotal = 0;
+
+            activeCart.forEach(item => {
+                const rowCost = item.price * item.quantity;
+                structuralSubtotal += rowCost;
+                const rowElement = document.createElement('div');
+                rowElement.className = 'cart-item-row';
+                rowElement.innerHTML = `
+                    <div class="item-details">
+                        <h4>${item.name}</h4>
+                        <p>$${item.price.toFixed(2)} x ${item.quantity}</p>
+                    </div>
+                    <div class="item-price-final">$${rowCost.toFixed(2)}</div>
+                `;
+                listContainer.appendChild(rowElement);
+            });
+
+            const calculatedTax = structuralSubtotal * 0.07;
+            const finalCalculatedTotal = structuralSubtotal + calculatedTax;
+
+            document.getElementById('calc-subtotal').innerText = `$${structuralSubtotal.toFixed(2)}`;
+            document.getElementById('calc-tax').innerText = `$${calculatedTax.toFixed(2)}`;
+            document.getElementById('calc-total').innerText = `$${finalCalculatedTotal.toFixed(2)}`;
+        }
+
+        function checkoutOrder() {
+            if (activeCart.length === 0) return;
+            const activeTotalString = document.getElementById('calc-total').innerText;
+            const absoluteTotalNumeric = parseFloat(activeTotalString.replace('$', ''));
+
+            runningSalesTotal += absoluteTotalNumeric;
+            localStorage.setItem('pos_running_sales', runningSalesTotal.toString());
+
+            alert(`Sale Finalized Successfully!\nProcessed Charge Amount: ${activeTotalString}`);
+            clearActiveOrder();
+            refreshHistoricalDisplay();
+        }
+
+        function refreshHistoricalDisplay() {
+            document.getElementById('live-sales-tracker').innerText = `Today's Sales: $${runningSalesTotal.toFixed(2)}`;
         }
     </script>
 </body>
