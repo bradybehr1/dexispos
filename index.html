@@ -58,16 +58,35 @@
         import { ReportingModule } from './modules/reporting.js';
         import { SettingsModule } from './modules/settings.js';
 
+        // --- SAFARI PRIVATE BROWSING PROTECTION LAYER ---
+        class MemoryStorageFallback {
+            constructor() { this.store = {}; }
+            getItem(key) { return this.store[key] || null; }
+            setItem(key, val) { this.store[key] = String(val); }
+            clear() { this.store = {}; }
+        }
+
         class DatabaseEngine {
-            constructor() { this.init(); }
+            constructor() {
+                this.storage = window.localStorage;
+                try {
+                    // Test if storage is write-locked (Safari Private Tab test)
+                    window.localStorage.setItem("__pos_test", "1");
+                    window.localStorage.removeItem("__pos_test");
+                } catch (e) {
+                    // Safe Fallback activation if Safari blocks localStorage writes
+                    this.storage = new MemoryStorageFallback();
+                }
+                this.init();
+            }
             init() {
-                if (localStorage.getItem("pos_products")) return;
-                localStorage.setItem("pos_products", JSON.stringify(initialProducts));
-                localStorage.setItem("pos_employees", JSON.stringify(initialEmployees));
-                localStorage.setItem("pos_customers", JSON.stringify(initialCustomers));
-                localStorage.setItem("pos_timecards", JSON.stringify([]));
-                localStorage.setItem("pos_transactions", JSON.stringify([]));
-                localStorage.setItem("pos_settings", JSON.stringify({
+                if (this.storage.getItem("pos_products")) return;
+                this.storage.setItem("pos_products", JSON.stringify(initialProducts));
+                this.storage.setItem("pos_employees", JSON.stringify(initialEmployees));
+                this.storage.setItem("pos_customers", JSON.stringify(initialCustomers));
+                this.storage.setItem("pos_timecards", JSON.stringify([]));
+                this.storage.setItem("pos_transactions", JSON.stringify([]));
+                this.storage.setItem("pos_settings", JSON.stringify({
                     storeName: "Terminal Node 01",
                     taxRate: 7.00,
                     currencySymbol: "$",
@@ -77,8 +96,9 @@
                     storeAddress: ""
                 }));
             }
-            get(key) { return JSON.parse(localStorage.getItem("pos_" + key)); }
-            set(key, data) { localStorage.setItem("pos_" + key, JSON.stringify(data)); }
+            get(key) { return JSON.parse(this.storage.getItem("pos_" + key)); }
+            set(key, data) { this.storage.setItem("pos_" + key, JSON.stringify(data)); }
+            clearAll() { this.storage.clear(); }
         }
 
         const db = new DatabaseEngine();
@@ -184,7 +204,6 @@
                     return;
                 }
 
-                // Protect dynamic settings retrieval values against instantiation lag loops
                 this.globalSettings = db.get("settings") || { storeName: "Terminal Node 01", currencySymbol: "$", taxRate: 7.00, receiptFooter: "" };
 
                 container.innerHTML = `
@@ -276,7 +295,6 @@
         const state = new StateRouter();
         window.state = state; 
         state.render();
-        setInterval(() => state.updateLiveClock(), 1000);
     </script>
 </body>
 </html>
