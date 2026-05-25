@@ -30,107 +30,15 @@
             user-select: none;
         }
 
-        /* Essential rule to allow input boxes to function on iOS touch screens */
-        input {
-            -webkit-user-select: text !important;
-            user-select: text !important;
-        }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-light);
             height: 100vh;
-            display: flex;
+            display: none; /* Stays hidden until native iOS login passes */
             flex-direction: column;
             overflow: hidden;
             padding-top: env(safe-area-inset-top);
-        }
-
-        /* Authorization Screen Layout */
-        #auth-gate {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: var(--bg-dark);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .login-card {
-            background: var(--surface-dark);
-            padding: 40px;
-            border-radius: 20px;
-            border: 1px solid var(--border-dark);
-            text-align: center;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .login-card h2 {
-            font-size: 1.6rem;
-            margin-bottom: 8px;
-            font-weight: 700;
-        }
-
-        .login-card p {
-            color: var(--text-dim);
-            font-size: 0.95rem;
-            margin-bottom: 24px;
-        }
-
-        .login-card input {
-            width: 100%;
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid var(--border-dark);
-            font-size: 1.3rem;
-            text-align: center;
-            margin-bottom: 20px;
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            outline: none;
-            letter-spacing: 4px;
-        }
-
-        .login-card input:focus {
-            border-color: var(--accent-blue);
-        }
-
-        .login-btn {
-            width: 100%;
-            background-color: var(--accent-blue);
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .login-btn:active {
-            background-color: #1d4ed8;
-        }
-
-        .error-msg {
-            color: var(--accent-red);
-            font-size: 0.95rem;
-            margin-top: 14px;
-            font-weight: 500;
-            display: none;
-        }
-
-        /* POS Core Screen Workspace (Hidden until logged in) */
-        #app-workspace {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-            width: 100%;
         }
 
         header {
@@ -259,63 +167,58 @@
 </head>
 <body>
 
-    <div id="auth-gate">
-        <div class="login-card">
-            <h2>Terminal Locked</h2>
-            <p>Please enter your access pin code</p>
-            <input type="password" id="pin-input" placeholder="••••••••" inputmode="numeric">
-            <button class="login-btn" onclick="checkCredentials()">Authorize Access</button>
-            <div class="error-msg" id="login-error">Invalid access code. Access Denied.</div>
-        </div>
-    </div>
+    <header>
+        <h1>Register Terminal 01</h1>
+        <div class="metrics-pill" id="live-sales-tracker">Today's Sales: $0.00</div>
+    </header>
 
-    <div id="app-workspace">
-        <header>
-            <h1>Register Terminal 01</h1>
-            <div class="metrics-pill" id="live-sales-tracker">Today's Sales: $0.00</div>
-        </header>
+    <div class="app-container">
+        <section class="products-section">
+            <div class="products-grid" id="catalog-hook"></div>
+        </section>
 
-        <div class="app-container">
-            <section class="products-section">
-                <div class="products-grid" id="catalog-hook"></div>
-            </section>
-
-            <aside class="cart-sidebar">
-                <div class="cart-header">
-                    <span>Current Order</span>
-                    <button class="clear-btn" onclick="clearActiveOrder()">Clear All</button>
-                </div>
-                <div class="cart-items-list" id="cart-hook"></div>
-                <div class="cart-checkout-footer">
-                    <div class="ledger-line"><span>Subtotal</span><span id="calc-subtotal">$0.00</span></div>
-                    <div class="ledger-line"><span>Estimated Tax (7%)</span><span id="calc-tax">$0.00</span></div>
-                    <div class="ledger-line total-bold"><span>Total</span><span id="calc-total">$0.00</span></div>
-                    <button class="charge-button" onclick="checkoutOrder()">Charge &amp; Complete</button>
-                </div>
-            </aside>
-        </div>
+        <aside class="cart-sidebar">
+            <div class="cart-header">
+                <span>Current Order</span>
+                <button class="clear-btn" onclick="clearActiveOrder()">Clear All</button>
+            </div>
+            <div class="cart-items-list" id="cart-hook"></div>
+            <div class="cart-checkout-footer">
+                <div class="ledger-line"><span>Subtotal</span><span id="calc-subtotal">$0.00</span></div>
+                <div class="ledger-line"><span>Estimated Tax (7%)</span><span id="calc-tax">$0.00</span></div>
+                <div class="ledger-line total-bold"><span>Total</span><span id="calc-total">$0.00</span></div>
+                <button class="charge-button" onclick="checkoutOrder()">Charge &amp; Complete</button>
+            </div>
+        </aside>
     </div>
 
     <script>
-        // Secret PIN setup: Change this to whatever code you want!
+        // Set your password right here
         const ACCESS_SECRET = "9091237"; 
 
-        function checkCredentials() {
-            const userInput = document.getElementById('pin-input').value;
-            if (userInput === ACCESS_SECRET) {
-                document.getElementById('auth-gate').style.display = 'none';
-                document.getElementById('app-workspace').style.display = 'flex';
-                startupPOS();
-            } else {
-                const err = document.getElementById('login-error');
-                err.style.display = 'block';
-                document.getElementById('pin-input').value = '';
+        // Uses native iPad pop-up gate immediately on page render
+        function runGatekeeper() {
+            let authenticated = false;
+            while (!authenticated) {
+                const userInput = prompt("Terminal Locked. Enter your access pin code:");
+                
+                // If they hit cancel
+                if (userInput === null) {
+                    alert("Access Denied.");
+                    window.location.reload();
+                    return;
+                }
+
+                if (userInput === ACCESS_SECRET) {
+                    authenticated = true;
+                    // Reveal the layout view
+                    document.body.style.display = 'flex';
+                    startupPOS();
+                } else {
+                    alert("Invalid access code. Try again.");
+                }
             }
         }
-
-        document.getElementById('pin-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') checkCredentials();
-        });
 
         const productCatalog = [
             { id: 1, name: "Premium Tier Box", price: 45.00 },
@@ -402,6 +305,9 @@
         function refreshHistoricalDisplay() {
             document.getElementById('live-sales-tracker').innerText = `Today's Sales: $${runningSalesTotal.toFixed(2)}`;
         }
+
+        // Fire the iPad system text prompt immediately on page mount
+        window.onload = runGatekeeper;
     </script>
 </body>
 </html>
