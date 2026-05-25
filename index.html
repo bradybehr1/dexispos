@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Jumpmind Ensembles Terminal Node</title>
+    <title>Store POS Node</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,9 +21,7 @@
                             surface: '#141619',
                             card: '#1c1f24',
                             border: '#2a2e35',
-                            blue: '#0070f3',
-                            green: '#00b0ff',
-                            orange: '#ff9100'
+                            blue: '#0070f3'
                         } 
                     } 
                 } 
@@ -32,24 +30,21 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
-        * { -webkit-user-select: none; user-select: none; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        * { -webkit-user-select: none; user-select: none; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
         input, textarea, select { -webkit-user-select: text !important; user-select: text !important; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #0c0d0e; }
         ::-webkit-scrollbar-thumb { background: #2a2e35; border-radius: 2px; }
-        /* Jumpmind High-Throughput Touch Target Optimizations */
         .jmd-btn-active:active { transform: scale(0.97); background-color: #2a2e35 !important; }
-        .jmd-action-active:active { transform: scale(0.97); filter: brightness(1.2); }
     </style>
 </head>
 <body class="h-full overflow-hidden antialiased bg-[#0c0d0e]">
 
     <div id="global-toast" class="fixed top-4 right-4 z-[9999] transform translate-y-20 opacity-0 pointer-events-none transition-all duration-200 flex items-center p-3 rounded-lg shadow-xl border bg-[#141619] border-[#2a2e35] max-w-xs">
-        <div id="toast-icon" class="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center text-white mr-2 text-xs"></div>
-        <div><p id="toast-msg" class="text-xs font-bold font-mono tracking-tight text-slate-300"></p></div>
+        <div id="toast-icon" class="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-white mr-2 text-xs"></div>
+        <div><p id="toast-msg" class="text-xs font-bold font-mono text-slate-300"></p></div>
     </div>
 
     <div id="root-app" class="h-full flex flex-col"></div>
@@ -73,13 +68,13 @@
                 localStorage.setItem("pos_timecards", JSON.stringify([]));
                 localStorage.setItem("pos_transactions", JSON.stringify([]));
                 localStorage.setItem("pos_settings", JSON.stringify({
-                    storeName: "Jumpmind Store Node",
+                    storeName: "Terminal Node 01",
                     taxRate: 7.00,
                     currencySymbol: "$",
                     receiptFooter: "Thank you for shopping.",
-                    companyName: "Aegis Retail Enterprise",
-                    taxId: "88-1234567",
-                    storeAddress: "100 Retail Way, Minneapolis, MN"
+                    companyName: "",
+                    taxId: "",
+                    storeAddress: ""
                 }));
             }
             get(key) { return JSON.parse(localStorage.getItem("pos_" + key)); }
@@ -93,7 +88,7 @@
                 this.currentUser = null;
                 this.currentView = "register";
                 this.currentPinInput = "";
-                this.globalSettings = db.get("settings");
+                this.globalSettings = db.get("settings") || { storeName: "Terminal Node 01", currencySymbol: "$", taxRate: 7.00, receiptFooter: "" };
                 
                 this.modules = {
                     register: new RegisterModule(db, this),
@@ -148,14 +143,13 @@
 
             submitLogin() {
                 const employees = db.get("employees");
-                // Authentication validates strictly against the modular database pin parameters
                 const match = employees.find(e => e.pin === this.currentPinInput);
                 if (match) {
                     this.currentUser = match;
                     this.setView("register");
-                    this.showToast(`Operator Authed: ${match.name}`);
+                    this.showToast(`Operator: ${match.name}`);
                 } else {
-                    this.showToast("Invalid Operator Token", "danger");
+                    this.showToast("Access Denied", "danger");
                     this.clearKey();
                 }
             }
@@ -174,11 +168,11 @@
                 if (openCardIndex !== -1) {
                     timecards[openCardIndex].clockOut = now;
                     db.set("timecards", timecards);
-                    this.showToast("Shift Log Completed.");
+                    this.showToast("Shift Log Out Recorded.");
                 } else {
                     timecards.push({ id: "TC-" + Date.now(), employeeId: this.currentUser.id, employeeName: this.currentUser.name, clockIn: now, clockOut: null, approved: false });
                     db.set("timecards", timecards);
-                    this.showToast("Shift Log Activated.");
+                    this.showToast("Shift Log In Recorded.");
                 }
                 this.render();
             }
@@ -190,24 +184,26 @@
                     return;
                 }
 
+                // Protect dynamic settings retrieval values against instantiation lag loops
+                this.globalSettings = db.get("settings") || { storeName: "Terminal Node 01", currencySymbol: "$", taxRate: 7.00, receiptFooter: "" };
+
                 container.innerHTML = `
-                    <header class="h-12 bg-[#141619] border-b border-[#2a2e35] px-4 flex items-center justify-between z-20 flex-shrink-0 text-xs font-bold select-none">
+                    <header class="h-12 bg-[#141619] border-b border-[#2a2e35] px-4 flex items-center justify-between z-20 flex-shrink-0 text-xs font-bold">
                         <div class="flex items-center gap-6">
                             <div class="flex items-center gap-2 text-white">
                                 <div class="w-4 h-4 rounded bg-blue-600 flex items-center justify-center font-black text-[10px]">E</div>
-                                <span class="tracking-wider uppercase font-mono text-slate-300">${this.globalSettings.storeName}</span>
+                                <span class="tracking-wider uppercase font-mono text-slate-300">${this.globalSettings.storeName || 'Terminal Node'}</span>
                             </div>
                             <div class="hidden sm:flex items-center gap-4 text-[#8a94a6] font-mono text-[11px] border-l border-[#2a2e35] pl-4">
                                 <span>TERM: <strong class="text-slate-300">001</strong></span>
                                 <span>OP: <strong class="text-blue-400 uppercase">${this.currentUser.name}</strong></span>
-                                <span>TIER: <strong class="text-slate-300 uppercase">${this.currentUser.role}</strong></span>
                             </div>
                         </div>
                         <div class="flex items-center gap-4 font-mono text-[11px]">
                             <div class="flex items-center gap-2 bg-[#0c0d0e] border border-[#2a2e35] px-3 py-1 rounded">
                                 <div class="w-1.5 h-1.5 rounded-full ${db.get("timecards").some(t => t.employeeId === this.currentUser.id && !t.clockOut) ? 'bg-emerald-500' : 'bg-slate-600'}"></div>
                                 <button onclick="window.state.toggleClock()" class="text-slate-400 hover:text-white transition">
-                                    ${db.get("timecards").some(t => t.employeeId === this.currentUser.id && !t.clockOut) ? 'SHIFT: ACTIVE (CLOCK-OUT)' : 'SHIFT: OFF (CLOCK-IN)'}
+                                    ${db.get("timecards").some(t => t.employeeId === this.currentUser.id && !t.clockOut) ? 'SHIFT OUT' : 'SHIFT IN'}
                                 </button>
                             </div>
                             <span class="text-slate-400" id="live-clock"></span>
@@ -215,7 +211,7 @@
                     </header>
 
                     <div class="flex-1 flex overflow-hidden">
-                        <nav class="w-16 md:w-56 bg-[#141619] border-r border-[#2a2e35] flex flex-col justify-between z-10 flex-shrink-0 select-none">
+                        <nav class="w-16 md:w-56 bg-[#141619] border-r border-[#2a2e35] flex flex-col justify-between z-10 flex-shrink-0">
                             <div class="p-2 space-y-1">
                                 ${this.navItem("register", "fa-cash-register", "Sales Terminal")}
                                 ${this.navItem("inventory", "fa-boxes-stacked", "Inventory Engine")}
@@ -230,7 +226,6 @@
                                 </button>
                             </div>
                         </nav>
-
                         <main class="flex-1 bg-[#0c0d0e] overflow-hidden relative" id="module-viewport-hook">
                             ${this.modules[this.currentView] ? this.modules[this.currentView].render() : ''}
                         </main>
@@ -242,7 +237,7 @@
             navItem(view, icon, label) {
                 const active = this.currentView === view;
                 return `
-                    <button onclick="window.state.setView('${view}')" class="w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded text-xs font-bold uppercase font-mono tracking-wider transition ${active ? 'bg-blue-600 text-white shadow-md shadow-blue-600/10 border border-blue-500' : 'text-slate-400 hover:bg-[#1c1f24] hover:text-slate-200'}">
+                    <button onclick="window.state.setView('${view}')" class="w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded text-xs font-bold uppercase font-mono tracking-wider transition ${active ? 'bg-blue-600 text-white border border-blue-500' : 'text-slate-400 hover:bg-[#1c1f24] hover:text-slate-200'}">
                         <i class="fas ${icon} text-sm w-4 text-center"></i><span class="hidden md:inline">${label}</span>
                     </button>
                 `;
@@ -258,18 +253,18 @@
                     <div class="h-full flex bg-[#0c0d0e] justify-center items-center p-4">
                         <div class="w-full max-w-sm space-y-4">
                             <div class="text-center font-mono">
-                                <div class="inline-block px-3 py-1 bg-[#141619] border border-[#2a2e35] rounded text-[11px] font-black tracking-widest text-blue-500 uppercase mb-2">System Locked</div>
-                                <h2 class="text-xl font-bold tracking-tight text-white uppercase">Operator Entry Terminal</h2>
+                                <div class="inline-block px-3 py-1 bg-[#141619] border border-[#2a2e35] rounded text-[11px] font-black tracking-widest text-blue-500 uppercase mb-2">Terminal Locked</div>
+                                <h2 class="text-xl font-bold tracking-tight text-white uppercase">Operator Access Gateway</h2>
                             </div>
-                            <div class="bg-[#141619] border border-[#2a2e35] p-5 rounded shadow-2xl space-y-4 select-none">
+                            <div class="bg-[#141619] border border-[#2a2e35] p-5 rounded shadow-2xl space-y-4">
                                 <div class="w-full bg-[#0c0d0e] border border-[#2a2e35] rounded p-3 text-center">
-                                    <input type="text" id="pin-mask-field" readonly placeholder="TERMINAL LOCKED" class="bg-transparent border-none text-center text-xl font-mono font-bold tracking-widest text-blue-400 w-full outline-none placeholder-[#2a2e35]">
+                                    <input type="text" id="pin-mask-field" readonly placeholder="ENTER PIN ACCESS" class="bg-transparent border-none text-center text-xl font-mono font-bold tracking-widest text-blue-400 w-full outline-none placeholder-[#2a2e35]">
                                 </div>
                                 <div class="grid grid-cols-3 gap-2">
                                     ${['1','2','3','4','5','6','7','8','9'].map(n => `<button onclick="window.state.pressKey('${n}')" class="h-14 rounded bg-[#1c1f24] text-white font-mono font-bold text-lg border border-[#2a2e35] jmd-btn-active transition flex items-center justify-center">${n}</button>`).join('')}
                                     <button onclick="window.state.clearKey()" class="h-14 rounded bg-[#1c1f24] text-orange-400 font-mono font-bold text-xs border border-[#2a2e35] jmd-btn-active transition uppercase tracking-wider">Clear</button>
                                     <button onclick="window.state.pressKey('0')" class="h-14 rounded bg-[#1c1f24] text-white font-mono font-bold text-lg border border-[#2a2e35] jmd-btn-active transition flex items-center justify-center">0</button>
-                                    <button onclick="window.state.submitLogin()" class="h-14 rounded bg-blue-600 text-white font-mono font-bold text-xs border border-blue-500 jmd-action-active transition uppercase tracking-wider shadow-lg shadow-blue-600/10">Auth</button>
+                                    <button onclick="window.state.submitLogin()" class="h-14 rounded bg-blue-600 text-white font-mono font-bold text-xs border border-blue-500 transition uppercase tracking-wider">Unlock</button>
                                 </div>
                             </div>
                         </div>
