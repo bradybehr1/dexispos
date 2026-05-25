@@ -37,11 +37,10 @@
             user-select: none;
             -webkit-touch-callout: none;
         }
-        input, textarea {
+        input, textarea, select {
             -webkit-user-select: text !important;
             user-select: text !important;
         }
-        /* Custom scrollbar mechanics for high-throughput retail panes */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -61,7 +60,7 @@
         }
     </style>
 </head>
-<body class="h-full overflow-hidden font-sans antialiased selection:bg-blue-500 selection:text-white">
+<body class="h-full overflow-hidden font-sans antialiased">
 
     <div id="global-toast" class="fixed top-6 right-6 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 flex items-center p-4 rounded-xl shadow-2xl border bg-slate-800 border-slate-700 max-w-sm">
         <div id="toast-icon" class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3"></div>
@@ -100,26 +99,18 @@
         ];
 
         class DatabaseEngine {
-            constructor() {
-                this.init();
-            }
-            init() {
-                if (!localStorage.getItem("pos_initialized")) {
-                    this.seed();
-                }
-            }
+            constructor() { this.init(); }
+            init() { if (!localStorage.getItem("pos_initialized")) { this.seed(); } }
             seed() {
                 localStorage.setItem("pos_products", JSON.stringify(DEFAULT_PRODUCTS));
                 localStorage.setItem("pos_employees", JSON.stringify(DEFAULT_EMPLOYEES));
                 localStorage.setItem("pos_customers", JSON.stringify(DEFAULT_CUSTOMERS));
                 localStorage.setItem("pos_timecards", JSON.stringify([]));
                 
-                // Construct historical transactional timeline over 30 elapsed days
                 const txHistory = [];
                 const baseDate = new Date();
                 for (let i = 30; i >= 0; i--) {
                     const txDate = new Date(baseDate.getTime() - (i * 24 * 60 * 60 * 1000));
-                    // Seed randomized traffic spikes
                     const dayVolume = Math.floor(Math.random() * 8) + 3; 
                     for (let j = 0; j < dayVolume; j++) {
                         const prod = DEFAULT_PRODUCTS[Math.floor(Math.random() * DEFAULT_PRODUCTS.length)];
@@ -141,7 +132,7 @@
                             subtotal: subtotal,
                             tax: tax,
                             total: total,
-                            paymentMethod: Math.random() > 0.3 ? "Card" : "Cash"
+                            paymentMethod: Math.random() > 0.3 ? "Card (Auth: 4821)" : "Cash"
                         });
                     }
                 }
@@ -161,7 +152,7 @@
         const db = new DatabaseEngine();
 
         //------------------------------------------------------------------------
-        // SYSTEM CONTROLLER STATE MACHINE MANAGER
+        // STATE ENGINE SYSTEM CONTROLLER
         //------------------------------------------------------------------------
         class StateMachine {
             constructor() {
@@ -182,9 +173,7 @@
                 if (!this.currentUser && viewName !== "login") return;
                 this.currentView = viewName;
                 this.render();
-                if (viewName === "reporting") {
-                    this.initReportingCharts();
-                }
+                if (viewName === "reporting") { this.initReportingCharts(); }
             }
 
             showToast(msg, type = "success") {
@@ -205,9 +194,7 @@
                 }
                 
                 toast.classList.remove("translate-y-20", "opacity-0", "pointer-events-none");
-                setTimeout(() => {
-                    toast.classList.add("translate-y-20", "opacity-0", "pointer-events-none");
-                }, 3000);
+                setTimeout(() => { toast.classList.add("translate-y-20", "opacity-0", "pointer-events-none"); }, 3000);
             }
 
             login(pin) {
@@ -253,22 +240,20 @@
             }
 
             //------------------------------------------------------------------------
-            // TRANSACTIONARY CORE LOGIC ENGINE (REGISTER PANES)
+            // TRANSACTION REGISTRATION HOOKS
             //------------------------------------------------------------------------
             addToCart(productId) {
                 const products = db.get("products");
                 const item = products.find(p => p.id === productId);
                 if (!item) return;
-
                 if (item.stock <= 0) {
                     this.showToast("Item out of stock!", "danger");
                     return;
                 }
-
                 const existing = this.cart.find(c => c.id === productId);
                 if (existing) {
                     if (existing.quantity >= item.stock) {
-                        this.showToast("Cannot exceed available physical stock limits.", "danger");
+                        this.showToast("Cannot exceed physical stock inventory.", "danger");
                         return;
                     }
                     existing.quantity++;
@@ -288,7 +273,7 @@
                     this.cart = this.cart.filter(c => c.id !== productId);
                 } else {
                     if (qty > targetProd.stock) {
-                        this.showToast("Insufficient stock inventory allocation.", "danger");
+                        this.showToast("Insufficient stock allocation.", "danger");
                         return;
                     }
                     item.quantity = qty;
@@ -322,9 +307,7 @@
 
             getTotals() {
                 let subtotal = 0;
-                this.cart.forEach(c => {
-                    subtotal += (c.price * c.quantity) - c.discount;
-                });
+                this.cart.forEach(c => { subtotal += (c.price * c.quantity) - c.discount; });
                 const tax = subtotal * (parseFloat(this.globalSettings.taxRate) / 100);
                 const total = subtotal + tax;
                 return { subtotal, tax, total };
@@ -334,14 +317,36 @@
                 const { subtotal, tax, total } = this.getTotals();
                 if (this.cart.length === 0) return;
 
+                let methodString = paymentMethod;
+
+                // 4-DIGIT CARD CARD SEGMENTATION PROMPT INTERCEPT HOOK
+                if (paymentMethod === "Card") {
+                    let lastFour = "";
+                    let isValid = false;
+                    
+                    while (!isValid) {
+                        const input = prompt("Swipe/Insert Card. Enter the last 4 digits of card number to authorize transaction:");
+                        if (input === null) {
+                            this.showToast("Card processing canceled.", "info");
+                            return;
+                        }
+                        if (/^\d{4}$/.test(input.trim())) {
+                            lastFour = input.trim();
+                            isValid = true;
+                        } else {
+                            alert("Invalid input parameters. Must enter exactly 4 numbers.");
+                        }
+                    }
+                    methodString = `Card (Last 4: ${lastFour})`;
+                }
+
                 if (paymentMethod === "Rewards") {
                     if (!this.selectedCustomer || this.selectedCustomer.points < Math.floor(total * 10)) {
-                        this.showToast("Insufficient reward metrics point matrix balance.", "danger");
+                        this.showToast("Insufficient loyalty rewards matrix balance.", "danger");
                         return;
                     }
                 }
 
-                // Mutate stock limits and save
                 const products = db.get("products");
                 this.cart.forEach(c => {
                     const p = products.find(prod => prod.id === c.id);
@@ -349,7 +354,6 @@
                 });
                 db.set("products", products);
 
-                // Mutate consumer loyalty parameters
                 const customers = db.get("customers");
                 if (this.selectedCustomer) {
                     const cMatch = customers.find(cust => cust.id === this.selectedCustomer.id);
@@ -357,16 +361,14 @@
                         if (paymentMethod === "Rewards") {
                             cMatch.points -= Math.floor(total * 10);
                         } else {
-                            const earned = Math.floor(total);
-                            cMatch.points += earned;
+                            cMatch.points += Math.floor(total);
                             cMatch.spend += total;
                         }
                         db.set("customers", customers);
-                        this.selectedCustomer = cMatch; // Update current ref
+                        this.selectedCustomer = cMatch;
                     }
                 }
 
-                // Build permanent transactional metadata artifact
                 const tx = {
                     id: "TX-" + Math.floor(100000 + Math.random() * 900000),
                     timestamp: new Date().toISOString(),
@@ -378,7 +380,7 @@
                     subtotal: subtotal,
                     tax: tax,
                     total: total,
-                    paymentMethod: paymentMethod
+                    paymentMethod: methodString
                 };
 
                 const txs = db.get("transactions");
@@ -389,12 +391,12 @@
                 this.cart = [];
                 this.checkoutModalOpen = false;
                 this.receiptModalOpen = true;
-                this.showToast("Transaction successfully routed.");
+                this.showToast("Transaction processing sequence completed.");
                 this.render();
             }
 
             //------------------------------------------------------------------------
-            // INVENTORY MUTATION ENGINE
+            // INVENTORY MANAGEMENT METRICS
             //------------------------------------------------------------------------
             saveProduct(prodData) {
                 const prods = db.get("products");
@@ -414,7 +416,7 @@
                 let prods = db.get("products");
                 prods = prods.filter(p => p.id !== id);
                 db.set("products", prods);
-                this.showToast("Product item dropped from terminal catalogs.", "danger");
+                this.showToast("Product item dropped from storage nodes.", "danger");
                 this.render();
             }
 
@@ -423,14 +425,14 @@
                 const match = prods.find(p => p.sku === sku);
                 if (match) {
                     this.addToCart(match.id);
-                    this.showToast(`Scanned asset: ${match.name}`);
+                    this.showToast(`Scanned: ${match.name}`);
                 } else {
-                    this.showToast(`SKU barcode matrix match failure: ${sku}`, "danger");
+                    this.showToast(`SKU match failure: ${sku}`, "danger");
                 }
             }
 
             //------------------------------------------------------------------------
-            // CUSTOMER PROFILE REGISTRATION ROUTINES
+            // CUSTOMER STORAGE DELETIONS AND CREATIONS (CRUD COMPLETE)
             //------------------------------------------------------------------------
             saveCustomer(custData) {
                 const custs = db.get("customers");
@@ -444,12 +446,22 @@
                     custs.push(custData);
                 }
                 db.set("customers", custs);
-                this.showToast("Customer database log locked.");
+                this.showToast("Customer database logs locked.");
+                this.render();
+            }
+
+            deleteCustomer(id) {
+                if (!confirm("Are you sure you want to completely erase this customer profile node from historical relational data systems?")) return;
+                let custs = db.get("customers");
+                custs = custs.filter(c => c.id !== id);
+                db.set("customers", custs);
+                if (this.selectedCustomer && this.selectedCustomer.id === id) { this.selectedCustomer = null; }
+                this.showToast("Consumer profile detached and dropped.", "danger");
                 this.render();
             }
 
             //------------------------------------------------------------------------
-            // HUMAN RESOURCE MUTATION INTERFACES
+            // STAFF MANAGEMENT MUTATORS AND CRITICAL DELETIONS (CRUD COMPLETE)
             //------------------------------------------------------------------------
             saveEmployee(empData) {
                 const emps = db.get("employees");
@@ -462,6 +474,19 @@
                 }
                 db.set("employees", emps);
                 this.showToast("Employee roster matrix modified.");
+                this.render();
+            }
+
+            deleteEmployee(id) {
+                if (this.currentUser.id === id) {
+                    this.showToast("Cannot drop active system node identity.", "danger");
+                    return;
+                }
+                if (!confirm("Are you sure you want to drop this employee profile and terminate system credentials access codes?")) return;
+                let emps = db.get("employees");
+                emps = emps.filter(e => e.id !== id);
+                db.set("employees", emps);
+                this.showToast("Staff resource token revoked and purged.", "danger");
                 this.render();
             }
 
@@ -479,12 +504,10 @@
             }
 
             //------------------------------------------------------------------------
-            // METRIC SYSTEM DASHBOARD REPORTING ARCHITECTURE
+            // ANALYTICS & VISUAL DATA CHARTS ENGINE
             //------------------------------------------------------------------------
             initReportingCharts() {
                 const txs = db.get("transactions");
-                
-                // Aggregate Daily Revenue Timeline
                 const dailyTotals = {};
                 txs.forEach(t => {
                     const dateStr = t.timestamp.split('T')[0];
@@ -493,7 +516,6 @@
                 const sortedDates = Object.keys(dailyTotals).sort().slice(-7);
                 const dailyData = sortedDates.map(d => dailyTotals[d]);
 
-                // Render Sales Chart Elements
                 const ctxSales = document.getElementById('chart-sales-trend');
                 if (ctxSales) {
                     new Chart(ctxSales, {
@@ -501,7 +523,6 @@
                         data: {
                             labels: sortedDates,
                             datasets: [{
-                                label: 'Gross Net Routing ($)',
                                 data: dailyData,
                                 borderColor: '#3b82f6',
                                 tension: 0.2,
@@ -512,13 +533,8 @@
                     });
                 }
 
-                // Volume Item Aggregation Loop Engine
                 const itemQtyMap = {};
-                txs.forEach(t => {
-                    t.items.forEach(i => {
-                        itemQtyMap[i.name] = (itemQtyMap[i.name] || 0) + i.quantity;
-                    });
-                });
+                txs.forEach(t => { t.items.forEach(i => { itemQtyMap[i.name] = (itemQtyMap[i.name] || 0) + i.quantity; }); });
                 const topItems = Object.keys(itemQtyMap).sort((a,b) => itemQtyMap[b] - itemQtyMap[a]).slice(0, 5);
                 const topItemQtys = topItems.map(it => itemQtyMap[it]);
 
@@ -528,10 +544,7 @@
                         type: 'bar',
                         data: {
                             labels: topItems,
-                            datasets: [{
-                                data: topItemQtys,
-                                backgroundColor: ['#22c55e', '#3b82f6', '#eab308', '#a855f7', '#6366f1']
-                            }]
+                            datasets: [{ data: topItemQtys, backgroundColor: ['#22c55e', '#3b82f6', '#eab308', '#a855f7', '#6366f1'] }]
                         },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
                     });
@@ -541,11 +554,9 @@
             exportCSV() {
                 const txs = db.get("transactions");
                 let csv = "Transaction ID,Timestamp,Employee,Customer,Total,Payment Method\n";
-                txs.forEach(t => {
-                    csv += `${t.id},${t.timestamp},${t.employeeName},${t.customerName},${t.total.toFixed(2)},${t.paymentMethod}\n`;
-                });
+                txs.forEach(t => { csv += `${t.id},${t.timestamp},${t.employeeName},${t.customerName},${t.total.toFixed(2)},${t.paymentMethod}\n`; });
                 console.log("--- SYSTEM METRIC EXPORT COMPLETED ---\n", csv);
-                this.showToast("CSV data stream string deployed directly to developer console debugging pane.");
+                this.showToast("CSV stream generated to debugger log console layout pane.");
             }
 
             resetDatabase() {
@@ -553,12 +564,12 @@
                 this.globalSettings = db.get("settings");
                 this.cart = [];
                 this.selectedCustomer = null;
-                this.showToast("Enterprise transaction state seeded successfully.");
+                this.showToast("Enterprise transaction data tables seeded.");
                 this.render();
             }
 
             //------------------------------------------------------------------------
-            // GLOBAL TEMPLATE RENDERING CONTEXTS
+            // MAIN STRUCTURE COMPILERS & TEMPLATE ENGINES
             //------------------------------------------------------------------------
             render() {
                 const container = document.getElementById("root-app");
@@ -627,15 +638,13 @@
                     ${this.checkoutModalOpen ? this.templateCheckoutModal() : ''}
                     ${this.receiptModalOpen ? this.templateReceiptModal() : ''}
                 `;
-
-                // Fire static live clock ticks
                 this.updateLiveClock();
             }
 
             navItem(view, icon, label) {
                 const active = this.currentView === view;
                 return `
-                    <button onclick="state.setView('${view}')" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/10' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}">
+                    <button onclick="state.setView('${view}')" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition ${active ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}">
                         <i class="fas ${icon} text-base"></i>
                         <span class="hidden md:inline">${label}</span>
                     </button>
@@ -644,15 +653,9 @@
 
             updateLiveClock() {
                 const el = document.getElementById("live-clock");
-                if (el) {
-                    const now = new Date();
-                    el.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                }
+                if (el) { el.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
             }
 
-            //------------------------------------------------------------------------
-            // SUBVIEW CONTROLLER SPLIT COMPILER LOOP
-            //------------------------------------------------------------------------
             renderActiveSubView() {
                 switch(this.currentView) {
                     case "register": return this.viewRegister();
@@ -665,15 +668,12 @@
                 }
             }
 
-            //------------------------------------------------------------------------
-            // CONTAINER MODULE VIEW 1: SECURITY GATE ACCESS PIN LOGIN
-            //------------------------------------------------------------------------
             templateLogin() {
                 return `
                     <div class="h-full flex flex-col md:flex-row bg-slate-950 overflow-hidden">
                         <div class="hidden md:flex md:w-1/2 bg-gradient-to-tr from-slate-950 via-slate-900 to-blue-950 p-12 flex-col justify-between border-r border-slate-800">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-xl shadow-blue-500/20">A</div>
+                                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-xl">A</div>
                                 <span class="font-bold text-xl tracking-tight text-slate-200">Aegis OS Architecture</span>
                             </div>
                             <div class="space-y-4">
@@ -683,26 +683,21 @@
                             </div>
                             <p class="text-xs text-slate-500">&copy; 2026 Aegis Security Networks Inc. All node operations authenticated.</p>
                         </div>
-                        
                         <div class="flex-1 flex flex-col justify-center items-center p-6 sm:p-12">
                             <div class="w-full max-w-sm space-y-8">
                                 <div class="text-center md:text-left">
                                     <h2 class="text-3xl font-bold tracking-tight text-white">System Authorization</h2>
                                     <p class="mt-2 text-sm text-slate-400">Input terminal authorization PIN parameter to unlock workspace console node</p>
                                 </div>
-                                
                                 <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
                                     <div class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-center mb-6">
                                         <input type="password" id="login-pin-display" readonly placeholder="••••••••" class="bg-transparent border-none text-center text-2xl font-bold tracking-widest text-blue-400 w-full outline-none placeholder-slate-700">
                                     </div>
-                                    
                                     <div class="grid grid-cols-3 gap-3">
-                                        ${[1,2,3,4,5,6,7,8,9].map(n => `
-                                            <button onclick="state.pressLoginNum('${n}')" class="h-16 rounded-xl bg-slate-800 text-white font-bold text-xl border border-slate-700/50 hover:bg-slate-700 active:scale-95 transition flex items-center justify-center">${n}</button>
-                                        `).join('')}
+                                        ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="state.pressLoginNum('${n}')" class="h-16 rounded-xl bg-slate-800 text-white font-bold text-xl border border-slate-700/50 hover:bg-slate-700 active:scale-95 transition flex items-center justify-center">${n}</button>`).join('')}
                                         <button onclick="state.clearLoginNum()" class="h-16 rounded-xl bg-slate-800 text-rose-400 font-bold text-sm border border-slate-700/50 hover:bg-rose-950/30 active:scale-95 transition flex items-center justify-center uppercase tracking-wider">Clear</button>
                                         <button onclick="state.pressLoginNum('0')" class="h-16 rounded-xl bg-slate-800 text-white font-bold text-xl border border-slate-700/50 hover:bg-slate-700 active:scale-95 transition flex items-center justify-center">0</button>
-                                        <button onclick="state.submitLogin()" class="h-16 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 active:scale-95 transition flex items-center justify-center uppercase tracking-wider shadow-lg shadow-blue-600/20">Unlock</button>
+                                        <button onclick="state.submitLogin()" class="h-16 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 active:scale-95 transition flex items-center justify-center uppercase tracking-wider shadow-lg">Unlock</button>
                                     </div>
                                 </div>
                             </div>
@@ -715,29 +710,17 @@
                 const el = document.getElementById("login-pin-display");
                 if (el && el.value.length < 8) el.value += n;
             }
-            clearLoginNum() {
-                const el = document.getElementById("login-pin-display");
-                if (el) el.value = "";
-            }
-            submitLogin() {
-                const el = document.getElementById("login-pin-display");
-                if (el) this.login(el.value);
-            }
+            clearLoginNum() { const el = document.getElementById("login-pin-display"); if (el) el.value = ""; }
+            submitLogin() { const el = document.getElementById("login-pin-display"); if (el) this.login(el.value); }
 
-            //------------------------------------------------------------------------
-            // CONTAINER MODULE VIEW 2: REGISTER CORE SALES SPLIT VIEW
-            //------------------------------------------------------------------------
             viewRegister() {
                 const products = db.get("products");
                 const categories = ["All", ...new Set(products.map(p => p.category))];
-                
-                // Filtering pipeline algorithm loops
                 const filteredProducts = products.filter(p => {
                     const matchesCat = this.currentCategory === "All" || p.category === this.currentCategory;
                     const matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || p.sku.includes(this.searchQuery);
                     return matchesCat && matchesSearch;
                 });
-
                 const { subtotal, tax, total } = this.getTotals();
 
                 return `
@@ -747,7 +730,7 @@
                                 <div class="flex gap-3">
                                     <div class="relative flex-1">
                                         <i class="fas fa-search absolute left-4 top-3.5 text-slate-500 text-sm"></i>
-                                        <input type="text" placeholder="Search product catalogs by title, metric key, SKU identifier..." value="${this.searchQuery}" oninput="state.searchQuery=this.value; state.render()" class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium placeholder-slate-500 outline-none focus:border-blue-500 text-slate-200">
+                                        <input type="text" placeholder="Search catalog by title or SKU code identifier..." value="${this.searchQuery}" oninput="state.searchQuery=this.value; state.render()" class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium placeholder-slate-500 outline-none focus:border-blue-500 text-slate-200">
                                     </div>
                                     <button onclick="state.toggleScannerModal()" class="px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-blue-400 hover:bg-slate-700 transition flex items-center gap-2 text-sm font-bold shadow-sm">
                                         <i class="fas fa-camera"></i>
@@ -755,34 +738,27 @@
                                     </button>
                                 </div>
                                 <div class="flex gap-2 overflow-x-auto pb-1">
-                                    ${categories.map(cat => {
-                                        const active = this.currentCategory === cat;
-                                        return `<button onclick="state.currentCategory='${cat}'; state.render()" class="px-4 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${active ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 border border-slate-700/50 hover:text-slate-200'}\">${cat}</button>`;
-                                    }).join('')}
+                                    ${categories.map(cat => `<button onclick="state.currentCategory='${cat}'; state.render()" class="px-4 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${this.currentCategory === cat ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 border border-slate-700/50 hover:text-slate-200'}">${cat}</button>`).join('')}
                                 </div>
                             </div>
-
                             <div class="flex-1 overflow-y-auto p-4 bg-slate-900/40">
                                 <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
                                     ${filteredProducts.map(p => `
                                         <div onclick="state.addToCart('${p.id}')" class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-md hover:border-slate-700 active:scale-95 transition cursor-pointer relative overflow-hidden group min-h-[140px]">
-                                            ${p.stock <= 15 ? `<span class="absolute top-2 right-2 px-2 py-0.5 bg-amber-950 border border-amber-800 text-amber-400 rounded-md text-[10px] font-bold uppercase tracking-wider animate-pulse">Low Stock: ${p.stock}</span>` : ''}
+                                            ${p.stock <= 15 ? `<span class="absolute top-2 right-2 px-2 py-0.5 bg-amber-950 border border-amber-800 text-amber-400 rounded-md text-[10px] font-bold uppercase tracking-wider animate-pulse">Low: ${p.stock}</span>` : ''}
                                             <div>
                                                 <h4 class="font-bold text-sm text-slate-200 group-hover:text-blue-400 transition line-clamp-2 leading-snug">${p.name}</h4>
                                                 <p class="text-[10px] text-slate-500 font-mono mt-1 uppercase tracking-wider">${p.sku}</p>
                                             </div>
                                             <div class="flex items-center justify-between mt-4 border-t border-slate-900 pt-3">
                                                 <span class="text-base font-extrabold text-slate-100">${this.globalSettings.currencySymbol}${p.price.toFixed(2)}</span>
-                                                <div class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition">
-                                                    <i class="fas fa-plus"></i>
-                                                </div>
+                                                <div class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition"><i class="fas fa-plus"></i></div>
                                             </div>
                                         </div>
                                     `).join('')}
                                 </div>
                             </div>
                         </div>
-
                         <div class="w-full lg:w-[420px] bg-slate-950 flex flex-col justify-between overflow-hidden flex-shrink-0 border-t lg:border-t-0 border-slate-800">
                             <div class="p-4 border-b border-slate-800 bg-slate-950/40 flex-shrink-0">
                                 ${this.selectedCustomer ? `
@@ -792,7 +768,7 @@
                                             <div>
                                                 <h4 class="text-sm font-bold text-slate-200">${this.selectedCustomer.name}</h4>
                                                 <p class="text-[11px] text-slate-400 font-semibold flex items-center gap-2">
-                                                    <span><i class="fas fa-star text-amber-400 mr-1"></i>${this.selectedCustomer.points} Tier Metrics</span>
+                                                    <span><i class="fas fa-star text-amber-400 mr-1"></i>${this.selectedCustomer.points} pts</span>
                                                     <span>•</span>
                                                     <span>Spend: ${this.globalSettings.currencySymbol}${this.selectedCustomer.spend.toFixed(0)}</span>
                                                 </p>
@@ -804,19 +780,17 @@
                                     <div class="flex gap-2">
                                         <div class="relative flex-1">
                                             <i class="fas fa-user-plus absolute left-3.5 top-2.5 text-slate-500 text-xs"></i>
-                                            <input type="text" id="cust-lookup-input" placeholder="Attach customer account profile..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs font-medium text-slate-200 outline-none focus:border-blue-500">
+                                            <input type="text" id="cust-lookup-input" placeholder="Attach customer by phone or name..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs font-medium text-slate-200 outline-none focus:border-blue-500">
                                         </div>
                                         <button onclick="state.attachCustomer(document.getElementById('cust-lookup-input').value)" class="px-4 py-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 transition rounded-xl text-xs font-bold text-slate-300">Link</button>
                                     </div>
                                 `}
                             </div>
-
                             <div class="flex-1 overflow-y-auto p-4 space-y-3">
                                 ${this.cart.length === 0 ? `
                                     <div class="h-full flex flex-col items-center justify-center text-center p-8 text-slate-600">
                                         <i class="fas fa-receipt text-4xl mb-3 opacity-30"></i>
                                         <p class="text-sm font-semibold">Active transaction ticket empty</p>
-                                        <p class="text-xs max-w-[200px] mt-1">Select entries from product list pane map matrix to mount line items</p>
                                     </div>
                                 ` : this.cart.map(item => `
                                     <div class="bg-slate-900/70 border border-slate-800 p-3 rounded-xl space-y-2">
@@ -832,30 +806,23 @@
                                             </div>
                                             <div class="text-right">
                                                 <span class="text-sm font-mono font-bold text-slate-200">${this.globalSettings.currencySymbol}${((item.price * item.quantity) - item.discount).toFixed(2)}</span>
-                                                <p class="text-[10px] text-slate-500">${this.globalSettings.currencySymbol}${item.price.toFixed(2)} unit metrics</p>
+                                                <p class="text-[10px] text-slate-500">${this.globalSettings.currencySymbol}${item.price.toFixed(2)} unit</p>
                                             </div>
                                         </div>
                                         <div class="flex items-center justify-end gap-2 pt-1 border-t border-slate-950">
-                                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Line Markdown:</span>
+                                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Markdown:</span>
                                             <input type="number" step="0.01" value="${item.discount || ''}" placeholder="0.00" onchange="state.applyLineDiscount('${item.id}', this.value)" class="w-16 bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-right font-mono text-xs text-amber-500 outline-none focus:border-amber-600">
                                         </div>
                                     </div>
                                 `).join('')}
                             </div>
-
                             <div class="p-4 bg-slate-950/80 border-t border-slate-800 space-y-3 flex-shrink-0 safe-bottom">
                                 <div class="space-y-1.5 font-mono text-xs text-slate-400">
-                                    <div class="flex justify-between"><span>SUBTOTAL LEDGER:</span><span class="text-slate-200 font-bold">${this.globalSettings.currencySymbol}${subtotal.toFixed(2)}</span></div>
-                                    <div class="flex justify-between"><span>TAX ARTIFACT (${this.globalSettings.taxRate}%):</span><span class="text-slate-200 font-bold">${this.globalSettings.currencySymbol}${tax.toFixed(2)}</span></div>
-                                    <div class="flex justify-between text-base font-bold text-slate-100 border-t border-slate-800/80 pt-2 mt-2">
-                                        <span>TOTAL DEBIT VALUE:</span>
-                                        <span class="text-emerald-400 font-mono">${this.globalSettings.currencySymbol}${total.toFixed(2)}</span>
-                                    </div>
+                                    <div class="flex justify-between"><span>SUBTOTAL:</span><span class="text-slate-200 font-bold">${this.globalSettings.currencySymbol}${subtotal.toFixed(2)}</span></div>
+                                    <div class="flex justify-between"><span>TAX (${this.globalSettings.taxRate}%):</span><span class="text-slate-200 font-bold">${this.globalSettings.currencySymbol}${tax.toFixed(2)}</span></div>
+                                    <div class="flex justify-between text-base font-bold text-slate-100 border-t border-slate-800/80 pt-2 mt-2"><span>TOTAL DUE:</span><span class="text-emerald-400 font-mono">${this.globalSettings.currencySymbol}${total.toFixed(2)}</span></div>
                                 </div>
-                                <button onclick="state.openCheckout()" ${this.cart.length === 0 ? 'disabled' : ''} class="w-full py-4 bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-600 disabled:shadow-none text-white rounded-xl font-bold text-sm hover:bg-emerald-500 transition shadow-lg shadow-emerald-600/10 uppercase tracking-wider flex items-center justify-center gap-2">
-                                    <i class="fas fa-credit-card"></i>
-                                    <span>Route Financial Checkout</span>
-                                </button>
+                                <button onclick="state.openCheckout()" ${this.cart.length === 0 ? 'disabled' : ''} class="w-full py-4 bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-500 transition uppercase tracking-wider flex items-center justify-center gap-2"><i class="fas fa-credit-card"></i><span>Process Checkout</span></button>
                             </div>
                         </div>
                     </div>
@@ -863,20 +830,16 @@
                     <div id="scanner-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
                         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
                             <button onclick="state.toggleScannerModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
-                            <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2"><i class="fas fa-camera text-blue-500"></i>Camera Scanning Terminal Node</h3>
-                            <p class="text-xs text-slate-400 mb-4">Aim camera node directly at item matrix SKU barcode tags, or leverage hardware emulation controls below.</p>
-                            
+                            <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2"><i class="fas fa-camera text-blue-500"></i>Camera Scanning Node</h3>
                             <div class="w-full bg-slate-950 rounded-xl aspect-video mb-4 border border-slate-800 overflow-hidden flex flex-col items-center justify-center text-slate-600 relative">
                                 <div id="interactive-reader" class="w-full h-full"></div>
                                 <div id="fallback-scanner-ui" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 p-4 text-center">
                                     <i class="fas fa-barcode text-4xl mb-2 text-slate-700 animate-pulse"></i>
-                                    <span class="text-xs font-semibold text-slate-400">Optics Hardware Stream Suspended</span>
-                                    <p class="text-[10px] text-slate-600 mt-1">Utilize keyboard emulator override matrix payload parameters</p>
+                                    <span class="text-xs font-semibold text-slate-400">Camera Stream Interface Suspended</span>
                                 </div>
                             </div>
-
                             <div class="border-t border-slate-800/60 pt-4 space-y-2">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">SKU Core Matrix Input Payload:</label>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">SKU Input Override:</label>
                                 <div class="flex gap-2">
                                     <input type="text" id="manual-sku-mock" placeholder="e.g., 88811101" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500">
                                     <button onclick="state.simulateBarcodeScan(document.getElementById('manual-sku-mock').value); state.toggleScannerModal();" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold text-white transition">Inject</button>
@@ -908,40 +871,18 @@
                         this.html5QrScanner.start(
                             { facingMode: "environment" },
                             { fps: 10, qrbox: { width: 250, height: 100 } },
-                            (decodedText) => {
-                                this.simulateBarcodeScan(decodedText);
-                                this.toggleScannerModal();
-                            },
-                            () => {} // Suppress noisy frames log
-                        ).then(() => {
-                            document.getElementById("fallback-scanner-ui").style.display = "none";
-                        }).catch(() => {
-                            document.getElementById("fallback-scanner-ui").style.display = "flex";
-                        });
+                            (decodedText) => { this.simulateBarcodeScan(decodedText); this.toggleScannerModal(); },
+                            () => {}
+                        ).then(() => { document.getElementById("fallback-scanner-ui").style.display = "none"; })
+                        .catch(() => { document.getElementById("fallback-scanner-ui").style.display = "flex"; });
                     }
                 }, 100);
             }
 
-            stopCameraStream() {
-                if (this.html5QrScanner) {
-                    this.html5QrScanner.stop().then(() => {
-                        this.html5QrScanner = null;
-                    }).catch(() => {});
-                }
-            }
+            stopCameraStream() { if (this.html5QrScanner) { this.html5QrScanner.stop().then(() => { this.html5QrScanner = null; }).catch(() => {}); } }
+            openCheckout() { this.checkoutModalOpen = true; this.render(); }
+            closeCheckout() { this.checkoutModalOpen = false; this.render(); }
 
-            openCheckout() {
-                this.checkoutModalOpen = true;
-                this.render();
-            }
-            closeCheckout() {
-                this.checkoutModalOpen = false;
-                this.render();
-            }
-
-            //------------------------------------------------------------------------
-            // CONTAINER MODULE VIEW 3: INVENTORY MASTER CATALOG INTERFACES
-            //------------------------------------------------------------------------
             viewInventory() {
                 const products = db.get("products");
                 return `
@@ -949,11 +890,10 @@
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-950 p-4 border border-slate-800 rounded-2xl shadow-sm flex-shrink-0">
                             <div>
                                 <h3 class="text-base font-bold text-white">Product Inventory Ledger Manifest</h3>
-                                <p class="text-xs text-slate-400">Add, delete, modify structural metadata arrays and asset parameters</p>
+                                <p class="text-xs text-slate-400">Add, delete, and modify system structural catalog arrays</p>
                             </div>
-                            <button onclick="state.openProductModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-blue-600/10 uppercase tracking-wider"><i class="fas fa-plus"></i>Create New Product Node</button>
+                            <button onclick="state.openProductModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 uppercase tracking-wider"><i class="fas fa-plus"></i>Create Product</button>
                         </div>
-
                         <div class="flex-1 overflow-auto border border-slate-800 bg-slate-950/20 rounded-2xl">
                             <table class="w-full border-collapse text-left text-sm text-slate-300">
                                 <thead class="bg-slate-950 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 border-b border-slate-800">
@@ -972,12 +912,10 @@
                                         <tr class="hover:bg-slate-900/40 transition">
                                             <td class="px-6 py-4 font-bold text-slate-200">${p.name}</td>
                                             <td class="px-6 py-4 font-mono text-xs text-slate-400 uppercase tracking-wider">${p.sku}</td>
-                                            <td class="px-6 py-4"><span class="px-2.5 py-1 bg-slate-800 border border-slate-700/60 rounded-md text-[11px] font-bold text-slate-400">${p.category}</span></td>
+                                            <td class="px-6 py-4"><span class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-md text-[11px] font-bold text-slate-400">${p.category}</span></td>
                                             <td class="px-6 py-4 text-right font-mono font-bold">${this.globalSettings.currencySymbol}${p.price.toFixed(2)}</td>
                                             <td class="px-6 py-4 text-right font-mono text-slate-400">${this.globalSettings.currencySymbol}${p.cost.toFixed(2)}</td>
-                                            <td class="px-6 py-4 text-center">
-                                                <span class="px-3 py-1 font-mono font-bold text-xs rounded-lg ${p.stock <= 15 ? 'bg-rose-950/50 border border-rose-900 text-rose-400 animate-pulse' : 'bg-slate-900 text-slate-300 border border-slate-800'}">${p.stock} units</span>
-                                            </td>
+                                            <td class="px-6 py-4 text-center"><span class="px-3 py-1 font-mono font-bold text-xs rounded-lg ${p.stock <= 15 ? 'bg-rose-950/50 border border-rose-900 text-rose-400 animate-pulse' : 'bg-slate-900 text-slate-300 border border-slate-800'}">${p.stock} units</span></td>
                                             <td class="px-6 py-4 text-right space-x-1">
                                                 <button onclick="state.openProductModal('${p.id}')" class="p-2 text-blue-400 hover:bg-slate-900 rounded-lg transition"><i class="fas fa-edit"></i></button>
                                                 <button onclick="state.deleteProduct('${p.id}')" class="p-2 text-rose-400 hover:bg-slate-900 rounded-lg transition"><i class="fas fa-trash"></i></button>
@@ -993,7 +931,6 @@
                         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative">
                             <button onclick="state.closeProductModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
                             <h3 id="prod-modal-title" class="text-base font-bold text-white mb-4">Modify Catalog Schema</h3>
-                            
                             <form id="prod-form" onsubmit="event.preventDefault(); state.submitProductForm();" class="space-y-4">
                                 <input type="hidden" id="prod-id">
                                 <div class="space-y-1">
@@ -1002,11 +939,11 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">SKU Ident Code Matrix:</label>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">SKU Code Ident:</label>
                                         <input type="text" id="prod-sku" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
                                     </div>
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">System Catalog Category Grouping:</label>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Catalog Category Grouping:</label>
                                         <input type="text" id="prod-category" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-200">
                                     </div>
                                 </div>
@@ -1016,17 +953,17 @@
                                         <input type="number" step="0.01" id="prod-price" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
                                     </div>
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cost Parameter Acquisition:</label>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cost Acquisition Basis:</label>
                                         <input type="number" step="0.01" id="prod-cost" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
                                     </div>
                                     <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Inventory Allocation:</label>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Inventory Unit Allocation:</label>
                                         <input type="number" id="prod-stock" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
                                     </div>
                                 </div>
                                 <div class="flex justify-end gap-3 border-t border-slate-800/60 pt-4 mt-6">
-                                    <button type="button" onclick="state.closeProductModal()" class="px-4 py-2.5 bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 rounded-xl text-xs font-bold transition uppercase tracking-wider">Cancel</button>
-                                    <button type="submit" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition uppercase tracking-wider shadow-lg shadow-blue-600/10">Commit Records</button>
+                                    <button type="button" onclick="state.closeProductModal()" class="px-4 py-2.5 bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 rounded-xl text-xs font-bold uppercase tracking-wider">Cancel</button>
+                                    <button type="submit" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider">Commit Records</button>
                                 </div>
                             </form>
                         </div>
@@ -1038,10 +975,8 @@
                 const modal = document.getElementById("product-modal");
                 const form = document.getElementById("prod-form");
                 const title = document.getElementById("prod-modal-title");
-                
                 form.reset();
                 document.getElementById("prod-id").value = "";
-
                 if (id) {
                     title.innerText = "Edit Catalog Product Entity Record";
                     const p = db.get("products").find(prod => prod.id === id);
@@ -1054,16 +989,10 @@
                         document.getElementById("prod-cost").value = p.cost;
                         document.getElementById("prod-stock").value = p.stock;
                     }
-                } else {
-                    title.innerText = "Inject New Product Entity Configuration";
-                }
+                } else { title.innerText = "Inject New Product Configuration Entity"; }
                 modal.classList.remove("hidden");
             }
-
-            closeProductModal() {
-                document.getElementById("product-modal").classList.add("hidden");
-            }
-
+            closeProductModal() { document.getElementById("product-modal").classList.add("hidden"); }
             submitProductForm() {
                 const pData = {
                     id: document.getElementById("prod-id").value || null,
@@ -1079,7 +1008,7 @@
             }
 
             //------------------------------------------------------------------------
-            // CONTAINER MODULE VIEW 4: CONSUMER CRM LOYALTY ARCHITECTURES
+            // CONTAINER MODULE VIEW 4: CUSTOMER DASHBOARDS W/ DELETION OPERATION
             //------------------------------------------------------------------------
             viewCustomers() {
                 const customers = db.get("customers");
@@ -1088,27 +1017,26 @@
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-950 p-4 border border-slate-800 rounded-2xl shadow-sm flex-shrink-0">
                             <div>
                                 <h3 class="text-base font-bold text-white">CRM Engagement Loyalty Core Node</h3>
-                                <p class="text-xs text-slate-400">Track structural consumer lifetimes value data streams and reward metrics</p>
+                                <p class="text-xs text-slate-400">Track consumer loyalty tier distributions, spend levels, and profile logs</p>
                             </div>
-                            <button onclick="state.openCustomerModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-blue-600/10 uppercase tracking-wider"><i class="fas fa-user-plus"></i>Provision CRM Record</button>
+                            <button onclick="state.openCustomerModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 uppercase tracking-wider"><i class="fas fa-user-plus"></i>Provision CRM Record</button>
                         </div>
-
                         <div class="flex-1 overflow-auto border border-slate-800 bg-slate-950/20 rounded-2xl">
                             <table class="w-full border-collapse text-left text-sm text-slate-300">
-                                <thead class="bg-slate-950 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 border-b border-slate-800">
+                                <thead class="bg-slate-950 text-xs font-bold text-slate-400 uppercase tracking-wider calendar sticky top-0 border-b border-slate-800">
                                     <tr>
                                         <th class="px-6 py-4">Customer Designation</th>
                                         <th class="px-6 py-4">Phone String</th>
                                         <th class="px-6 py-4">Secure Email Account</th>
                                         <th class="px-6 py-4 text-right">Lifetime Aggregate Value</th>
-                                        <th class="px-6 py-4 text-center">Loyalty Metric Points</th>
-                                        <th class="px-6 py-4 text-center">Tier Configuration Status</th>
+                                        <th class="px-6 py-4 text-center">Loyalty Points</th>
+                                        <th class="px-6 py-4 text-center">Tier Configuration</th>
                                         <th class="px-6 py-4 text-right">Operations</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-800/60 font-medium">
                                     ${customers.map(c => {
-                                        const tier = c.spend >= 1000 ? 'Gold Elite Tier' : (c.spend >= 300 ? 'Silver Preferred' : 'Base Consumer Member');
+                                        const tier = c.spend >= 1000 ? 'Gold Elite Tier' : (c.spend >= 300 ? 'Silver Preferred' : 'Base Member');
                                         const tierClass = c.spend >= 1000 ? 'bg-amber-950 border-amber-800 text-amber-400' : (c.spend >= 300 ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-900 border-slate-800 text-slate-400');
                                         return `
                                             <tr class="hover:bg-slate-900/40 transition">
@@ -1117,11 +1045,10 @@
                                                 <td class="px-6 py-4 text-slate-400 font-normal">${c.email}</td>
                                                 <td class="px-6 py-4 text-right font-mono font-bold text-slate-200">${this.globalSettings.currencySymbol}${c.spend.toFixed(2)}</td>
                                                 <td class="px-6 py-4 text-center font-mono font-bold text-blue-400">${c.points} pts</td>
-                                                <td class="px-6 py-4 text-center">
-                                                    <span class="px-2.5 py-1 border rounded-md text-[10px] font-bold uppercase tracking-wider ${tierClass}">${tier}</span>
-                                                </td>
-                                                <td class="px-6 py-4 text-right">
+                                                <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 border rounded-md text-[10px] font-bold uppercase tracking-wider ${tierClass}">${tier}</span></td>
+                                                <td class="px-6 py-4 text-right space-x-1">
                                                     <button onclick="state.openCustomerModal('${c.id}')" class="p-2 text-blue-400 hover:bg-slate-900 rounded-lg transition"><i class="fas fa-edit"></i></button>
+                                                    <button onclick="state.deleteCustomer('${c.id}')" class="p-2 text-rose-400 hover:bg-slate-900 rounded-lg transition"><i class="fas fa-trash"></i></button>
                                                 </td>
                                             </tr>
                                         `;
@@ -1135,502 +1062,8 @@
                         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
                             <button onclick="state.closeCustomerModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
                             <h3 id="cust-modal-title" class="text-base font-bold text-white mb-4">Modify CRM User Map Node</h3>
-                            
                             <form id="cust-form" onsubmit="event.preventDefault(); state.submitCustomerForm();" class="space-y-4">
                                 <input type="hidden" id="cust-id">
                                 <div class="space-y-1">
                                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Full Legal Consumer Identification Name:</label>
-                                    <input type="text" id="cust-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-200">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mobile Communication Terminal Phone String:</label>
-                                    <input type="tel" id="cust-phone" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Account Communication Routing Electronic Mail:</label>
-                                    <input type="email" id="cust-email" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-200">
-                                </div>
-                                <div class="flex justify-end gap-3 border-t border-slate-800/60 pt-4 mt-6">
-                                    <button type="button" onclick="state.closeCustomerModal()" class="px-4 py-2.5 bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 rounded-xl text-xs font-bold transition uppercase tracking-wider">Cancel</button>
-                                    <button type="submit" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition uppercase tracking-wider shadow-lg shadow-blue-600/10">Lock Record</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                `;
-            }
-
-            openCustomerModal(id = null) {
-                const modal = document.getElementById("customer-modal");
-                const form = document.getElementById("cust-form");
-                const title = document.getElementById("cust-modal-title");
-                form.reset();
-                document.getElementById("cust-id").value = "";
-
-                if (id) {
-                    title.innerText = "Edit CRM Account Framework Context";
-                    const c = db.get("customers").find(cust => cust.id === id);
-                    if (c) {
-                        document.getElementById("cust-id").value = c.id;
-                        document.getElementById("cust-name").value = c.name;
-                        document.getElementById("cust-phone").value = c.phone;
-                        document.getElementById("cust-email").value = c.email;
-                    }
-                } else {
-                    title.innerText = "Provision Fresh Core CRM Registry Node";
-                }
-                modal.classList.remove("hidden");
-            }
-
-            closeCustomerModal() { document.getElementById("customer-modal").classList.add("hidden"); }
-
-            submitCustomerForm() {
-                const cData = {
-                    id: document.getElementById("cust-id").value || null,
-                    name: document.getElementById("cust-name").value,
-                    phone: document.getElementById("cust-phone").value,
-                    email: document.getElementById("cust-email").value
-                };
-                this.saveCustomer(cData);
-                this.closeCustomerModal();
-            }
-
-            //------------------------------------------------------------------------
-            // CONTAINER MODULE VIEW 5: HUMAN RESOURCES TIMECARDS SUBVIEW PANES
-            //------------------------------------------------------------------------
-            viewEmployees() {
-                const employees = db.get("employees");
-                const timecards = db.get("timecards");
-                return `
-                    <div class="h-full flex flex-col overflow-hidden p-6 space-y-6">
-                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-4">
-                            <div class="flex justify-between items-center border-b border-slate-800/60 pb-3">
-                                <div>
-                                    <h3 class="text-base font-bold text-white">Corporate Enterprise Staff Deployment Manifest</h3>
-                                    <p class="text-xs text-slate-400">Manage user clearance tiers, hourly financial allocations, and access pin security arrays</p>
-                                </div>
-                                <button onclick="state.openEmployeeModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-blue-600/10 uppercase tracking-wider"><i class="fas fa-user-plus"></i>Onboard Employee Node</button>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                ${employees.map(e => `
-                                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between shadow-sm">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center font-bold text-base">${e.name.charAt(0)}</div>
-                                            <div>
-                                                <h4 class="text-sm font-bold text-slate-200">${e.name}</h4>
-                                                <p class="text-[11px] font-semibold text-slate-400 flex items-center gap-2">
-                                                    <span class="text-blue-400 uppercase tracking-wider">${e.role}</span>
-                                                    <span>•</span>
-                                                    <span class="font-mono">${this.globalSettings.currencySymbol}${e.wage.toFixed(2)}/hr</span>
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <button onclick="state.openEmployeeModal('${e.id}')" class="p-2 text-slate-500 hover:text-blue-400 transition"><i class="fas fa-cog"></i></button>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-
-                        <div class="flex-1 flex flex-col overflow-hidden bg-slate-950 border border-slate-800 rounded-2xl shadow-sm">
-                            <div class="p-4 border-b border-slate-800 bg-slate-950/40">
-                                <h3 class="text-base font-bold text-white">Shift Tracking Verification Ledger &amp; Auditing Matrix</h3>
-                                <p class="text-xs text-slate-400">Authorize, modify, or recalculate parameters for payroll distribution architectures</p>
-                            </div>
-                            <div class="flex-1 overflow-auto">
-                                <table class="w-full border-collapse text-left text-sm text-slate-300">
-                                    <thead class="bg-slate-950 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 sticky top-0">
-                                        <tr>
-                                            <th class="px-6 py-4">Onboarded Resource Name</th>
-                                            <th class="px-6 py-4">Clock-In Event Timestamp</th>
-                                            <th class="px-6 py-4">Clock-Out Event Timestamp</th>
-                                            <th class="px-6 py-4 text-center">Total Computed Hours</th>
-                                            <th class="px-6 py-4 text-center">Auditing Verification Status</th>
-                                            <th class="px-6 py-4 text-right">Verification Commit</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-800/60 font-medium">
-                                        ${timecards.length === 0 ? `
-                                            <tr><td colspan="6" class="px-6 py-12 text-center text-slate-600 font-semibold"><i class="fas fa-history text-3xl mb-2 block opacity-30"></i>No employee operational shifts logged in timecard system storage.</td></tr>
-                                        ` : timecards.map(t => {
-                                            const hrs = t.clockOut ? ((new Date(t.clockOut) - new Date(t.clockIn)) / (1000 * 60 * 60)).toFixed(2) : 'Active Loop';
-                                            return `
-                                                <tr class="hover:bg-slate-900/40 transition">
-                                                    <td class="px-6 py-4 font-bold text-slate-200">${t.employeeName}</td>
-                                                    <td class="px-6 py-4 font-mono text-xs text-slate-400">${new Date(t.clockIn).toLocaleString()}</td>
-                                                    <td class="px-6 py-4 font-mono text-xs text-slate-400">${t.clockOut ? new Date(t.clockOut).toLocaleString() : '<span class="text-emerald-400 font-semibold animate-pulse uppercase tracking-wider text-[10px] bg-emerald-950/40 border border-emerald-900 px-2 py-0.5 rounded">Active Shift</span>'}</td>
-                                                    <td class="px-6 py-4 text-center font-mono font-bold text-slate-300">${hrs}</td>
-                                                    <td class="px-6 py-4 text-center">
-                                                        <span class="px-2.5 py-1 text-[10px] border font-bold uppercase tracking-wider rounded-md ${t.approved ? 'bg-emerald-950 border-emerald-800 text-emerald-400' : 'bg-amber-950 border-amber-900 text-amber-500 animate-pulse'}">
-                                                            ${t.approved ? 'Approved Asset' : 'Pending Audit'}
-                                                        </span>
-                                                    </td>
-                                                    <td class="px-6 py-4 text-right">
-                                                        ${!t.approved && t.clockOut ? `<button onclick="state.approveShift('${t.id}')" class="px-3 py-1.5 bg-slate-800 border border-slate-700 text-emerald-400 font-bold hover:bg-slate-700 rounded-lg text-xs transition uppercase tracking-wider"><i class="fas fa-check-double mr-1"></i>Verify</button>` : '<i class="fas fa-circle-check text-slate-600 text-base mr-3"></i>'}
-                                                    </td>
-                                                </tr>
-                                            `;
-                                        }).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="employee-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
-                            <button onclick="state.closeEmployeeModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
-                            <h3 id="emp-modal-title" class="text-base font-bold text-white mb-4">Modify HR Roster Entity Node</h3>
-                            
-                            <form id="emp-form" onsubmit="event.preventDefault(); state.submitEmployeeForm();" class="space-y-4">
-                                <input type="hidden" id="emp-id">
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Full Legal Employee Designation Name:</label>
-                                    <input type="text" id="emp-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-200">
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Authentication Core Pass Code PIN:</label>
-                                        <input type="password" id="emp-pin" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono tracking-widest outline-none focus:border-blue-500 text-slate-200">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Security Access Level Cleared Role:</label>
-                                        <select id="emp-role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-400">
-                                            <option value="Cashier">Cashier Access Tier</option>
-                                            <option value="Manager">Manager Override Tier</option>
-                                            <option value="Admin">Admin Full Stack Root</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Compensation Allocation Base Scale (USD/HR):</label>
-                                    <input type="number" step="0.01" id="emp-wage" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
-                                </div>
-                                <div class="flex justify-end gap-3 border-t border-slate-800/60 pt-4 mt-6">
-                                    <button type="button" onclick="state.closeEmployeeModal()" class="px-4 py-2.5 bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 rounded-xl text-xs font-bold transition uppercase tracking-wider">Cancel</button>
-                                    <button type="submit" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition uppercase tracking-wider shadow-lg shadow-blue-600/10">Commit Token</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                `;
-            }
-
-            openEmployeeModal(id = null) {
-                const modal = document.getElementById("employee-modal");
-                const form = document.getElementById("emp-form");
-                const title = document.getElementById("emp-modal-title");
-                form.reset();
-                document.getElementById("emp-id").value = "";
-
-                if (id) {
-                    title.innerText = "Edit Operational Staff Parameter Architecture";
-                    const e = db.get("employees").find(emp => emp.id === id);
-                    if (e) {
-                        document.getElementById("emp-id").value = e.id;
-                        document.getElementById("emp-name").value = e.name;
-                        document.getElementById("emp-pin").value = e.pin;
-                        document.getElementById("emp-role").value = e.role;
-                        document.getElementById("emp-wage").value = e.wage;
-                    }
-                } else {
-                    title.innerText = "Provision Fresh Human Capital Asset Matrix Profile";
-                }
-                modal.classList.remove("hidden");
-            }
-
-            closeEmployeeModal() { document.getElementById("employee-modal").classList.add("hidden"); }
-
-            submitEmployeeForm() {
-                const eData = {
-                    id: document.getElementById("emp-id").value || null,
-                    name: document.getElementById("emp-name").value,
-                    pin: document.getElementById("emp-pin").value,
-                    role: document.getElementById("emp-role").value,
-                    wage: parseFloat(document.getElementById("emp-wage").value)
-                };
-                this.saveEmployee(eData);
-                this.closeEmployeeModal();
-            }
-
-            approveShift(id) {
-                const tcs = db.get("timecards");
-                const target = tcs.find(t => t.id === id);
-                if (target) {
-                    this.updateTimecard(id, target.clockIn, target.clockOut, true);
-                }
-            }
-
-            //------------------------------------------------------------------------
-            // CONTAINER MODULE VIEW 6: CORPORATE ANALYTICS BUSINESS REPORT PANES
-            //------------------------------------------------------------------------
-            viewReporting() {
-                const txs = db.get("transactions");
-                const prods = db.get("products");
-                
-                // Aggregate core absolute fiscal stats variables
-                let grossRevenue = 0;
-                let totalCost = 0;
-                txs.forEach(t => {
-                    grossRevenue += t.total;
-                    t.items.forEach(i => {
-                        const originalProd = prods.find(p => p.id === i.id);
-                        const c = originalProd ? originalProd.cost : (i.price * 0.4); 
-                        totalCost += (c * i.quantity);
-                    });
-                });
-                const netProfit = grossRevenue - totalCost;
-                const avgTicket = txs.length ? (grossRevenue / txs.length) : 0;
-
-                return `
-                    <div class="h-full flex flex-col overflow-hidden p-6 space-y-6">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 flex-shrink-0">
-                            ${this.kpiCard("Gross Revenue Run Rate", grossRevenue, "fa-wallet", "text-blue-500", true)}
-                            ${this.kpiCard("Net Margin Operating Profit", netProfit, "fa-chart-line", "text-emerald-500", true)}
-                            ${this.kpiCard("Transaction Loops Logs", txs.length, "fa-receipt", "text-amber-500", false)}
-                            ${this.kpiCard("Average Ticket Yield Metrics", avgTicket, "fa-basket-shopping", "text-indigo-500", true)}
-                        </div>
-
-                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 flex-shrink-0">
-                            <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl shadow-sm">
-                                <h4 class="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider">Gross Transaction Ingestion Velocity (7 Elapsed Days)</h4>
-                                <div class="h-64 relative"><canvas id="chart-sales-trend"></canvas></div>
-                            </div>
-                            <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl shadow-sm">
-                                <h4 class="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider">High Volume Velocity Catalog Distribution Products</h4>
-                                <div class="h-64 relative"><canvas id="chart-top-products"></canvas></div>
-                            </div>
-                        </div>
-
-                        <div class="flex-1 flex flex-col overflow-hidden bg-slate-950 border border-slate-800 rounded-2xl shadow-sm">
-                            <div class="p-4 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-950/40">
-                                <div>
-                                    <h4 class="text-base font-bold text-white">Full Auditing Transaction Transactionary Data Stream</h4>
-                                    <p class="text-xs text-slate-400">Complete multi-layered sequence history records for node reconciliation pipelines</p>
-                                </div>
-                                <button onclick="state.exportCSV()" class="px-4 py-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 uppercase tracking-wider"><i class="fas fa-file-csv text-emerald-500"></i>Export Data stream</button>
-                            </div>
-                            <div class="flex-1 overflow-auto">
-                                <table class="w-full border-collapse text-left text-sm text-slate-300">
-                                    <thead class="bg-slate-950 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 sticky top-0">
-                                        <tr>
-                                            <th class="px-6 py-4">Transaction Token</th>
-                                            <th class="px-6 py-4">Execution Time</th>
-                                            <th class="px-6 py-4">Node Operator Context</th>
-                                            <th class="px-6 py-4">CRM Consumer Anchor</th>
-                                            <th class="px-6 py-4 text-center">Routing Engine Gateway</th>
-                                            <th class="px-6 py-4 text-right">Debit Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-800/60 font-medium font-mono text-xs text-slate-400">
-                                        ${txs.map(t => `
-                                            <tr class="hover:bg-slate-900/40 transition">
-                                                <td class="px-6 py-4 font-bold text-slate-200">${t.id}</td>
-                                                <td class="px-6 py-4">${new Date(t.timestamp).toLocaleString()}</td>
-                                                <td class="px-6 py-4 font-sans text-sm font-semibold text-slate-300">${t.employeeName}</td>
-                                                <td class="px-6 py-4 font-sans text-sm text-slate-400">${t.customerName}</td>
-                                                <td class="px-6 py-4 text-center"><span class="px-2 py-0.5 border rounded bg-slate-900 border-slate-800 font-sans font-bold text-[10px] uppercase tracking-wider text-slate-300">${t.paymentMethod}</span></td>
-                                                <td class="px-6 py-4 text-right text-sm font-bold text-emerald-400">${this.globalSettings.currencySymbol}${t.total.toFixed(2)}</td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            kpiCard(title, val, icon, color, isCurrency) {
-                return `
-                    <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl flex items-center justify-between shadow-sm">
-                        <div class="space-y-1">
-                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">${title}</span>
-                            <span class="text-2xl font-black text-white font-mono tracking-tight">${isCurrency ? this.globalSettings.currencySymbol : ''}${typeof val === 'number' ? val.toLocaleString([], {minimumFractionDigits: isCurrency ? 2 : 0, maximumFractionDigits: isCurrency ? 2 : 0}) : val}</span>
-                        </div>
-                        <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xl ${color}"><i class="fas ${icon}"></i></div>
-                    </div>
-                `;
-            }
-
-            //------------------------------------------------------------------------
-            // CONTAINER MODULE VIEW 7: BACKEND STACK ADMIN DESIGN PARAMETERS
-            //------------------------------------------------------------------------
-            viewSettings() {
-                return `
-                    <div class="h-full overflow-y-auto p-6 max-w-4xl mx-auto space-y-6">
-                        <div class="bg-slate-950 border border-slate-800 p-6 rounded-2xl space-y-6">
-                            <div>
-                                <h3 class="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2"><i class="fas fa-sliders text-blue-500"></i>Global Operational Configuration Variables</h3>
-                                <p class="text-xs text-slate-400 mt-1">Configure foundational retail data schemas and localization values</p>
-                            </div>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Store Node Branding Label:</label>
-                                    <input type="text" id="set-store-name" value="${this.globalSettings.storeName}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500 text-slate-200">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fiscal Tax Rate Parameter Matrix (%):</label>
-                                    <input type="number" step="0.001" id="set-tax-rate" value="${this.globalSettings.taxRate}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Localization Currency Structural Symbol:</label>
-                                    <input type="text" id="set-currency" value="${this.globalSettings.currencySymbol}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Receipt Output Static Message String:</label>
-                                    <input type="text" id="set-footer" value="${this.globalSettings.receiptFooter}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500 text-slate-200">
-                                </div>
-                            </div>
-                            <div class="flex justify-end border-t border-slate-800/60 pt-4 mt-2">
-                                <button onclick="state.saveGlobalSettings()" class="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition uppercase tracking-wider shadow-lg shadow-blue-600/10"><i class="fas fa-floppy-disk mr-2"></i>Lock Variable Layout Configs</button>
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-950 border border-rose-950 p-6 rounded-2xl space-y-4">
-                            <div>
-                                <h3 class="text-base font-bold text-rose-400 flex items-center gap-2"><i class="fas fa-triangle-exclamation text-rose-500"></i>Data Core Integrity &amp; Destructive Pipeline Zone</h3>
-                                <p class="text-xs text-rose-900/80 mt-1">Nuke or hard reset transactional states back to default seed matrices</p>
-                            </div>
-                            <p class="text-xs text-slate-400 leading-relaxed">Executing hard database re-seeds will flush all customized inventory lists, recorded payroll timecards, newly registered customer profiles, and transaction streams, replacing them with default sample metrics data structures over 30 days of historical operational logs.</p>
-                            <div class="flex flex-wrap gap-3 pt-2">
-                                <button onclick="state.resetDatabase()" class="px-4 py-2.5 bg-rose-950/40 border border-rose-900/60 text-rose-400 hover:bg-rose-900/30 rounded-xl text-xs font-bold transition uppercase tracking-wider"><i class="fas fa-database mr-2"></i>Flush &amp; Re-Seed Database Node</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            saveGlobalSettings() {
-                const s = {
-                    storeName: document.getElementById("set-store-name").value,
-                    taxRate: parseFloat(document.getElementById("set-tax-rate").value),
-                    currencySymbol: document.getElementById("set-currency").value,
-                    receiptFooter: document.getElementById("set-footer").value
-                };
-                db.set("settings", s);
-                this.globalSettings = s;
-                this.showToast("Global system operational configurations modified.");
-                this.render();
-            }
-
-            //------------------------------------------------------------------------
-            // VISUAL DYNAMIC MODAL DRAWER FRAME: FINALIZE CHECKOUT WORKFLOW
-            //------------------------------------------------------------------------
-            templateCheckoutModal() {
-                const { total } = this.getTotals();
-                return `
-                    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
-                            <button onclick="state.closeCheckout()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
-                            <h3 class="text-lg font-black text-white mb-2 flex items-center gap-2"><i class="fas fa-cash-register text-emerald-500"></i>Ingest Gateway Protocol</h3>
-                            <p class="text-xs text-slate-400 mb-6">Select transaction execution routing path for processing debit loop</p>
-                            
-                            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center mb-6">
-                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Required Tender Value Due:</span>
-                                <span class="text-3xl font-black text-emerald-400 font-mono">${this.globalSettings.currencySymbol}${total.toFixed(2)}</span>
-                            </div>
-
-                            <div class="space-y-3">
-                                <button onclick="state.processCheckout('Card')" class="w-full p-4 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-xl flex items-center justify-between transition text-left group">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-blue-950 border border-blue-900/60 flex items-center justify-center text-blue-400"><i class="fas fa-credit-card"></i></div>
-                                        <div>
-                                            <h4 class="text-sm font-bold text-slate-200">Integrated Terminal Card Node</h4>
-                                            <p class="text-[11px] text-slate-400">EMV / NFC Merchant Ledger Sync</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-slate-600 group-hover:text-slate-400 transition"></i>
-                                </button>
-
-                                <button onclick="state.processCheckout('Cash')" class="w-full p-4 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-xl flex items-center justify-between transition text-left group">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-emerald-950 border border-emerald-900/60 flex items-center justify-center text-emerald-400"><i class="fas fa-money-bill-wave"></i></div>
-                                        <div>
-                                            <h4 class="text-sm font-bold text-slate-200">Physical Cash Tender Process</h4>
-                                            <p class="text-[11px] text-slate-400">Triggers absolute hardware drawer kickout</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-slate-600 group-hover:text-slate-400 transition"></i>
-                                </button>
-
-                                <button onclick="state.processCheckout('Rewards')" ${(!this.selectedCustomer || this.selectedCustomer.points < Math.floor(total * 10)) ? 'disabled' : ''} class="w-full p-4 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 disabled:opacity-40 disabled:pointer-events-none rounded-xl flex items-center justify-between transition text-left group">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-amber-950 border border-amber-900/60 flex items-center justify-center text-amber-400"><i class="fas fa-star"></i></div>
-                                        <div>
-                                            <h4 class="text-sm font-bold text-slate-200">Redeem Consumer Loyalty Points</h4>
-                                            <p class="text-[11px] text-slate-400">Requires balance equivalent: ${Math.floor(total * 10)} pts</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-slate-600 group-hover:text-slate-400 transition"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            //------------------------------------------------------------------------
-            // VISUAL DYNAMIC MODAL DRAWER FRAME: RETAIL RECEIPT PREVIEW ARTIFACTS
-            //------------------------------------------------------------------------
-            templateReceiptModal() {
-                if (!this.lastTransaction) return ``;
-                return `
-                    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
-                            <h3 class="text-center font-bold text-xs text-slate-500 uppercase tracking-widest"><i class="fas fa-circle-check text-emerald-500 mr-1"></i> Transaction Ledger Committed</h3>
-                            
-                            <div class="bg-white text-slate-950 p-6 rounded-xl font-mono text-xs shadow-inner space-y-4 select-text">
-                                <div class="text-center border-b border-dashed border-slate-300 pb-3">
-                                    <h4 class="font-black text-sm uppercase tracking-tight">${this.globalSettings.storeName}</h4>
-                                    <p class="text-[10px] text-slate-500 mt-0.5">Terminal Node ID: ${this.lastTransaction.id}</p>
-                                    <p class="text-[10px] text-slate-500">${new Date(this.lastTransaction.timestamp).toLocaleString()}</p>
-                                </div>
-
-                                <div class="space-y-1 text-[11px]">
-                                    <p><strong>Operator Token:</strong> ${this.lastTransaction.employeeName}</p>
-                                    <p><strong>CRM Consumer Anchor:</strong> ${this.lastTransaction.customerName}</p>
-                                    <p><strong>Routing Gateway:</strong> ${this.lastTransaction.paymentMethod}</p>
-                                </div>
-
-                                <div class="border-b border-t border-dashed border-slate-300 py-2 my-2 space-y-2">
-                                    ${this.lastTransaction.items.map(i => `
-                                        <div class="flex justify-between items-start">
-                                            <div class="max-w-[180px]">
-                                                <p class="font-bold truncate">${i.name}</p>
-                                                <p class="text-[10px] text-slate-500">Qty ${i.quantity} @ ${this.globalSettings.currencySymbol}${i.price.toFixed(2)}</p>
-                                                ${i.discount > 0 ? `<p class="text-[10px] text-rose-600 font-bold">-Markdown: ${this.globalSettings.currencySymbol}${i.discount.toFixed(2)}</p>` : ''}
-                                            </div>
-                                            <span class="font-bold">${this.globalSettings.currencySymbol}${((i.price * i.quantity) - i.discount).toFixed(2)}</span>
-                                        </div>
-                                    `).join('')}
-                                </div>
-
-                                <div class="space-y-1 text-right text-[11px] font-bold">
-                                    <div class="flex justify-between"><span>SUBTOTAL FLUSH:</span><span>${this.globalSettings.currencySymbol}${this.lastTransaction.subtotal.toFixed(2)}</span></div>
-                                    <div class="flex justify-between"><span>TAX INGESTION ARTIFACT:</span><span>${this.globalSettings.currencySymbol}${this.lastTransaction.tax.toFixed(2)}</span></div>
-                                    <div class="flex justify-between text-sm font-black border-t border-slate-200 pt-1 mt-1"><span>TOTAL CAPTURED:</span><span>${this.globalSettings.currencySymbol}${this.lastTransaction.total.toFixed(2)}</span></div>
-                                </div>
-
-                                <div class="text-center border-t border-dashed border-slate-300 pt-3 mt-4 text-[10px] text-slate-500 font-sans font-medium leading-relaxed">
-                                    <p>${this.globalSettings.receiptFooter}</p>
-                                    <p class="mt-1 text-[9px] font-mono uppercase tracking-wider">Aegis OS Cryptographic Signature Verified</p>
-                                </div>
-                            </div>
-
-                            <button onclick="state.receiptModalOpen=false; state.render();" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition uppercase tracking-wider">Dismiss Terminal Workspace Panel</button>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        // Boot and bind initial application runtime instance
-        const state = new StateMachine();
-        state.render();
-
-        // Establish core ticks for synchronous interface rendering pipelines
-        setInterval(() => state.updateLiveClock(), 30000);
-    </script>
-</body>
-</html>
+                                    <input type="text" id="cust-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py
