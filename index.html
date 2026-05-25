@@ -1,450 +1,1636 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>POS Terminal</title>
+    <title>Aegis POS Enterprise</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Pro POS">
+    <meta name="apple-mobile-web-app-title" content="Aegis POS">
 
-    <style>
-        :root {
-            --bg-dark: #09090b;
-            --surface-dark: #18181b;
-            --surface-card: #27272a;
-            --border-dark: #27272a;
-            --text-light: #f4f4f5;
-            --text-dim: #a1a1aa;
-            --accent-blue: #3b82f6;
-            --accent-green: #22c55e;
-            --accent-red: #ef4444;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            padding-top: env(safe-area-inset-top);
-        }
-
-        #auth-gate {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: var(--bg-dark);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .keypad-container {
-            background: var(--surface-dark);
-            padding: 30px;
-            border-radius: 24px;
-            border: 1px solid var(--border-dark);
-            width: 100%;
-            max-width: 360px;
-            text-align: center;
-        }
-
-        .keypad-container h2 {
-            font-size: 1.4rem;
-            margin-bottom: 6px;
-            font-weight: 700;
-        }
-
-        .keypad-container p {
-            color: var(--text-dim);
-            font-size: 0.9rem;
-            margin-bottom: 20px;
-        }
-
-        .pin-dots {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 25px;
-            height: 20px;
-            align-items: center;
-        }
-
-        .dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background-color: #3f3f46;
-            transition: background-color 0.1s;
-        }
-
-        .dot.active {
-            background-color: var(--accent-blue);
-            box-shadow: 0 0 8px var(--accent-blue);
-        }
-
-        /* Clean, perfectly aligned 3x4 grid matrix */
-        .grid-keypad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-        }
-
-        .key-btn {
-            background-color: var(--surface-card);
-            border: 1px solid var(--border-dark);
-            color: var(--text-light);
-            border-radius: 16px;
-            padding: 20px;
-            font-size: 1.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background-color 0.05s, transform 0.05s;
-        }
-
-        .key-btn:active {
-            background-color: #3f3f46;
-            transform: scale(0.95);
-        }
-
-        .key-btn.action-clear { color: var(--accent-red); font-size: 1.1rem; }
-        .key-btn.action-enter { color: var(--accent-green); font-size: 1.1rem; }
-
-        #app-workspace {
-            display: none; 
-            flex-direction: column;
-            height: 100%;
-            width: 100%;
-        }
-
-        header {
-            background-color: var(--surface-dark);
-            padding: 18px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-dark);
-        }
-
-        header h1 { font-size: 1.3rem; font-weight: 700; }
-
-        .metrics-pill {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--accent-blue);
-            background: #1e3a8a;
-            padding: 8px 16px;
-            border-radius: 20px;
-        }
-
-        .app-container {
-            display: grid;
-            grid-template-columns: 1fr 400px;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        .products-section {
-            padding: 24px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 20px;
-        }
-
-        .product-card {
-            background-color: var(--surface-dark);
-            border-radius: 14px;
-            padding: 20px;
-            text-align: center;
-            border: 1px solid var(--border-dark);
-            cursor: pointer;
-            transition: transform 0.08s, background-color 0.08s;
-            min-height: 130px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .product-card:active {
-            transform: scale(0.95);
-            background-color: var(--surface-card);
-        }
-
-        .product-name { font-weight: 600; font-size: 1rem; }
-        .product-price { color: var(--accent-blue); font-weight: 700; font-size: 1.15rem; }
-
-        .cart-sidebar {
-            background-color: var(--surface-dark);
-            border-left: 1px solid var(--border-dark);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .cart-header {
-            padding: 20px 24px;
-            font-weight: 700;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-dark);
-        }
-
-        .clear-btn { background: none; border: none; color: var(--accent-red); font-weight: 600; cursor: pointer; }
-        .cart-items-list { flex: 1; overflow-y: auto; padding: 10px 24px; }
-
-        .cart-item-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 0;
-            border-bottom: 1px solid var(--border-dark);
-        }
-
-        .item-details h4 { font-size: 1rem; font-weight: 600; }
-        .item-details p { font-size: 0.85rem; color: var(--text-dim); }
-        .item-price-final { font-weight: 700; }
-
-        .cart-checkout-footer {
-            padding: 24px;
-            background-color: var(--bg-dark);
-            border-top: 1px solid var(--border-dark);
-        }
-
-        .ledger-line { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .ledger-line.total-bold {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 16px;
-            font-size: 1.4rem;
-            font-weight: 800;
-            border-top: 1px solid var(--border-dark);
-            padding-top: 16px;
-            margin-bottom: 20px;
-        }
-
-        .charge-button {
-            width: 100%;
-            background-color: var(--accent-green);
-            color: white;
-            border: none;
-            padding: 18px;
-            border-radius: 14px;
-            font-size: 1.2rem;
-            font-weight: 700;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-
-    <div id="auth-gate">
-        <div class="keypad-container">
-            <h2>Terminal Locked</h2>
-            <p>Enter Station PIN Code</p>
-            
-            <div class="pin-dots">
-                <div class="dot" id="dot-0"></div>
-                <div class="dot" id="dot-1"></div>
-                <div class="dot" id="dot-2"></div>
-                <div class="dot" id="dot-3"></div>
-                <div class="dot" id="dot-4"></div>
-                <div class="dot" id="dot-5"></div>
-                <div class="dot" id="dot-6"></div>
-            </div>
-
-            <div class="grid-keypad">
-                <div class="key-btn" onclick="pressNum('1')">1</div>
-                <div class="key-btn" onclick="pressNum('2')">2</div>
-                <div class="key-btn" onclick="pressNum('3')">3</div>
-                
-                <div class="key-btn" onclick="pressNum('4')">4</div>
-                <div class="key-btn" onclick="pressNum('5')">5</div>
-                <div class="key-btn" onclick="pressNum('6')">6</div>
-                
-                <div class="key-btn" onclick="pressNum('7')">7</div>
-                <div class="key-btn" onclick="pressNum('8')">8</div>
-                <div class="key-btn" onclick="pressNum('9')">9</div>
-                
-                <div class="key-btn action-clear" onclick="pressClear()">Clear</div>
-                <div class="key-btn" onclick="pressNum('0')">0</div>
-                <div class="key-btn action-enter" onclick="pressEnter()">Enter</div>
-            </div>
-        </div>
-    </div>
-
-    <div id="app-workspace">
-        <header>
-            <h1>Register Terminal 01</h1>
-            <div class="metrics-pill" id="live-sales-tracker">Today's Sales: $0.00</div>
-        </header>
-
-        <div class="app-container">
-            <section class="products-section">
-                <div class="products-grid" id="catalog-hook"></div>
-            </section>
-
-            <aside class="cart-sidebar">
-                <div class="cart-header">
-                    <span>Current Order</span>
-                    <button class="clear-btn" onclick="clearActiveOrder()">Clear All</button>
-                </div>
-                <div class="cart-items-list" id="cart-hook"></div>
-                <div class="cart-checkout-footer">
-                    <div class="ledger-line"><span>Subtotal</span><span id="calc-subtotal">$0.00</span></div>
-                    <div class="ledger-line"><span>Estimated Tax (7%)</span><span id="calc-tax">$0.00</span></div>
-                    <div class="ledger-line total-bold"><span>Total</span><span id="calc-total">$0.00</span></div>
-                    <button class="charge-button" onclick="checkoutOrder()">Charge &amp; Complete</button>
-                </div>
-            </aside>
-        </div>
-    </div>
-
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        const ACCESS_SECRET = "9091237"; 
-        let currentPinInput = "";
-
-        function pressNum(num) {
-            if (currentPinInput.length >= 7) return;
-            currentPinInput += num;
-            updateDots();
-        }
-
-        function pressClear() {
-            currentPinInput = "";
-            updateDots();
-        }
-
-        function pressEnter() {
-            if (currentPinInput === ACCESS_SECRET) {
-                document.getElementById('auth-gate').style.display = 'none';
-                document.getElementById('app-workspace').style.display = 'flex';
-                startupPOS();
-            } else {
-                alert("Invalid terminal access authorization.");
-                pressClear();
-            }
-        }
-
-        function updateDots() {
-            for (let i = 0; i < 7; i++) {
-                const dotElement = document.getElementById(`dot-${i}`);
-                if (i < currentPinInput.length) {
-                    dotElement.classList.add('active');
-                } else {
-                    dotElement.classList.remove('active');
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#030712',
+                        }
+                    }
                 }
             }
         }
+    </script>
 
-        const productCatalog = [
-            { id: 1, name: "Premium Tier Box", price: 45.00 },
-            { id: 2, name: "Standard Option A", price: 25.00 },
-            { id: 3, name: "Standard Option B", price: 15.00 },
-            { id: 4, name: "Add-On Upgrade", price: 10.00 },
-            { id: 5, name: "Essential Pack", price: 30.00 },
-            { id: 6, name: "Custom Setup Svc", price: 65.00 },
-            { id: 7, name: "Mini Gift Item", price: 5.50 },
-            { id: 8, name: "Deluxe Bundle Kit", price: 85.00 }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <style>
+        * {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        input, textarea {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+        }
+        /* Custom scrollbar mechanics for high-throughput retail panes */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .safe-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+</head>
+<body class="h-full overflow-hidden font-sans antialiased selection:bg-blue-500 selection:text-white">
+
+    <div id="global-toast" class="fixed top-6 right-6 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 flex items-center p-4 rounded-xl shadow-2xl border bg-slate-800 border-slate-700 max-w-sm">
+        <div id="toast-icon" class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3"></div>
+        <div>
+            <p id="toast-msg" class="text-sm font-semibold text-slate-200"></p>
+        </div>
+    </div>
+
+    <div id="root-app" class="h-full flex flex-col"></div>
+
+    <script>
+        //------------------------------------------------------------------------
+        // DATA MODELS, PERSISTENCE ENGINE & RECONCILIATION SEEDING
+        //------------------------------------------------------------------------
+        const DEFAULT_PRODUCTS = [
+            { id: "p1", name: "Premium Tier Gift Box", sku: "88811101", price: 45.00, cost: 18.50, stock: 59, category: "Gifts" },
+            { id: "p2", name: "Standard Luxury Pack A", sku: "88811102", price: 25.00, cost: 11.00, stock: 112, category: "Bundles" },
+            { id: "p3", name: "Standard Fragrance Pack B", sku: "88811103", price: 15.00, cost: 6.25, stock: 84, category: "Fragrance" },
+            { id: "p4", name: "Essential Aromatherapy Upgrade", sku: "88811104", price: 10.00, cost: 3.10, stock: 240, category: "Upgrades" },
+            { id: "p5", name: "Elegance Collection Kit", sku: "88811105", price: 30.00, cost: 12.00, stock: 45, category: "Bundles" },
+            { id: "p6", name: "Custom Counter Top Display Svc", sku: "88811106", price: 65.00, cost: 0.00, stock: 999, category: "Services" },
+            { id: "p7", name: "Mini Sample Gift Tray", sku: "88811107", price: 5.50, cost: 1.75, stock: 14, category: "Gifts" },
+            { id: "p8", name: "Deluxe Executive Streetwear Trunk", sku: "88811108", price: 85.00, cost: 39.00, stock: 32, category: "Gifts" }
         ];
 
-        let activeCart = [];
-        let runningSalesTotal = parseFloat(localStorage.getItem('pos_running_sales')) || 0;
+        const DEFAULT_EMPLOYEES = [
+            { id: "e1", name: "Brady Behrendt", pin: "9091237", role: "Admin", wage: 34.50 },
+            { id: "e2", name: "Eduardo Sanchez", pin: "1111", role: "Manager", wage: 26.00 },
+            { id: "e3", name: "Alex Mercer", pin: "2222", role: "Cashier", wage: 16.50 }
+        ];
 
-        function startupPOS() {
-            const gridContainer = document.getElementById('catalog-hook');
-            gridContainer.innerHTML = '';
-            
-            productCatalog.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'product-card';
-                card.onclick = () => addItemToOrder(item.id);
-                card.innerHTML = `
-                    <div class="product-name">${item.name}</div>
-                    <div class="product-price">$${item.price.toFixed(2)}</div>
-                `;
-                gridContainer.appendChild(card);
-            });
-            refreshHistoricalDisplay();
+        const DEFAULT_CUSTOMERS = [
+            { id: "c1", name: "John Miller", phone: "3205550192", email: "jmiller@gmail.com", spend: 340.50, points: 120 },
+            { id: "c2", name: "Sarah Jenkins", phone: "6125559843", email: "sjenkins@yahoo.com", spend: 1250.00, points: 450 },
+            { id: "c3", name: "Marcus Brody", phone: "7635552311", email: "mbrody@outlook.com", spend: 45.50, points: 15 }
+        ];
+
+        class DatabaseEngine {
+            constructor() {
+                this.init();
+            }
+            init() {
+                if (!localStorage.getItem("pos_initialized")) {
+                    this.seed();
+                }
+            }
+            seed() {
+                localStorage.setItem("pos_products", JSON.stringify(DEFAULT_PRODUCTS));
+                localStorage.setItem("pos_employees", JSON.stringify(DEFAULT_EMPLOYEES));
+                localStorage.setItem("pos_customers", JSON.stringify(DEFAULT_CUSTOMERS));
+                localStorage.setItem("pos_timecards", JSON.stringify([]));
+                
+                // Construct historical transactional timeline over 30 elapsed days
+                const txHistory = [];
+                const baseDate = new Date();
+                for (let i = 30; i >= 0; i--) {
+                    const txDate = new Date(baseDate.getTime() - (i * 24 * 60 * 60 * 1000));
+                    // Seed randomized traffic spikes
+                    const dayVolume = Math.floor(Math.random() * 8) + 3; 
+                    for (let j = 0; j < dayVolume; j++) {
+                        const prod = DEFAULT_PRODUCTS[Math.floor(Math.random() * DEFAULT_PRODUCTS.length)];
+                        const emp = DEFAULT_EMPLOYEES[Math.floor(Math.random() * DEFAULT_EMPLOYEES.length)];
+                        const cust = DEFAULT_CUSTOMERS[Math.floor(Math.random() * DEFAULT_CUSTOMERS.length)];
+                        const qty = Math.floor(Math.random() * 2) + 1;
+                        const subtotal = prod.price * qty;
+                        const tax = subtotal * 0.07;
+                        const total = subtotal + tax;
+
+                        txHistory.push({
+                            id: "TX-" + Math.floor(100000 + Math.random() * 900000),
+                            timestamp: txDate.toISOString(),
+                            employeeId: emp.id,
+                            employeeName: emp.name,
+                            customerId: cust.id,
+                            customerName: cust.name,
+                            items: [{ id: prod.id, name: prod.name, price: prod.price, quantity: qty, discount: 0 }],
+                            subtotal: subtotal,
+                            tax: tax,
+                            total: total,
+                            paymentMethod: Math.random() > 0.3 ? "Card" : "Cash"
+                        });
+                    }
+                }
+                localStorage.setItem("pos_transactions", JSON.stringify(txHistory));
+                localStorage.setItem("pos_settings", JSON.stringify({
+                    storeName: "Aegis OS Terminal",
+                    taxRate: 7.00,
+                    currencySymbol: "$",
+                    receiptFooter: "Thank you for shopping at Aegis Retail Network."
+                }));
+                localStorage.setItem("pos_initialized", "true");
+            }
+            get(key) { return JSON.parse(localStorage.getItem("pos_" + key)); }
+            set(key, data) { localStorage.setItem("pos_" + key, JSON.stringify(data)); }
         }
 
-        function addItemToOrder(itemId) {
-            const catalogItem = productCatalog.find(p => p.id === itemId);
-            const matchesInCart = activeCart.find(cartItem => cartItem.id === itemId);
-            if (matchesInCart) { matchesInCart.quantity += 1; } 
-            else { activeCart.push({ ...catalogItem, quantity: 1 }); }
-            refreshCartUI();
-        }
+        const db = new DatabaseEngine();
 
-        function clearActiveOrder() { activeCart = []; refreshCartUI(); }
+        //------------------------------------------------------------------------
+        // SYSTEM CONTROLLER STATE MACHINE MANAGER
+        //------------------------------------------------------------------------
+        class StateMachine {
+            constructor() {
+                this.currentUser = null;
+                this.currentView = "register"; 
+                this.cart = [];
+                this.selectedCustomer = null;
+                this.globalSettings = db.get("settings");
+                this.searchQuery = "";
+                this.currentCategory = "All";
+                this.html5QrScanner = null;
+                this.checkoutModalOpen = false;
+                this.receiptModalOpen = false;
+                this.lastTransaction = null;
+            }
 
-        function refreshCartUI() {
-            const listContainer = document.getElementById('cart-hook');
-            listContainer.innerHTML = '';
-            let structuralSubtotal = 0;
+            setView(viewName) {
+                if (!this.currentUser && viewName !== "login") return;
+                this.currentView = viewName;
+                this.render();
+                if (viewName === "reporting") {
+                    this.initReportingCharts();
+                }
+            }
 
-            activeCart.forEach(item => {
-                const rowCost = item.price * item.quantity;
-                structuralSubtotal += rowCost;
-                const rowElement = document.createElement('div');
-                rowElement.className = 'cart-item-row';
-                rowElement.innerHTML = `
-                    <div class="item-details">
-                        <h4>${item.name}</h4>
-                        <p>$${item.price.toFixed(2)} x ${item.quantity}</p>
+            showToast(msg, type = "success") {
+                const toast = document.getElementById("global-toast");
+                const icon = document.getElementById("toast-icon");
+                const text = document.getElementById("toast-msg");
+                
+                text.innerText = msg;
+                if (type === "success") {
+                    icon.className = "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3 bg-emerald-500";
+                    icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                } else if (type === "danger") {
+                    icon.className = "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3 bg-rose-500";
+                    icon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                } else {
+                    icon.className = "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white mr-3 bg-blue-500";
+                    icon.innerHTML = '<i class="fas fa-info-circle"></i>';
+                }
+                
+                toast.classList.remove("translate-y-20", "opacity-0", "pointer-events-none");
+                setTimeout(() => {
+                    toast.classList.add("translate-y-20", "opacity-0", "pointer-events-none");
+                }, 3000);
+            }
+
+            login(pin) {
+                const employees = db.get("employees");
+                const match = employees.find(e => e.pin === pin);
+                if (match) {
+                    this.currentUser = match;
+                    this.setView("register");
+                    this.showToast(`Authorized: Welcome ${match.name}`);
+                } else {
+                    this.showToast("Invalid Credentials PIN", "danger");
+                }
+            }
+
+            logout() {
+                this.currentUser = null;
+                this.setView("login");
+                this.showToast("Session disconnected.");
+            }
+
+            toggleClock() {
+                const timecards = db.get("timecards");
+                const openCardIndex = timecards.findIndex(tc => tc.employeeId === this.currentUser.id && !tc.clockOut);
+                const now = new Date().toISOString();
+
+                if (openCardIndex !== -1) {
+                    timecards[openCardIndex].clockOut = now;
+                    db.set("timecards", timecards);
+                    this.showToast("Clock Out logged successfully.");
+                } else {
+                    timecards.push({
+                        id: "TC-" + Date.now(),
+                        employeeId: this.currentUser.id,
+                        employeeName: this.currentUser.name,
+                        clockIn: now,
+                        clockOut: null,
+                        approved: false
+                    });
+                    db.set("timecards", timecards);
+                    this.showToast("Clock In logged successfully.");
+                }
+                this.render();
+            }
+
+            //------------------------------------------------------------------------
+            // TRANSACTIONARY CORE LOGIC ENGINE (REGISTER PANES)
+            //------------------------------------------------------------------------
+            addToCart(productId) {
+                const products = db.get("products");
+                const item = products.find(p => p.id === productId);
+                if (!item) return;
+
+                if (item.stock <= 0) {
+                    this.showToast("Item out of stock!", "danger");
+                    return;
+                }
+
+                const existing = this.cart.find(c => c.id === productId);
+                if (existing) {
+                    if (existing.quantity >= item.stock) {
+                        this.showToast("Cannot exceed available physical stock limits.", "danger");
+                        return;
+                    }
+                    existing.quantity++;
+                } else {
+                    this.cart.push({ ...item, quantity: 1, discount: 0 });
+                }
+                this.render();
+            }
+
+            updateCartQty(productId, qty) {
+                const products = db.get("products");
+                const targetProd = products.find(p => p.id === productId);
+                const item = this.cart.find(c => c.id === productId);
+                if (!item) return;
+
+                if (qty <= 0) {
+                    this.cart = this.cart.filter(c => c.id !== productId);
+                } else {
+                    if (qty > targetProd.stock) {
+                        this.showToast("Insufficient stock inventory allocation.", "danger");
+                        return;
+                    }
+                    item.quantity = qty;
+                }
+                this.render();
+            }
+
+            applyLineDiscount(productId, amt) {
+                const item = this.cart.find(c => c.id === productId);
+                if (!item) return;
+                item.discount = Math.max(0, parseFloat(amt) || 0);
+                this.render();
+            }
+
+            attachCustomer(phoneOrName) {
+                const customers = db.get("customers");
+                const match = customers.find(c => c.phone === phoneOrName || c.name.toLowerCase().includes(phoneOrName.toLowerCase()));
+                if (match) {
+                    this.selectedCustomer = match;
+                    this.showToast(`Customer connected: ${match.name}`);
+                } else {
+                    this.showToast("No consumer profile record matched.", "danger");
+                }
+                this.render();
+            }
+
+            detachCustomer() {
+                this.selectedCustomer = null;
+                this.render();
+            }
+
+            getTotals() {
+                let subtotal = 0;
+                this.cart.forEach(c => {
+                    subtotal += (c.price * c.quantity) - c.discount;
+                });
+                const tax = subtotal * (parseFloat(this.globalSettings.taxRate) / 100);
+                const total = subtotal + tax;
+                return { subtotal, tax, total };
+            }
+
+            processCheckout(paymentMethod) {
+                const { subtotal, tax, total } = this.getTotals();
+                if (this.cart.length === 0) return;
+
+                if (paymentMethod === "Rewards") {
+                    if (!this.selectedCustomer || this.selectedCustomer.points < Math.floor(total * 10)) {
+                        this.showToast("Insufficient reward metrics point matrix balance.", "danger");
+                        return;
+                    }
+                }
+
+                // Mutate stock limits and save
+                const products = db.get("products");
+                this.cart.forEach(c => {
+                    const p = products.find(prod => prod.id === c.id);
+                    if (p) p.stock = Math.max(0, p.stock - c.quantity);
+                });
+                db.set("products", products);
+
+                // Mutate consumer loyalty parameters
+                const customers = db.get("customers");
+                if (this.selectedCustomer) {
+                    const cMatch = customers.find(cust => cust.id === this.selectedCustomer.id);
+                    if (cMatch) {
+                        if (paymentMethod === "Rewards") {
+                            cMatch.points -= Math.floor(total * 10);
+                        } else {
+                            const earned = Math.floor(total);
+                            cMatch.points += earned;
+                            cMatch.spend += total;
+                        }
+                        db.set("customers", customers);
+                        this.selectedCustomer = cMatch; // Update current ref
+                    }
+                }
+
+                // Build permanent transactional metadata artifact
+                const tx = {
+                    id: "TX-" + Math.floor(100000 + Math.random() * 900000),
+                    timestamp: new Date().toISOString(),
+                    employeeId: this.currentUser.id,
+                    employeeName: this.currentUser.name,
+                    customerId: this.selectedCustomer ? this.selectedCustomer.id : null,
+                    customerName: this.selectedCustomer ? this.selectedCustomer.name : "Walk-in Guest",
+                    items: [...this.cart],
+                    subtotal: subtotal,
+                    tax: tax,
+                    total: total,
+                    paymentMethod: paymentMethod
+                };
+
+                const txs = db.get("transactions");
+                txs.unshift(tx);
+                db.set("transactions", txs);
+
+                this.lastTransaction = tx;
+                this.cart = [];
+                this.checkoutModalOpen = false;
+                this.receiptModalOpen = true;
+                this.showToast("Transaction successfully routed.");
+                this.render();
+            }
+
+            //------------------------------------------------------------------------
+            // INVENTORY MUTATION ENGINE
+            //------------------------------------------------------------------------
+            saveProduct(prodData) {
+                const prods = db.get("products");
+                if (prodData.id) {
+                    const idx = prods.findIndex(p => p.id === prodData.id);
+                    if (idx !== -1) prods[idx] = prodData;
+                } else {
+                    prodData.id = "p-" + Date.now();
+                    prods.push(prodData);
+                }
+                db.set("products", prods);
+                this.showToast("Product master manifest updated.");
+                this.render();
+            }
+
+            deleteProduct(id) {
+                let prods = db.get("products");
+                prods = prods.filter(p => p.id !== id);
+                db.set("products", prods);
+                this.showToast("Product item dropped from terminal catalogs.", "danger");
+                this.render();
+            }
+
+            simulateBarcodeScan(sku) {
+                const prods = db.get("products");
+                const match = prods.find(p => p.sku === sku);
+                if (match) {
+                    this.addToCart(match.id);
+                    this.showToast(`Scanned asset: ${match.name}`);
+                } else {
+                    this.showToast(`SKU barcode matrix match failure: ${sku}`, "danger");
+                }
+            }
+
+            //------------------------------------------------------------------------
+            // CUSTOMER PROFILE REGISTRATION ROUTINES
+            //------------------------------------------------------------------------
+            saveCustomer(custData) {
+                const custs = db.get("customers");
+                if (custData.id) {
+                    const idx = custs.findIndex(c => c.id === custData.id);
+                    if (idx !== -1) custs[idx] = custData;
+                } else {
+                    custData.id = "c-" + Date.now();
+                    custData.spend = 0;
+                    custData.points = 0;
+                    custs.push(custData);
+                }
+                db.set("customers", custs);
+                this.showToast("Customer database log locked.");
+                this.render();
+            }
+
+            //------------------------------------------------------------------------
+            // HUMAN RESOURCE MUTATION INTERFACES
+            //------------------------------------------------------------------------
+            saveEmployee(empData) {
+                const emps = db.get("employees");
+                if (empData.id) {
+                    const idx = emps.findIndex(e => e.id === empData.id);
+                    if (idx !== -1) emps[idx] = empData;
+                } else {
+                    empData.id = "e-" + Date.now();
+                    emps.push(empData);
+                }
+                db.set("employees", emps);
+                this.showToast("Employee roster matrix modified.");
+                this.render();
+            }
+
+            updateTimecard(tcId, clockIn, clockOut, approved) {
+                const tcs = db.get("timecards");
+                const idx = tcs.findIndex(t => t.id === tcId);
+                if (idx !== -1) {
+                    tcs[idx].clockIn = clockIn;
+                    tcs[idx].clockOut = clockOut;
+                    tcs[idx].approved = approved;
+                    db.set("timecards", tcs);
+                    this.showToast("Time card verified and modified.");
+                    this.render();
+                }
+            }
+
+            //------------------------------------------------------------------------
+            // METRIC SYSTEM DASHBOARD REPORTING ARCHITECTURE
+            //------------------------------------------------------------------------
+            initReportingCharts() {
+                const txs = db.get("transactions");
+                
+                // Aggregate Daily Revenue Timeline
+                const dailyTotals = {};
+                txs.forEach(t => {
+                    const dateStr = t.timestamp.split('T')[0];
+                    dailyTotals[dateStr] = (dailyTotals[dateStr] || 0) + t.total;
+                });
+                const sortedDates = Object.keys(dailyTotals).sort().slice(-7);
+                const dailyData = sortedDates.map(d => dailyTotals[d]);
+
+                // Render Sales Chart Elements
+                const ctxSales = document.getElementById('chart-sales-trend');
+                if (ctxSales) {
+                    new Chart(ctxSales, {
+                        type: 'line',
+                        data: {
+                            labels: sortedDates,
+                            datasets: [{
+                                label: 'Gross Net Routing ($)',
+                                data: dailyData,
+                                borderColor: '#3b82f6',
+                                tension: 0.2,
+                                fill: false
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                    });
+                }
+
+                // Volume Item Aggregation Loop Engine
+                const itemQtyMap = {};
+                txs.forEach(t => {
+                    t.items.forEach(i => {
+                        itemQtyMap[i.name] = (itemQtyMap[i.name] || 0) + i.quantity;
+                    });
+                });
+                const topItems = Object.keys(itemQtyMap).sort((a,b) => itemQtyMap[b] - itemQtyMap[a]).slice(0, 5);
+                const topItemQtys = topItems.map(it => itemQtyMap[it]);
+
+                const ctxProd = document.getElementById('chart-top-products');
+                if (ctxProd) {
+                    new Chart(ctxProd, {
+                        type: 'bar',
+                        data: {
+                            labels: topItems,
+                            datasets: [{
+                                data: topItemQtys,
+                                backgroundColor: ['#22c55e', '#3b82f6', '#eab308', '#a855f7', '#6366f1']
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                    });
+                }
+            }
+
+            exportCSV() {
+                const txs = db.get("transactions");
+                let csv = "Transaction ID,Timestamp,Employee,Customer,Total,Payment Method\n";
+                txs.forEach(t => {
+                    csv += `${t.id},${t.timestamp},${t.employeeName},${t.customerName},${t.total.toFixed(2)},${t.paymentMethod}\n`;
+                });
+                console.log("--- SYSTEM METRIC EXPORT COMPLETED ---\n", csv);
+                this.showToast("CSV data stream string deployed directly to developer console debugging pane.");
+            }
+
+            resetDatabase() {
+                db.seed();
+                this.globalSettings = db.get("settings");
+                this.cart = [];
+                this.selectedCustomer = null;
+                this.showToast("Enterprise transaction state seeded successfully.");
+                this.render();
+            }
+
+            //------------------------------------------------------------------------
+            // GLOBAL TEMPLATE RENDERING CONTEXTS
+            //------------------------------------------------------------------------
+            render() {
+                const container = document.getElementById("root-app");
+                if (!this.currentUser) {
+                    container.innerHTML = this.templateLogin();
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="flex h-full overflow-hidden">
+                        <aside class="w-20 md:w-64 bg-slate-950 border-r border-slate-800 flex flex-col justify-between z-10">
+                            <div>
+                                <div class="h-16 flex items-center px-6 border-b border-slate-800 gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">A</div>
+                                    <span class="font-bold text-lg hidden md:inline tracking-tight text-slate-200">${this.globalSettings.storeName}</span>
+                                </div>
+                                <nav class="p-4 space-y-1">
+                                    ${this.navItem("register", "fa-cash-register", "Register Terminal")}
+                                    ${this.navItem("inventory", "fa-boxes-stacked", "Inventory Master")}
+                                    ${this.navItem("customers", "fa-users", "Loyalty Database")}
+                                    ${this.currentUser.role !== 'Cashier' ? this.navItem("employees", "fa-id-card", "Staff & Timecards") : ''}
+                                    ${this.currentUser.role !== 'Cashier' ? this.navItem("reporting", "fa-chart-pie", "Analytics Ledger") : ''}
+                                    ${this.currentUser.role === 'Admin' ? this.navItem("settings", "fa-sliders", "Global Configurations") : ''}
+                                </nav>
+                            </div>
+                            <div class="p-4 border-t border-slate-800 space-y-3">
+                                <div class="hidden md:flex items-center gap-3 px-2">
+                                    <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-blue-400 font-semibold border border-slate-700">
+                                        ${this.currentUser.name.charAt(0)}
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <h4 class="text-xs font-semibold text-slate-200 truncate">${this.currentUser.name}</h4>
+                                        <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">${this.currentUser.role}</p>
+                                    </div>
+                                </div>
+                                <button onclick="state.logout()" class="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-rose-400 bg-rose-950/20 border border-rose-900/30 rounded-xl hover:bg-rose-950/40 transition">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    <span class="hidden md:inline">Disconnect</span>
+                                </button>
+                            </div>
+                        </aside>
+
+                        <main class="flex-1 flex flex-col bg-slate-900 overflow-hidden">
+                            <header class="h-16 bg-slate-950 border-b border-slate-800 px-6 flex items-center justify-between z-10 flex-shrink-0">
+                                <div class="flex items-center gap-4">
+                                    <h2 class="text-xl font-bold tracking-tight text-slate-100 capitalize">${this.currentView} Panel</h2>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 px-4 py-1.5 rounded-xl shadow-inner">
+                                        <div class="w-2 h-2 rounded-full ${db.get("timecards").some(t => t.employeeId === this.currentUser.id && !t.clockOut) ? 'bg-emerald-500 animate-pulse' : 'bg-slate-600'}"></div>
+                                        <span class="text-xs font-medium text-slate-400">Shift Tracker Log:</span>
+                                        <button onclick="state.toggleClock()" class="text-xs font-bold text-blue-400 hover:underline">
+                                            ${db.get("timecards").some(t => t.employeeId === this.currentUser.id && !t.clockOut) ? 'Clock Out' : 'Clock In'}
+                                        </button>
+                                    </div>
+                                    <div class="text-sm font-semibold text-slate-300" id="live-clock"></div>
+                                </div>
+                            </header>
+
+                            <div class="flex-1 overflow-hidden relative">
+                                ${this.renderActiveSubView()}
+                            </div>
+                        </main>
                     </div>
-                    <div class="item-price-final">$${rowCost.toFixed(2)}</div>
+
+                    ${this.checkoutModalOpen ? this.templateCheckoutModal() : ''}
+                    ${this.receiptModalOpen ? this.templateReceiptModal() : ''}
                 `;
-                listContainer.appendChild(rowElement);
-            });
 
-            const calculatedTax = structuralSubtotal * 0.07;
-            const finalCalculatedTotal = structuralSubtotal + calculatedTax;
+                // Fire static live clock ticks
+                this.updateLiveClock();
+            }
 
-            document.getElementById('calc-subtotal').innerText = `$${structuralSubtotal.toFixed(2)}`;
-            document.getElementById('calc-tax').innerText = `$${calculatedTax.toFixed(2)}`;
-            document.getElementById('calc-total').innerText = `$${finalCalculatedTotal.toFixed(2)}`;
+            navItem(view, icon, label) {
+                const active = this.currentView === view;
+                return `
+                    <button onclick="state.setView('${view}')" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/10' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}">
+                        <i class="fas ${icon} text-base"></i>
+                        <span class="hidden md:inline">${label}</span>
+                    </button>
+                `;
+            }
+
+            updateLiveClock() {
+                const el = document.getElementById("live-clock");
+                if (el) {
+                    const now = new Date();
+                    el.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+            }
+
+            //------------------------------------------------------------------------
+            // SUBVIEW CONTROLLER SPLIT COMPILER LOOP
+            //------------------------------------------------------------------------
+            renderActiveSubView() {
+                switch(this.currentView) {
+                    case "register": return this.viewRegister();
+                    case "inventory": return this.viewInventory();
+                    case "customers": return this.viewCustomers();
+                    case "employees": return this.viewEmployees();
+                    case "reporting": return this.viewReporting();
+                    case "settings": return this.viewSettings();
+                    default: return ``;
+                }
+            }
+
+            //------------------------------------------------------------------------
+            // CONTAINER MODULE VIEW 1: SECURITY GATE ACCESS PIN LOGIN
+            //------------------------------------------------------------------------
+            templateLogin() {
+                return `
+                    <div class="h-full flex flex-col md:flex-row bg-slate-950 overflow-hidden">
+                        <div class="hidden md:flex md:w-1/2 bg-gradient-to-tr from-slate-950 via-slate-900 to-blue-950 p-12 flex-col justify-between border-r border-slate-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-xl shadow-blue-500/20">A</div>
+                                <span class="font-bold text-xl tracking-tight text-slate-200">Aegis OS Architecture</span>
+                            </div>
+                            <div class="space-y-4">
+                                <span class="text-blue-500 font-semibold text-sm uppercase tracking-wider">Enterprise Endpoint POS</span>
+                                <h1 class="text-4xl lg:text-5xl font-extrabold text-white leading-tight tracking-tight">Unified Point of Sale Management System</h1>
+                                <p class="text-slate-400 text-base max-w-md">Multi-layered security node, conversion optimization metrics, and relational state tracking built for retail terminals.</p>
+                            </div>
+                            <p class="text-xs text-slate-500">&copy; 2026 Aegis Security Networks Inc. All node operations authenticated.</p>
+                        </div>
+                        
+                        <div class="flex-1 flex flex-col justify-center items-center p-6 sm:p-12">
+                            <div class="w-full max-w-sm space-y-8">
+                                <div class="text-center md:text-left">
+                                    <h2 class="text-3xl font-bold tracking-tight text-white">System Authorization</h2>
+                                    <p class="mt-2 text-sm text-slate-400">Input terminal authorization PIN parameter to unlock workspace console node</p>
+                                </div>
+                                
+                                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                                    <div class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-center mb-6">
+                                        <input type="password" id="login-pin-display" readonly placeholder="••••••••" class="bg-transparent border-none text-center text-2xl font-bold tracking-widest text-blue-400 w-full outline-none placeholder-slate-700">
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-3 gap-3">
+                                        ${[1,2,3,4,5,6,7,8,9].map(n => `
+                                            <button onclick="state.pressLoginNum('${n}')" class="h-16 rounded-xl bg-slate-800 text-white font-bold text-xl border border-slate-700/50 hover:bg-slate-700 active:scale-95 transition flex items-center justify-center">${n}</button>
+                                        `).join('')}
+                                        <button onclick="state.clearLoginNum()" class="h-16 rounded-xl bg-slate-800 text-rose-400 font-bold text-sm border border-slate-700/50 hover:bg-rose-950/30 active:scale-95 transition flex items-center justify-center uppercase tracking-wider">Clear</button>
+                                        <button onclick="state.pressLoginNum('0')" class="h-16 rounded-xl bg-slate-800 text-white font-bold text-xl border border-slate-700/50 hover:bg-slate-700 active:scale-95 transition flex items-center justify-center">0</button>
+                                        <button onclick="state.submitLogin()" class="h-16 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 active:scale-95 transition flex items-center justify-center uppercase tracking-wider shadow-lg shadow-blue-600/20">Unlock</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            pressLoginNum(n) {
+                const el = document.getElementById("login-pin-display");
+                if (el && el.value.length < 8) el.value += n;
+            }
+            clearLoginNum() {
+                const el = document.getElementById("login-pin-display");
+                if (el) el.value = "";
+            }
+            submitLogin() {
+                const el = document.getElementById("login-pin-display");
+                if (el) this.login(el.value);
+            }
+
+            //------------------------------------------------------------------------
+            // CONTAINER MODULE VIEW 2: REGISTER CORE SALES SPLIT VIEW
+            //------------------------------------------------------------------------
+            viewRegister() {
+                const products = db.get("products");
+                const categories = ["All", ...new Set(products.map(p => p.category))];
+                
+                // Filtering pipeline algorithm loops
+                const filteredProducts = products.filter(p => {
+                    const matchesCat = this.currentCategory === "All" || p.category === this.currentCategory;
+                    const matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || p.sku.includes(this.searchQuery);
+                    return matchesCat && matchesSearch;
+                });
+
+                const { subtotal, tax, total } = this.getTotals();
+
+                return `
+                    <div class="h-full flex flex-col lg:flex-row overflow-hidden">
+                        <div class="flex-1 flex flex-col overflow-hidden border-r border-slate-800">
+                            <div class="p-4 bg-slate-950/50 border-b border-slate-800 space-y-3 flex-shrink-0">
+                                <div class="flex gap-3">
+                                    <div class="relative flex-1">
+                                        <i class="fas fa-search absolute left-4 top-3.5 text-slate-500 text-sm"></i>
+                                        <input type="text" placeholder="Search product catalogs by title, metric key, SKU identifier..." value="${this.searchQuery}" oninput="state.searchQuery=this.value; state.render()" class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium placeholder-slate-500 outline-none focus:border-blue-500 text-slate-200">
+                                    </div>
+                                    <button onclick="state.toggleScannerModal()" class="px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-blue-400 hover:bg-slate-700 transition flex items-center gap-2 text-sm font-bold shadow-sm">
+                                        <i class="fas fa-camera"></i>
+                                        <span class="hidden sm:inline">Camera Scan</span>
+                                    </button>
+                                </div>
+                                <div class="flex gap-2 overflow-x-auto pb-1">
+                                    ${categories.map(cat => {
+                                        const active = this.currentCategory === cat;
+                                        return `<button onclick="state.currentCategory='${cat}'; state.render()" class="px-4 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${active ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 border border-slate-700/50 hover:text-slate-200'}\">${cat}</button>`;
+                                    }).join('')}
+                                </div>
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto p-4 bg-slate-900/40">
+                                <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+                                    ${filteredProducts.map(p => `
+                                        <div onclick="state.addToCart('${p.id}')" class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-md hover:border-slate-700 active:scale-95 transition cursor-pointer relative overflow-hidden group min-h-[140px]">
+                                            ${p.stock <= 15 ? `<span class="absolute top-2 right-2 px-2 py-0.5 bg-amber-950 border border-amber-800 text-amber-400 rounded-md text-[10px] font-bold uppercase tracking-wider animate-pulse">Low Stock: ${p.stock}</span>` : ''}
+                                            <div>
+                                                <h4 class="font-bold text-sm text-slate-200 group-hover:text-blue-400 transition line-clamp-2 leading-snug">${p.name}</h4>
+                                                <p class="text-[10px] text-slate-500 font-mono mt-1 uppercase tracking-wider">${p.sku}</p>
+                                            </div>
+                                            <div class="flex items-center justify-between mt-4 border-t border-slate-900 pt-3">
+                                                <span class="text-base font-extrabold text-slate-100">${this.globalSettings.currencySymbol}${p.price.toFixed(2)}</span>
+                                                <div class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition">
+                                                    <i class="fas fa-plus"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="w-full lg:w-[420px] bg-slate-950 flex flex-col justify-between overflow-hidden flex-shrink-0 border-t lg:border-t-0 border-slate-800">
+                            <div class="p-4 border-b border-slate-800 bg-slate-950/40 flex-shrink-0">
+                                ${this.selectedCustomer ? `
+                                    <div class="bg-blue-950/40 border border-blue-900/50 p-3 rounded-xl flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-9 h-9 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-800 flex items-center justify-center text-sm"><i class="fas fa-user"></i></div>
+                                            <div>
+                                                <h4 class="text-sm font-bold text-slate-200">${this.selectedCustomer.name}</h4>
+                                                <p class="text-[11px] text-slate-400 font-semibold flex items-center gap-2">
+                                                    <span><i class="fas fa-star text-amber-400 mr-1"></i>${this.selectedCustomer.points} Tier Metrics</span>
+                                                    <span>•</span>
+                                                    <span>Spend: ${this.globalSettings.currencySymbol}${this.selectedCustomer.spend.toFixed(0)}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button onclick="state.detachCustomer()" class="text-slate-500 hover:text-rose-400 p-2 text-sm transition"><i class="fas fa-user-minus"></i></button>
+                                    </div>
+                                ` : `
+                                    <div class="flex gap-2">
+                                        <div class="relative flex-1">
+                                            <i class="fas fa-user-plus absolute left-3.5 top-2.5 text-slate-500 text-xs"></i>
+                                            <input type="text" id="cust-lookup-input" placeholder="Attach customer account profile..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs font-medium text-slate-200 outline-none focus:border-blue-500">
+                                        </div>
+                                        <button onclick="state.attachCustomer(document.getElementById('cust-lookup-input').value)" class="px-4 py-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 transition rounded-xl text-xs font-bold text-slate-300">Link</button>
+                                    </div>
+                                `}
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto p-4 space-y-3">
+                                ${this.cart.length === 0 ? `
+                                    <div class="h-full flex flex-col items-center justify-center text-center p-8 text-slate-600">
+                                        <i class="fas fa-receipt text-4xl mb-3 opacity-30"></i>
+                                        <p class="text-sm font-semibold">Active transaction ticket empty</p>
+                                        <p class="text-xs max-w-[200px] mt-1">Select entries from product list pane map matrix to mount line items</p>
+                                    </div>
+                                ` : this.cart.map(item => `
+                                    <div class="bg-slate-900/70 border border-slate-800 p-3 rounded-xl space-y-2">
+                                        <div class="flex justify-between items-start gap-4">
+                                            <h5 class="text-sm font-bold text-slate-200 line-clamp-1 leading-tight">${item.name}</h5>
+                                            <button onclick="state.updateCartQty('${item.id}', 0)" class="text-slate-600 hover:text-rose-400 transition text-xs"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5">
+                                                <button onclick="state.updateCartQty('${item.id}', ${item.quantity - 1})" class="w-7 h-7 flex items-center justify-center text-xs text-slate-500 hover:text-slate-200 active:bg-slate-900 rounded-md transition"><i class="fas fa-minus"></i></button>
+                                                <span class="w-8 text-center text-xs font-mono font-bold text-slate-300">${item.quantity}</span>
+                                                <button onclick="state.updateCartQty('${item.id}', ${item.quantity + 1})" class="w-7 h-7 flex items-center justify-center text-xs text-slate-500 hover:text-slate-200 active:bg-slate-900 rounded-md transition"><i class="fas fa-plus"></i></button>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-sm font-mono font-bold text-slate-200">${this.globalSettings.currencySymbol}${((item.price * item.quantity) - item.discount).toFixed(2)}</span>
+                                                <p class="text-[10px] text-slate-500">${this.globalSettings.currencySymbol}${item.price.toFixed(2)} unit metrics</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-end gap-2 pt-1 border-t border-slate-950">
+                                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Line Markdown:</span>
+                                            <input type="number" step="0.01" value="${item.discount || ''}" placeholder="0.00" onchange="state.applyLineDiscount('${item.id}', this.value)" class="w-16 bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-right font-mono text-xs text-amber-500 outline-none focus:border-amber-600">
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div class="p-4 bg-slate-950/80 border-t border-slate-800 space-y-3 flex-shrink-0 safe-bottom">
+                                <div class="space-y-1.5 font-mono text-xs text-slate-400">
+                                    <div class="flex justify-between"><span>SUBTOTAL LEDGER:</span><span class="text-slate-200 font-bold">${this.globalSettings.currencySymbol}${subtotal.toFixed(2)}</span></div>
+                                    <div class="flex justify-between"><span>TAX ARTIFACT (${this.globalSettings.taxRate}%):</span><span class="text-slate-200 font-bold">${this.globalSettings.currencySymbol}${tax.toFixed(2)}</span></div>
+                                    <div class="flex justify-between text-base font-bold text-slate-100 border-t border-slate-800/80 pt-2 mt-2">
+                                        <span>TOTAL DEBIT VALUE:</span>
+                                        <span class="text-emerald-400 font-mono">${this.globalSettings.currencySymbol}${total.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                                <button onclick="state.openCheckout()" ${this.cart.length === 0 ? 'disabled' : ''} class="w-full py-4 bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-600 disabled:shadow-none text-white rounded-xl font-bold text-sm hover:bg-emerald-500 transition shadow-lg shadow-emerald-600/10 uppercase tracking-wider flex items-center justify-center gap-2">
+                                    <i class="fas fa-credit-card"></i>
+                                    <span>Route Financial Checkout</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="scanner-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+                            <button onclick="state.toggleScannerModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
+                            <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2"><i class="fas fa-camera text-blue-500"></i>Camera Scanning Terminal Node</h3>
+                            <p class="text-xs text-slate-400 mb-4">Aim camera node directly at item matrix SKU barcode tags, or leverage hardware emulation controls below.</p>
+                            
+                            <div class="w-full bg-slate-950 rounded-xl aspect-video mb-4 border border-slate-800 overflow-hidden flex flex-col items-center justify-center text-slate-600 relative">
+                                <div id="interactive-reader" class="w-full h-full"></div>
+                                <div id="fallback-scanner-ui" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 p-4 text-center">
+                                    <i class="fas fa-barcode text-4xl mb-2 text-slate-700 animate-pulse"></i>
+                                    <span class="text-xs font-semibold text-slate-400">Optics Hardware Stream Suspended</span>
+                                    <p class="text-[10px] text-slate-600 mt-1">Utilize keyboard emulator override matrix payload parameters</p>
+                                </div>
+                            </div>
+
+                            <div class="border-t border-slate-800/60 pt-4 space-y-2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">SKU Core Matrix Input Payload:</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="manual-sku-mock" placeholder="e.g., 88811101" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500">
+                                    <button onclick="state.simulateBarcodeScan(document.getElementById('manual-sku-mock').value); state.toggleScannerModal();" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold text-white transition">Inject</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            toggleScannerModal() {
+                const modal = document.getElementById("scanner-modal");
+                if (modal) {
+                    if (modal.classList.contains("hidden")) {
+                        modal.classList.remove("hidden");
+                        this.startCameraStream();
+                    } else {
+                        modal.classList.add("hidden");
+                        this.stopCameraStream();
+                    }
+                }
+            }
+
+            startCameraStream() {
+                setTimeout(() => {
+                    const qrEl = document.getElementById("interactive-reader");
+                    if (qrEl) {
+                        this.html5QrScanner = new Html5Qrcode("interactive-reader");
+                        this.html5QrScanner.start(
+                            { facingMode: "environment" },
+                            { fps: 10, qrbox: { width: 250, height: 100 } },
+                            (decodedText) => {
+                                this.simulateBarcodeScan(decodedText);
+                                this.toggleScannerModal();
+                            },
+                            () => {} // Suppress noisy frames log
+                        ).then(() => {
+                            document.getElementById("fallback-scanner-ui").style.display = "none";
+                        }).catch(() => {
+                            document.getElementById("fallback-scanner-ui").style.display = "flex";
+                        });
+                    }
+                }, 100);
+            }
+
+            stopCameraStream() {
+                if (this.html5QrScanner) {
+                    this.html5QrScanner.stop().then(() => {
+                        this.html5QrScanner = null;
+                    }).catch(() => {});
+                }
+            }
+
+            openCheckout() {
+                this.checkoutModalOpen = true;
+                this.render();
+            }
+            closeCheckout() {
+                this.checkoutModalOpen = false;
+                this.render();
+            }
+
+            //------------------------------------------------------------------------
+            // CONTAINER MODULE VIEW 3: INVENTORY MASTER CATALOG INTERFACES
+            //------------------------------------------------------------------------
+            viewInventory() {
+                const products = db.get("products");
+                return `
+                    <div class="h-full flex flex-col overflow-hidden p-6 space-y-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-950 p-4 border border-slate-800 rounded-2xl shadow-sm flex-shrink-0">
+                            <div>
+                                <h3 class="text-base font-bold text-white">Product Inventory Ledger Manifest</h3>
+                                <p class="text-xs text-slate-400">Add, delete, modify structural metadata arrays and asset parameters</p>
+                            </div>
+                            <button onclick="state.openProductModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-blue-600/10 uppercase tracking-wider"><i class="fas fa-plus"></i>Create New Product Node</button>
+                        </div>
+
+                        <div class="flex-1 overflow-auto border border-slate-800 bg-slate-950/20 rounded-2xl">
+                            <table class="w-full border-collapse text-left text-sm text-slate-300">
+                                <thead class="bg-slate-950 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 border-b border-slate-800">
+                                    <tr>
+                                        <th class="px-6 py-4">Title / Identifier</th>
+                                        <th class="px-6 py-4">SKU Code</th>
+                                        <th class="px-6 py-4">Category</th>
+                                        <th class="px-6 py-4 text-right">Debit Price</th>
+                                        <th class="px-6 py-4 text-right">Acquisition Cost</th>
+                                        <th class="px-6 py-4 text-center">In-Stock Quant</th>
+                                        <th class="px-6 py-4 text-right">Operations</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/60 font-medium">
+                                    ${products.map(p => `
+                                        <tr class="hover:bg-slate-900/40 transition">
+                                            <td class="px-6 py-4 font-bold text-slate-200">${p.name}</td>
+                                            <td class="px-6 py-4 font-mono text-xs text-slate-400 uppercase tracking-wider">${p.sku}</td>
+                                            <td class="px-6 py-4"><span class="px-2.5 py-1 bg-slate-800 border border-slate-700/60 rounded-md text-[11px] font-bold text-slate-400">${p.category}</span></td>
+                                            <td class="px-6 py-4 text-right font-mono font-bold">${this.globalSettings.currencySymbol}${p.price.toFixed(2)}</td>
+                                            <td class="px-6 py-4 text-right font-mono text-slate-400">${this.globalSettings.currencySymbol}${p.cost.toFixed(2)}</td>
+                                            <td class="px-6 py-4 text-center">
+                                                <span class="px-3 py-1 font-mono font-bold text-xs rounded-lg ${p.stock <= 15 ? 'bg-rose-950/50 border border-rose-900 text-rose-400 animate-pulse' : 'bg-slate-900 text-slate-300 border border-slate-800'}">${p.stock} units</span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right space-x-1">
+                                                <button onclick="state.openProductModal('${p.id}')" class="p-2 text-blue-400 hover:bg-slate-900 rounded-lg transition"><i class="fas fa-edit"></i></button>
+                                                <button onclick="state.deleteProduct('${p.id}')" class="p-2 text-rose-400 hover:bg-slate-900 rounded-lg transition"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="product-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative">
+                            <button onclick="state.closeProductModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
+                            <h3 id="prod-modal-title" class="text-base font-bold text-white mb-4">Modify Catalog Schema</h3>
+                            
+                            <form id="prod-form" onsubmit="event.preventDefault(); state.submitProductForm();" class="space-y-4">
+                                <input type="hidden" id="prod-id">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Product Master Title Name:</label>
+                                    <input type="text" id="prod-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-200">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">SKU Ident Code Matrix:</label>
+                                        <input type="text" id="prod-sku" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">System Catalog Category Grouping:</label>
+                                        <input type="text" id="prod-category" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-200">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Retail Price Debit:</label>
+                                        <input type="number" step="0.01" id="prod-price" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cost Parameter Acquisition:</label>
+                                        <input type="number" step="0.01" id="prod-cost" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Inventory Allocation:</label>
+                                        <input type="number" id="prod-stock" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
+                                    </div>
+                                </div>
+                                <div class="flex justify-end gap-3 border-t border-slate-800/60 pt-4 mt-6">
+                                    <button type="button" onclick="state.closeProductModal()" class="px-4 py-2.5 bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 rounded-xl text-xs font-bold transition uppercase tracking-wider">Cancel</button>
+                                    <button type="submit" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition uppercase tracking-wider shadow-lg shadow-blue-600/10">Commit Records</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            openProductModal(id = null) {
+                const modal = document.getElementById("product-modal");
+                const form = document.getElementById("prod-form");
+                const title = document.getElementById("prod-modal-title");
+                
+                form.reset();
+                document.getElementById("prod-id").value = "";
+
+                if (id) {
+                    title.innerText = "Edit Catalog Product Entity Record";
+                    const p = db.get("products").find(prod => prod.id === id);
+                    if (p) {
+                        document.getElementById("prod-id").value = p.id;
+                        document.getElementById("prod-name").value = p.name;
+                        document.getElementById("prod-sku").value = p.sku;
+                        document.getElementById("prod-category").value = p.category;
+                        document.getElementById("prod-price").value = p.price;
+                        document.getElementById("prod-cost").value = p.cost;
+                        document.getElementById("prod-stock").value = p.stock;
+                    }
+                } else {
+                    title.innerText = "Inject New Product Entity Configuration";
+                }
+                modal.classList.remove("hidden");
+            }
+
+            closeProductModal() {
+                document.getElementById("product-modal").classList.add("hidden");
+            }
+
+            submitProductForm() {
+                const pData = {
+                    id: document.getElementById("prod-id").value || null,
+                    name: document.getElementById("prod-name").value,
+                    sku: document.getElementById("prod-sku").value,
+                    category: document.getElementById("prod-category").value,
+                    price: parseFloat(document.getElementById("prod-price").value),
+                    cost: parseFloat(document.getElementById("prod-cost").value),
+                    stock: parseInt(document.getElementById("prod-stock").value)
+                };
+                this.saveProduct(pData);
+                this.closeProductModal();
+            }
+
+            //------------------------------------------------------------------------
+            // CONTAINER MODULE VIEW 4: CONSUMER CRM LOYALTY ARCHITECTURES
+            //------------------------------------------------------------------------
+            viewCustomers() {
+                const customers = db.get("customers");
+                return `
+                    <div class="h-full flex flex-col overflow-hidden p-6 space-y-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-950 p-4 border border-slate-800 rounded-2xl shadow-sm flex-shrink-0">
+                            <div>
+                                <h3 class="text-base font-bold text-white">CRM Engagement Loyalty Core Node</h3>
+                                <p class="text-xs text-slate-400">Track structural consumer lifetimes value data streams and reward metrics</p>
+                            </div>
+                            <button onclick="state.openCustomerModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-blue-600/10 uppercase tracking-wider"><i class="fas fa-user-plus"></i>Provision CRM Record</button>
+                        </div>
+
+                        <div class="flex-1 overflow-auto border border-slate-800 bg-slate-950/20 rounded-2xl">
+                            <table class="w-full border-collapse text-left text-sm text-slate-300">
+                                <thead class="bg-slate-950 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 border-b border-slate-800">
+                                    <tr>
+                                        <th class="px-6 py-4">Customer Designation</th>
+                                        <th class="px-6 py-4">Phone String</th>
+                                        <th class="px-6 py-4">Secure Email Account</th>
+                                        <th class="px-6 py-4 text-right">Lifetime Aggregate Value</th>
+                                        <th class="px-6 py-4 text-center">Loyalty Metric Points</th>
+                                        <th class="px-6 py-4 text-center">Tier Configuration Status</th>
+                                        <th class="px-6 py-4 text-right">Operations</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/60 font-medium">
+                                    ${customers.map(c => {
+                                        const tier = c.spend >= 1000 ? 'Gold Elite Tier' : (c.spend >= 300 ? 'Silver Preferred' : 'Base Consumer Member');
+                                        const tierClass = c.spend >= 1000 ? 'bg-amber-950 border-amber-800 text-amber-400' : (c.spend >= 300 ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-900 border-slate-800 text-slate-400');
+                                        return `
+                                            <tr class="hover:bg-slate-900/40 transition">
+                                                <td class="px-6 py-4 font-bold text-slate-200">${c.name}</td>
+                                                <td class="px-6 py-4 font-mono text-xs text-slate-400">${c.phone}</td>
+                                                <td class="px-6 py-4 text-slate-400 font-normal">${c.email}</td>
+                                                <td class="px-6 py-4 text-right font-mono font-bold text-slate-200">${this.globalSettings.currencySymbol}${c.spend.toFixed(2)}</td>
+                                                <td class="px-6 py-4 text-center font-mono font-bold text-blue-400">${c.points} pts</td>
+                                                <td class="px-6 py-4 text-center">
+                                                    <span class="px-2.5 py-1 border rounded-md text-[10px] font-bold uppercase tracking-wider ${tierClass}">${tier}</span>
+                                                </td>
+                                                <td class="px-6 py-4 text-right">
+                                                    <button onclick="state.openCustomerModal('${c.id}')" class="p-2 text-blue-400 hover:bg-slate-900 rounded-lg transition"><i class="fas fa-edit"></i></button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="customer-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+                            <button onclick="state.closeCustomerModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
+                            <h3 id="cust-modal-title" class="text-base font-bold text-white mb-4">Modify CRM User Map Node</h3>
+                            
+                            <form id="cust-form" onsubmit="event.preventDefault(); state.submitCustomerForm();" class="space-y-4">
+                                <input type="hidden" id="cust-id">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Full Legal Consumer Identification Name:</label>
+                                    <input type="text" id="cust-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-200">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mobile Communication Terminal Phone String:</label>
+                                    <input type="tel" id="cust-phone" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Account Communication Routing Electronic Mail:</label>
+                                    <input type="email" id="cust-email" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-200">
+                                </div>
+                                <div class="flex justify-end gap-3 border-t border-slate-800/60 pt-4 mt-6">
+                                    <button type="button" onclick="state.closeCustomerModal()" class="px-4 py-2.5 bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 rounded-xl text-xs font-bold transition uppercase tracking-wider">Cancel</button>
+                                    <button type="submit" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition uppercase tracking-wider shadow-lg shadow-blue-600/10">Lock Record</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            openCustomerModal(id = null) {
+                const modal = document.getElementById("customer-modal");
+                const form = document.getElementById("cust-form");
+                const title = document.getElementById("cust-modal-title");
+                form.reset();
+                document.getElementById("cust-id").value = "";
+
+                if (id) {
+                    title.innerText = "Edit CRM Account Framework Context";
+                    const c = db.get("customers").find(cust => cust.id === id);
+                    if (c) {
+                        document.getElementById("cust-id").value = c.id;
+                        document.getElementById("cust-name").value = c.name;
+                        document.getElementById("cust-phone").value = c.phone;
+                        document.getElementById("cust-email").value = c.email;
+                    }
+                } else {
+                    title.innerText = "Provision Fresh Core CRM Registry Node";
+                }
+                modal.classList.remove("hidden");
+            }
+
+            closeCustomerModal() { document.getElementById("customer-modal").classList.add("hidden"); }
+
+            submitCustomerForm() {
+                const cData = {
+                    id: document.getElementById("cust-id").value || null,
+                    name: document.getElementById("cust-name").value,
+                    phone: document.getElementById("cust-phone").value,
+                    email: document.getElementById("cust-email").value
+                };
+                this.saveCustomer(cData);
+                this.closeCustomerModal();
+            }
+
+            //------------------------------------------------------------------------
+            // CONTAINER MODULE VIEW 5: HUMAN RESOURCES TIMECARDS SUBVIEW PANES
+            //------------------------------------------------------------------------
+            viewEmployees() {
+                const employees = db.get("employees");
+                const timecards = db.get("timecards");
+                return `
+                    <div class="h-full flex flex-col overflow-hidden p-6 space-y-6">
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-4">
+                            <div class="flex justify-between items-center border-b border-slate-800/60 pb-3">
+                                <div>
+                                    <h3 class="text-base font-bold text-white">Corporate Enterprise Staff Deployment Manifest</h3>
+                                    <p class="text-xs text-slate-400">Manage user clearance tiers, hourly financial allocations, and access pin security arrays</p>
+                                </div>
+                                <button onclick="state.openEmployeeModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-blue-600/10 uppercase tracking-wider"><i class="fas fa-user-plus"></i>Onboard Employee Node</button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                ${employees.map(e => `
+                                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center font-bold text-base">${e.name.charAt(0)}</div>
+                                            <div>
+                                                <h4 class="text-sm font-bold text-slate-200">${e.name}</h4>
+                                                <p class="text-[11px] font-semibold text-slate-400 flex items-center gap-2">
+                                                    <span class="text-blue-400 uppercase tracking-wider">${e.role}</span>
+                                                    <span>•</span>
+                                                    <span class="font-mono">${this.globalSettings.currencySymbol}${e.wage.toFixed(2)}/hr</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button onclick="state.openEmployeeModal('${e.id}')" class="p-2 text-slate-500 hover:text-blue-400 transition"><i class="fas fa-cog"></i></button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="flex-1 flex flex-col overflow-hidden bg-slate-950 border border-slate-800 rounded-2xl shadow-sm">
+                            <div class="p-4 border-b border-slate-800 bg-slate-950/40">
+                                <h3 class="text-base font-bold text-white">Shift Tracking Verification Ledger &amp; Auditing Matrix</h3>
+                                <p class="text-xs text-slate-400">Authorize, modify, or recalculate parameters for payroll distribution architectures</p>
+                            </div>
+                            <div class="flex-1 overflow-auto">
+                                <table class="w-full border-collapse text-left text-sm text-slate-300">
+                                    <thead class="bg-slate-950 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 sticky top-0">
+                                        <tr>
+                                            <th class="px-6 py-4">Onboarded Resource Name</th>
+                                            <th class="px-6 py-4">Clock-In Event Timestamp</th>
+                                            <th class="px-6 py-4">Clock-Out Event Timestamp</th>
+                                            <th class="px-6 py-4 text-center">Total Computed Hours</th>
+                                            <th class="px-6 py-4 text-center">Auditing Verification Status</th>
+                                            <th class="px-6 py-4 text-right">Verification Commit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800/60 font-medium">
+                                        ${timecards.length === 0 ? `
+                                            <tr><td colspan="6" class="px-6 py-12 text-center text-slate-600 font-semibold"><i class="fas fa-history text-3xl mb-2 block opacity-30"></i>No employee operational shifts logged in timecard system storage.</td></tr>
+                                        ` : timecards.map(t => {
+                                            const hrs = t.clockOut ? ((new Date(t.clockOut) - new Date(t.clockIn)) / (1000 * 60 * 60)).toFixed(2) : 'Active Loop';
+                                            return `
+                                                <tr class="hover:bg-slate-900/40 transition">
+                                                    <td class="px-6 py-4 font-bold text-slate-200">${t.employeeName}</td>
+                                                    <td class="px-6 py-4 font-mono text-xs text-slate-400">${new Date(t.clockIn).toLocaleString()}</td>
+                                                    <td class="px-6 py-4 font-mono text-xs text-slate-400">${t.clockOut ? new Date(t.clockOut).toLocaleString() : '<span class="text-emerald-400 font-semibold animate-pulse uppercase tracking-wider text-[10px] bg-emerald-950/40 border border-emerald-900 px-2 py-0.5 rounded">Active Shift</span>'}</td>
+                                                    <td class="px-6 py-4 text-center font-mono font-bold text-slate-300">${hrs}</td>
+                                                    <td class="px-6 py-4 text-center">
+                                                        <span class="px-2.5 py-1 text-[10px] border font-bold uppercase tracking-wider rounded-md ${t.approved ? 'bg-emerald-950 border-emerald-800 text-emerald-400' : 'bg-amber-950 border-amber-900 text-amber-500 animate-pulse'}">
+                                                            ${t.approved ? 'Approved Asset' : 'Pending Audit'}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 text-right">
+                                                        ${!t.approved && t.clockOut ? `<button onclick="state.approveShift('${t.id}')" class="px-3 py-1.5 bg-slate-800 border border-slate-700 text-emerald-400 font-bold hover:bg-slate-700 rounded-lg text-xs transition uppercase tracking-wider"><i class="fas fa-check-double mr-1"></i>Verify</button>` : '<i class="fas fa-circle-check text-slate-600 text-base mr-3"></i>'}
+                                                    </td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="employee-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+                            <button onclick="state.closeEmployeeModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
+                            <h3 id="emp-modal-title" class="text-base font-bold text-white mb-4">Modify HR Roster Entity Node</h3>
+                            
+                            <form id="emp-form" onsubmit="event.preventDefault(); state.submitEmployeeForm();" class="space-y-4">
+                                <input type="hidden" id="emp-id">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Full Legal Employee Designation Name:</label>
+                                    <input type="text" id="emp-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-200">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Authentication Core Pass Code PIN:</label>
+                                        <input type="password" id="emp-pin" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono tracking-widest outline-none focus:border-blue-500 text-slate-200">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Security Access Level Cleared Role:</label>
+                                        <select id="emp-role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-400">
+                                            <option value="Cashier">Cashier Access Tier</option>
+                                            <option value="Manager">Manager Override Tier</option>
+                                            <option value="Admin">Admin Full Stack Root</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Compensation Allocation Base Scale (USD/HR):</label>
+                                    <input type="number" step="0.01" id="emp-wage" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
+                                </div>
+                                <div class="flex justify-end gap-3 border-t border-slate-800/60 pt-4 mt-6">
+                                    <button type="button" onclick="state.closeEmployeeModal()" class="px-4 py-2.5 bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 rounded-xl text-xs font-bold transition uppercase tracking-wider">Cancel</button>
+                                    <button type="submit" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition uppercase tracking-wider shadow-lg shadow-blue-600/10">Commit Token</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            openEmployeeModal(id = null) {
+                const modal = document.getElementById("employee-modal");
+                const form = document.getElementById("emp-form");
+                const title = document.getElementById("emp-modal-title");
+                form.reset();
+                document.getElementById("emp-id").value = "";
+
+                if (id) {
+                    title.innerText = "Edit Operational Staff Parameter Architecture";
+                    const e = db.get("employees").find(emp => emp.id === id);
+                    if (e) {
+                        document.getElementById("emp-id").value = e.id;
+                        document.getElementById("emp-name").value = e.name;
+                        document.getElementById("emp-pin").value = e.pin;
+                        document.getElementById("emp-role").value = e.role;
+                        document.getElementById("emp-wage").value = e.wage;
+                    }
+                } else {
+                    title.innerText = "Provision Fresh Human Capital Asset Matrix Profile";
+                }
+                modal.classList.remove("hidden");
+            }
+
+            closeEmployeeModal() { document.getElementById("employee-modal").classList.add("hidden"); }
+
+            submitEmployeeForm() {
+                const eData = {
+                    id: document.getElementById("emp-id").value || null,
+                    name: document.getElementById("emp-name").value,
+                    pin: document.getElementById("emp-pin").value,
+                    role: document.getElementById("emp-role").value,
+                    wage: parseFloat(document.getElementById("emp-wage").value)
+                };
+                this.saveEmployee(eData);
+                this.closeEmployeeModal();
+            }
+
+            approveShift(id) {
+                const tcs = db.get("timecards");
+                const target = tcs.find(t => t.id === id);
+                if (target) {
+                    this.updateTimecard(id, target.clockIn, target.clockOut, true);
+                }
+            }
+
+            //------------------------------------------------------------------------
+            // CONTAINER MODULE VIEW 6: CORPORATE ANALYTICS BUSINESS REPORT PANES
+            //------------------------------------------------------------------------
+            viewReporting() {
+                const txs = db.get("transactions");
+                const prods = db.get("products");
+                
+                // Aggregate core absolute fiscal stats variables
+                let grossRevenue = 0;
+                let totalCost = 0;
+                txs.forEach(t => {
+                    grossRevenue += t.total;
+                    t.items.forEach(i => {
+                        const originalProd = prods.find(p => p.id === i.id);
+                        const c = originalProd ? originalProd.cost : (i.price * 0.4); 
+                        totalCost += (c * i.quantity);
+                    });
+                });
+                const netProfit = grossRevenue - totalCost;
+                const avgTicket = txs.length ? (grossRevenue / txs.length) : 0;
+
+                return `
+                    <div class="h-full flex flex-col overflow-hidden p-6 space-y-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 flex-shrink-0">
+                            ${this.kpiCard("Gross Revenue Run Rate", grossRevenue, "fa-wallet", "text-blue-500", true)}
+                            ${this.kpiCard("Net Margin Operating Profit", netProfit, "fa-chart-line", "text-emerald-500", true)}
+                            ${this.kpiCard("Transaction Loops Logs", txs.length, "fa-receipt", "text-amber-500", false)}
+                            ${this.kpiCard("Average Ticket Yield Metrics", avgTicket, "fa-basket-shopping", "text-indigo-500", true)}
+                        </div>
+
+                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 flex-shrink-0">
+                            <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl shadow-sm">
+                                <h4 class="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider">Gross Transaction Ingestion Velocity (7 Elapsed Days)</h4>
+                                <div class="h-64 relative"><canvas id="chart-sales-trend"></canvas></div>
+                            </div>
+                            <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl shadow-sm">
+                                <h4 class="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider">High Volume Velocity Catalog Distribution Products</h4>
+                                <div class="h-64 relative"><canvas id="chart-top-products"></canvas></div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 flex flex-col overflow-hidden bg-slate-950 border border-slate-800 rounded-2xl shadow-sm">
+                            <div class="p-4 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-950/40">
+                                <div>
+                                    <h4 class="text-base font-bold text-white">Full Auditing Transaction Transactionary Data Stream</h4>
+                                    <p class="text-xs text-slate-400">Complete multi-layered sequence history records for node reconciliation pipelines</p>
+                                </div>
+                                <button onclick="state.exportCSV()" class="px-4 py-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 uppercase tracking-wider"><i class="fas fa-file-csv text-emerald-500"></i>Export Data stream</button>
+                            </div>
+                            <div class="flex-1 overflow-auto">
+                                <table class="w-full border-collapse text-left text-sm text-slate-300">
+                                    <thead class="bg-slate-950 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 sticky top-0">
+                                        <tr>
+                                            <th class="px-6 py-4">Transaction Token</th>
+                                            <th class="px-6 py-4">Execution Time</th>
+                                            <th class="px-6 py-4">Node Operator Context</th>
+                                            <th class="px-6 py-4">CRM Consumer Anchor</th>
+                                            <th class="px-6 py-4 text-center">Routing Engine Gateway</th>
+                                            <th class="px-6 py-4 text-right">Debit Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800/60 font-medium font-mono text-xs text-slate-400">
+                                        ${txs.map(t => `
+                                            <tr class="hover:bg-slate-900/40 transition">
+                                                <td class="px-6 py-4 font-bold text-slate-200">${t.id}</td>
+                                                <td class="px-6 py-4">${new Date(t.timestamp).toLocaleString()}</td>
+                                                <td class="px-6 py-4 font-sans text-sm font-semibold text-slate-300">${t.employeeName}</td>
+                                                <td class="px-6 py-4 font-sans text-sm text-slate-400">${t.customerName}</td>
+                                                <td class="px-6 py-4 text-center"><span class="px-2 py-0.5 border rounded bg-slate-900 border-slate-800 font-sans font-bold text-[10px] uppercase tracking-wider text-slate-300">${t.paymentMethod}</span></td>
+                                                <td class="px-6 py-4 text-right text-sm font-bold text-emerald-400">${this.globalSettings.currencySymbol}${t.total.toFixed(2)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            kpiCard(title, val, icon, color, isCurrency) {
+                return `
+                    <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl flex items-center justify-between shadow-sm">
+                        <div class="space-y-1">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">${title}</span>
+                            <span class="text-2xl font-black text-white font-mono tracking-tight">${isCurrency ? this.globalSettings.currencySymbol : ''}${typeof val === 'number' ? val.toLocaleString([], {minimumFractionDigits: isCurrency ? 2 : 0, maximumFractionDigits: isCurrency ? 2 : 0}) : val}</span>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xl ${color}"><i class="fas ${icon}"></i></div>
+                    </div>
+                `;
+            }
+
+            //------------------------------------------------------------------------
+            // CONTAINER MODULE VIEW 7: BACKEND STACK ADMIN DESIGN PARAMETERS
+            //------------------------------------------------------------------------
+            viewSettings() {
+                return `
+                    <div class="h-full overflow-y-auto p-6 max-w-4xl mx-auto space-y-6">
+                        <div class="bg-slate-950 border border-slate-800 p-6 rounded-2xl space-y-6">
+                            <div>
+                                <h3 class="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2"><i class="fas fa-sliders text-blue-500"></i>Global Operational Configuration Variables</h3>
+                                <p class="text-xs text-slate-400 mt-1">Configure foundational retail data schemas and localization values</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Store Node Branding Label:</label>
+                                    <input type="text" id="set-store-name" value="${this.globalSettings.storeName}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500 text-slate-200">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fiscal Tax Rate Parameter Matrix (%):</label>
+                                    <input type="number" step="0.001" id="set-tax-rate" value="${this.globalSettings.taxRate}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Localization Currency Structural Symbol:</label>
+                                    <input type="text" id="set-currency" value="${this.globalSettings.currencySymbol}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-mono outline-none focus:border-blue-500 text-slate-200">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Receipt Output Static Message String:</label>
+                                    <input type="text" id="set-footer" value="${this.globalSettings.receiptFooter}" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500 text-slate-200">
+                                </div>
+                            </div>
+                            <div class="flex justify-end border-t border-slate-800/60 pt-4 mt-2">
+                                <button onclick="state.saveGlobalSettings()" class="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition uppercase tracking-wider shadow-lg shadow-blue-600/10"><i class="fas fa-floppy-disk mr-2"></i>Lock Variable Layout Configs</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950 border border-rose-950 p-6 rounded-2xl space-y-4">
+                            <div>
+                                <h3 class="text-base font-bold text-rose-400 flex items-center gap-2"><i class="fas fa-triangle-exclamation text-rose-500"></i>Data Core Integrity &amp; Destructive Pipeline Zone</h3>
+                                <p class="text-xs text-rose-900/80 mt-1">Nuke or hard reset transactional states back to default seed matrices</p>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">Executing hard database re-seeds will flush all customized inventory lists, recorded payroll timecards, newly registered customer profiles, and transaction streams, replacing them with default sample metrics data structures over 30 days of historical operational logs.</p>
+                            <div class="flex flex-wrap gap-3 pt-2">
+                                <button onclick="state.resetDatabase()" class="px-4 py-2.5 bg-rose-950/40 border border-rose-900/60 text-rose-400 hover:bg-rose-900/30 rounded-xl text-xs font-bold transition uppercase tracking-wider"><i class="fas fa-database mr-2"></i>Flush &amp; Re-Seed Database Node</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            saveGlobalSettings() {
+                const s = {
+                    storeName: document.getElementById("set-store-name").value,
+                    taxRate: parseFloat(document.getElementById("set-tax-rate").value),
+                    currencySymbol: document.getElementById("set-currency").value,
+                    receiptFooter: document.getElementById("set-footer").value
+                };
+                db.set("settings", s);
+                this.globalSettings = s;
+                this.showToast("Global system operational configurations modified.");
+                this.render();
+            }
+
+            //------------------------------------------------------------------------
+            // VISUAL DYNAMIC MODAL DRAWER FRAME: FINALIZE CHECKOUT WORKFLOW
+            //------------------------------------------------------------------------
+            templateCheckoutModal() {
+                const { total } = this.getTotals();
+                return `
+                    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+                            <button onclick="state.closeCheckout()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg transition"><i class="fas fa-times"></i></button>
+                            <h3 class="text-lg font-black text-white mb-2 flex items-center gap-2"><i class="fas fa-cash-register text-emerald-500"></i>Ingest Gateway Protocol</h3>
+                            <p class="text-xs text-slate-400 mb-6">Select transaction execution routing path for processing debit loop</p>
+                            
+                            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center mb-6">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Required Tender Value Due:</span>
+                                <span class="text-3xl font-black text-emerald-400 font-mono">${this.globalSettings.currencySymbol}${total.toFixed(2)}</span>
+                            </div>
+
+                            <div class="space-y-3">
+                                <button onclick="state.processCheckout('Card')" class="w-full p-4 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-xl flex items-center justify-between transition text-left group">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-blue-950 border border-blue-900/60 flex items-center justify-center text-blue-400"><i class="fas fa-credit-card"></i></div>
+                                        <div>
+                                            <h4 class="text-sm font-bold text-slate-200">Integrated Terminal Card Node</h4>
+                                            <p class="text-[11px] text-slate-400">EMV / NFC Merchant Ledger Sync</p>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-slate-600 group-hover:text-slate-400 transition"></i>
+                                </button>
+
+                                <button onclick="state.processCheckout('Cash')" class="w-full p-4 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-xl flex items-center justify-between transition text-left group">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-emerald-950 border border-emerald-900/60 flex items-center justify-center text-emerald-400"><i class="fas fa-money-bill-wave"></i></div>
+                                        <div>
+                                            <h4 class="text-sm font-bold text-slate-200">Physical Cash Tender Process</h4>
+                                            <p class="text-[11px] text-slate-400">Triggers absolute hardware drawer kickout</p>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-slate-600 group-hover:text-slate-400 transition"></i>
+                                </button>
+
+                                <button onclick="state.processCheckout('Rewards')" ${(!this.selectedCustomer || this.selectedCustomer.points < Math.floor(total * 10)) ? 'disabled' : ''} class="w-full p-4 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 disabled:opacity-40 disabled:pointer-events-none rounded-xl flex items-center justify-between transition text-left group">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-amber-950 border border-amber-900/60 flex items-center justify-center text-amber-400"><i class="fas fa-star"></i></div>
+                                        <div>
+                                            <h4 class="text-sm font-bold text-slate-200">Redeem Consumer Loyalty Points</h4>
+                                            <p class="text-[11px] text-slate-400">Requires balance equivalent: ${Math.floor(total * 10)} pts</p>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-slate-600 group-hover:text-slate-400 transition"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            //------------------------------------------------------------------------
+            // VISUAL DYNAMIC MODAL DRAWER FRAME: RETAIL RECEIPT PREVIEW ARTIFACTS
+            //------------------------------------------------------------------------
+            templateReceiptModal() {
+                if (!this.lastTransaction) return ``;
+                return `
+                    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+                            <h3 class="text-center font-bold text-xs text-slate-500 uppercase tracking-widest"><i class="fas fa-circle-check text-emerald-500 mr-1"></i> Transaction Ledger Committed</h3>
+                            
+                            <div class="bg-white text-slate-950 p-6 rounded-xl font-mono text-xs shadow-inner space-y-4 select-text">
+                                <div class="text-center border-b border-dashed border-slate-300 pb-3">
+                                    <h4 class="font-black text-sm uppercase tracking-tight">${this.globalSettings.storeName}</h4>
+                                    <p class="text-[10px] text-slate-500 mt-0.5">Terminal Node ID: ${this.lastTransaction.id}</p>
+                                    <p class="text-[10px] text-slate-500">${new Date(this.lastTransaction.timestamp).toLocaleString()}</p>
+                                </div>
+
+                                <div class="space-y-1 text-[11px]">
+                                    <p><strong>Operator Token:</strong> ${this.lastTransaction.employeeName}</p>
+                                    <p><strong>CRM Consumer Anchor:</strong> ${this.lastTransaction.customerName}</p>
+                                    <p><strong>Routing Gateway:</strong> ${this.lastTransaction.paymentMethod}</p>
+                                </div>
+
+                                <div class="border-b border-t border-dashed border-slate-300 py-2 my-2 space-y-2">
+                                    ${this.lastTransaction.items.map(i => `
+                                        <div class="flex justify-between items-start">
+                                            <div class="max-w-[180px]">
+                                                <p class="font-bold truncate">${i.name}</p>
+                                                <p class="text-[10px] text-slate-500">Qty ${i.quantity} @ ${this.globalSettings.currencySymbol}${i.price.toFixed(2)}</p>
+                                                ${i.discount > 0 ? `<p class="text-[10px] text-rose-600 font-bold">-Markdown: ${this.globalSettings.currencySymbol}${i.discount.toFixed(2)}</p>` : ''}
+                                            </div>
+                                            <span class="font-bold">${this.globalSettings.currencySymbol}${((i.price * i.quantity) - i.discount).toFixed(2)}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+
+                                <div class="space-y-1 text-right text-[11px] font-bold">
+                                    <div class="flex justify-between"><span>SUBTOTAL FLUSH:</span><span>${this.globalSettings.currencySymbol}${this.lastTransaction.subtotal.toFixed(2)}</span></div>
+                                    <div class="flex justify-between"><span>TAX INGESTION ARTIFACT:</span><span>${this.globalSettings.currencySymbol}${this.lastTransaction.tax.toFixed(2)}</span></div>
+                                    <div class="flex justify-between text-sm font-black border-t border-slate-200 pt-1 mt-1"><span>TOTAL CAPTURED:</span><span>${this.globalSettings.currencySymbol}${this.lastTransaction.total.toFixed(2)}</span></div>
+                                </div>
+
+                                <div class="text-center border-t border-dashed border-slate-300 pt-3 mt-4 text-[10px] text-slate-500 font-sans font-medium leading-relaxed">
+                                    <p>${this.globalSettings.receiptFooter}</p>
+                                    <p class="mt-1 text-[9px] font-mono uppercase tracking-wider">Aegis OS Cryptographic Signature Verified</p>
+                                </div>
+                            </div>
+
+                            <button onclick="state.receiptModalOpen=false; state.render();" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition uppercase tracking-wider">Dismiss Terminal Workspace Panel</button>
+                        </div>
+                    </div>
+                `;
+            }
         }
 
-        function checkoutOrder() {
-            if (activeCart.length === 0) return;
-            const activeTotalString = document.getElementById('calc-total').innerText;
-            const absoluteTotalNumeric = parseFloat(activeTotalString.replace('$', ''));
+        // Boot and bind initial application runtime instance
+        const state = new StateMachine();
+        state.render();
 
-            runningSalesTotal += absoluteTotalNumeric;
-            localStorage.setItem('pos_running_sales', runningSalesTotal.toString());
-
-            alert(`Sale Finalized Successfully!\nProcessed Charge Amount: ${activeTotalString}`);
-            clearActiveOrder();
-            refreshHistoricalDisplay();
-        }
-
-        function refreshHistoricalDisplay() {
-            document.getElementById('live-sales-tracker').innerText = `Today's Sales: $${runningSalesTotal.toFixed(2)}`;
-        }
+        // Establish core ticks for synchronous interface rendering pipelines
+        setInterval(() => state.updateLiveClock(), 30000);
     </script>
 </body>
 </html>
