@@ -20,35 +20,45 @@ const LoginView = {
     },
 
     // Process user interaction submission events
-    async handleLoginSubmit() {
+        async handleLoginSubmit() {
+        console.log("Stage 1: Login triggered.");
+        
         let numField = document.getElementById("login-emp-num");
         let passField = document.getElementById("login-emp-pass");
         
-        if (!numField || !passField) return;
-        
+        if (!numField || !passField) {
+            alert("Error: Input fields not found.");
+            return;
+        }
+
         let inputNum = numField.value.trim();
         let inputPass = passField.value;
+        console.log("Stage 2: Inputs captured: " + inputNum);
 
-        // Fail-safe collection boundary checking arrays
-        if (!state.dbCache.employees) state.dbCache.employees = [];
-        
-        // Match user properties metrics keys
+        // Check if employees cache is loaded
+        if (!state || !state.dbCache || !state.dbCache.employees) {
+            alert("Error: Database cache not loaded yet.");
+            return;
+        }
+
+        console.log("Stage 3: Attempting to find user in cache...");
         let matchedUser = state.dbCache.employees.find(e => e.employeeNum === inputNum);
         
         if (!matchedUser) {
-            alert("Authentication Rejected: The provided employee number cannot be found inside active database charts.");
+            alert("Error: Employee ID not found.");
             return;
         }
-        
-        if (matchedUser.status !== "active") {
-            alert(`Account Restrained: Login blocked. This profile currently holds an explicit status of: ${matchedUser.status.toUpperCase()}.`);
-            return;
-        }
-        
+
+        console.log("Stage 4: User found. Checking password...");
         if (matchedUser.password !== inputPass) {
-            alert("Security Mismatch: The entry password password credential supplied is incorrect.");
+            alert("Error: Incorrect password.");
             return;
         }
+
+        console.log("Stage 5: Success! Routing to dashboard.");
+        state.activeEmployee = matchedUser;
+        AppRouter.navigateTo('view-home');
+    }
         
         // Establish active session token boundaries configurations
         state.activeEmployee = matchedUser;
