@@ -81,7 +81,7 @@
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-1">Password</label>
                         <input type="password" id="login-emp-pass" placeholder="6-15 Characters" class="w-full px-4 py-3 bg-gray-100 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue text-lg">
                     </div>
-                    <button onclick="handleLogin()" class="w-full bg-iosBlue text-white py-3 font-semibold rounded-xl active:opacity-80 transition text-lg mt-2 shadow-sm">Sign In</button>
+                    <button onclick="LoginView.handleLoginSubmit()" class="w-full bg-iosBlue text-white py-3 font-semibold rounded-xl text-lg mt-2 shadow-sm transition active:scale-98">Sign In</button>
                 </div>
             </div>
             
@@ -109,7 +109,7 @@
                     <div id="header-user" class="font-semibold text-sm">Not Logged In</div>
                     <div id="header-datetime" class="text-xs text-gray-500">MM/DD/YYYY --:--</div>
                 </div>
-                <button onclick="handleLogout()" class="bg-iosRed/10 hover:bg-iosRed/20 text-iosRed p-2.5 rounded-full transition active:scale-95">
+                <button onclick="LoginView.handleLogoutRequest()" class="bg-iosRed/10 hover:bg-iosRed/20 text-iosRed p-2.5 rounded-full transition active:scale-95">
                     <i data-lucide="log-out" class="w-5 h-5"></i>
                 </button>
             </div>
@@ -128,78 +128,70 @@
                             <p class="text-xs text-gray-500">Ensure the active Register Till is systematically counted before initializing any customer transactions.</p>
                         </div>
                     </div>
-                    <span class="text-xs text-gray-400 font-medium">Just Now</span>
                 </div>
 
                 <div class="grid grid-cols-3 gap-5">
-                    <button onclick="navigateTo('view-register')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                    <button onclick="AppRouter.navigateTo('view-register')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
                         <div class="bg-iosBlue text-white p-3 rounded-xl"><i data-lucide="calculator" class="w-6 h-6"></i></div>
                         <div>
                             <h3 class="font-bold text-lg">Sales Register</h3>
                             <p class="text-xs text-gray-400 mt-1">Process checkouts, scan items, and run transactions.</p>
                         </div>
                     </button>
-                    <button onclick="openPriceInquiryModal()" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                    <button onclick="RegisterView.openPriceInquiryModal()" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
                         <div class="bg-purple-500 text-white p-3 rounded-xl"><i data-lucide="tag" class="w-6 h-6"></i></div>
                         <div>
                             <h3 class="font-bold text-lg">Price Inquiry</h3>
                             <p class="text-xs text-gray-400 mt-1">Verify SKU properties, real-time inventory levels, and variants.</p>
                         </div>
                     </button>
-                    <button onclick="triggerDisabledFeatureAlert('BOPIS')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                    <button onclick="AppRouter.triggerDisabledFeatureAlert('BOPIS')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
                         <div class="bg-orange-500 text-white p-3 rounded-xl"><i data-lucide="package-check" class="w-6 h-6"></i></div>
                         <div>
                             <h3 class="font-bold text-lg">BOPIS</h3>
                             <p class="text-xs text-gray-400 mt-1">Buy Online, Pick Up In Store management console.</p>
                         </div>
                     </button>
-                    <button onclick="navigateTo('view-customer-mgmt')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                    <button onclick="AppRouter.navigateTo('view-customer-mgmt')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
                         <div class="bg-iosGreen text-white p-3 rounded-xl"><i data-lucide="users" class="w-6 h-6"></i></div>
                         <div>
                             <h3 class="font-bold text-lg">Customer Account Management</h3>
                             <p class="text-xs text-gray-400 mt-1">Enroll customers, look up ledger accounts, check point totals.</p>
                         </div>
                     </button>
-                    <button onclick="openTimeClockModal()" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                    <button onclick="EmployeeView.openTimeClockModal()" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
                         <div class="bg-cyan-500 text-white p-3 rounded-xl"><i data-lucide="clock" class="w-6 h-6"></i></div>
                         <div>
                             <h3 class="font-bold text-lg">Time Clock</h3>
-                            <p class="text-xs text-gray-400 mt-1">Clock in/out, view working time cards, and preview gross payroll projections.</p>
+                            <p class="text-xs text-gray-400 mt-1">Clock in/out, view working time cards, and preview payroll calculations.</p>
                         </div>
                     </button>
-                    <button onclick="requireManagerAuth('view-employee-mgmt')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left relative overflow-hidden">
+                    <button onclick="AppRouter.requireManagerAuth('view-employee-mgmt')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left overflow-hidden">
                         <div class="bg-pink-500 text-white p-3 rounded-xl"><i data-lucide="shield-user" class="w-6 h-6"></i></div>
                         <div>
                             <h3 class="font-bold text-lg flex items-center gap-1.5">Employee Management <i data-lucide="lock" class="w-4 h-4 text-iosGray"></i></h3>
-                            <p class="text-xs text-gray-400 mt-1">Hire, terminate, modify profiles, audit employee discount files.</p>
+                            <p class="text-xs text-gray-400 mt-1">Hire, terminate, modify profiles, audit employee discount logs.</p>
                         </div>
                     </button>
-                    <button onclick="navigateTo('view-inventory-mgmt')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                    <button onclick="AppRouter.navigateTo('view-inventory-mgmt')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
                         <div class="bg-amber-500 text-white p-3 rounded-xl"><i data-lucide="boxes" class="w-6 h-6"></i></div>
                         <div>
                             <h3 class="font-bold text-lg">Inventory Management</h3>
-                            <p class="text-xs text-gray-400 mt-1">Adjust item balances, catalog variants, structure taxation rules.</p>
+                            <p class="text-xs text-gray-400 mt-1">Adjust item balances, catalog variants, structure taxonomy rules.</p>
                         </div>
                     </button>
-                    <button onclick="requireManagerAuth('view-manage-till')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                    <button onclick="AppRouter.requireManagerAuth('view-manage-till')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
                         <div class="bg-teal-600 text-white p-3 rounded-xl"><i data-lucide="landmark" class="w-6 h-6"></i></div>
                         <div>
                             <h3 class="font-bold text-lg flex items-center gap-1.5">Manage Till <i data-lucide="lock" class="w-4 h-4 text-iosGray"></i></h3>
                             <p class="text-xs text-gray-400 mt-1">Process opening counts, close operations, handle cash drops.</p>
                         </div>
                     </button>
-                    <button onclick="requireManagerAuth('view-system-settings')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                    <button onclick="AppRouter.requireManagerAuth('view-system-settings')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
                         <div class="bg-indigo-600 text-white p-3 rounded-xl"><i data-lucide="sliders" class="w-6 h-6"></i></div>
                         <div>
                             <h3 class="font-bold text-lg flex items-center gap-1.5">System Settings <i data-lucide="lock" class="w-4 h-4 text-iosGray"></i></h3>
-                            <p class="text-xs text-gray-400 mt-1">Access auditing logs, gift card configuration, post voids, metadata tables.</p>
-                        </div>
-                    </button>
-                    <button onclick="triggerDisabledFeatureAlert('Reports')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
-                        <div class="bg-emerald-600 text-white p-3 rounded-xl"><i data-lucide="bar-chart-3" class="w-6 h-6"></i></div>
-                        <div>
-                            <h3 class="font-bold text-lg">Reports Console</h3>
-                            <p class="text-xs text-gray-400 mt-1">Review live gross receipts, margins, and associate metrics.</p>
+                            <p class="text-xs text-gray-400 mt-1">Access auditing logs, gift card databases, post voids, metadata tables.</p>
                         </div>
                     </button>
                 </div>
@@ -209,46 +201,39 @@
                 <div class="w-7/12 h-full bg-white border-r border-gray-200 flex flex-col justify-between">
                     <div class="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
                         <div class="flex items-center space-x-2">
-                            <button onclick="navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1 px-2 py-1 hover:bg-gray-200 rounded-lg transition">
+                            <button onclick="AppRouter.navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1 px-2 py-1 hover:bg-gray-200 rounded-lg transition">
                                 <i data-lucide="chevron-left" class="w-5 h-5"></i> Dashboard
                             </button>
                             <h2 class="font-bold text-lg text-gray-800 ml-2">Current Cart</h2>
                         </div>
                         
                         <div class="relative">
-                            <button onclick="toggleElementVisibility('register-hamburger-menu')" class="bg-gray-200 hover:bg-gray-300 p-2 rounded-xl transition active:scale-95">
+                            <button onclick="AppRouter.toggleVisibility('register-hamburger-menu')" class="bg-gray-200 hover:bg-gray-300 p-2 rounded-xl transition">
                                 <i data-lucide="menu" class="w-5 h-5"></i>
                             </button>
-                            <div id="register-hamburger-menu" class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-200 py-2 hidden z-50 text-sm">
-                                <button onclick="triggerTransactionDiscountPrompt('dollar')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="dollar-sign" class="w-4 h-4 text-iosBlue"></i> Discount Transaction ($)</button>
-                                <button onclick="triggerTransactionDiscountPrompt('percent')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="percent" class="w-4 h-4 text-iosBlue"></i> Discount Transaction (%)</button>
-                                <button onclick="triggerEmployeeDiscountWorkflow()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-purple-600 font-medium"><i data-lucide="user-check" class="w-4 h-4"></i> Apply Associate Discount (50%)</button>
+                            <div id="register-hamburger-menu" class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border py-2 hidden z-50 text-sm">
+                                <button onclick="RegisterView.triggerInvoiceDiscount('dollar')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="dollar-sign" class="w-4 h-4 text-iosBlue"></i> Discount Transaction ($)</button>
+                                <button onclick="RegisterView.triggerInvoiceDiscount('percent')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="percent" class="w-4 h-4 text-iosBlue"></i> Discount Transaction (%)</button>
+                                <button onclick="RegisterView.triggerAssociateDiscount()" class="w-full px-4 py-3 text-left hover:bg-gray-50 text-purple-600 font-bold flex items-center gap-3"><i data-lucide="user-check" class="w-4 h-4"></i> Apply Associate Discount (50%)</button>
                                 <hr class="border-gray-100 my-1">
-                                <button onclick="openReturnContextScreen()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="undo-2" class="w-4 h-4 text-iosRed"></i> Initialize Return Mode</button>
-                                <button onclick="openPriceInquiryModal()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="search" class="w-4 h-4"></i> Standalone Price Inquiry</button>
-                                <button onclick="triggerGiftCardValidationFlow()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="credit-card" class="w-4 h-4"></i> Issue / Audit Gift Cards</button>
-                                <button onclick="triggerTaxExemptEntry()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="shield-alert" class="w-4 h-4"></i> Force Tax Exemption Status</button>
-                                <button onclick="triggerGiftReceiptToggling()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="gift" class="w-4 h-4"></i> Toggle Gift Receipts Flag</button>
-                                <button onclick="triggerSuspendTransaction()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="archive" class="w-4 h-4"></i> Suspend Active Invoice</button>
-                                <button onclick="triggerResumeTransactionList()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="folder-open" class="w-4 h-4"></i> Resume Suspended Invoice</button>
+                                <button onclick="RegisterView.openReturnPortalModal()" class="w-full px-4 py-3 text-left hover:bg-gray-50 text-iosRed flex items-center gap-3"><i data-lucide="undo-2" class="w-4 h-4"></i> Initialize Return Mode</button>
+                                <button onclick="RegisterView.openPriceInquiryModal()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="search" class="w-4 h-4"></i> Standalone Price Inquiry</button>
+                                <button onclick="RegisterView.triggerGiftCardContext()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="credit-card" class="w-4 h-4"></i> Issue / Audit Gift Cards</button>
+                                <button onclick="RegisterView.triggerTaxExemption()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="shield-alert" class="w-4 h-4"></i> Force Tax Exemption Status</button>
+                                <button onclick="RegisterView.toggleGiftReceiptFlag()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="gift" class="w-4 h-4"></i> Toggle Gift Receipts Flag</button>
+                                <button onclick="RegisterView.suspendCurrentInvoice()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="archive" class="w-4 h-4"></i> Suspend Active Invoice</button>
+                                <button onclick="RegisterView.openSuspendedListModal()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="folder-open" class="w-4 h-4"></i> Resume Suspended Invoice</button>
                             </div>
                         </div>
                     </div>
 
-                    <div id="cart-items-container" class="flex-1 overflow-y-auto p-4 space-y-3 ios-scroll bg-gray-50/50">
-                        <div class="text-center text-gray-400 py-20 flex flex-col items-center justify-center">
-                            <i data-lucide="barcode" class="w-16 h-16 stroke-[1] text-gray-300 mb-2"></i>
-                            <p class="text-sm font-medium">No items present in current invoice frame.</p>
-                        </div>
-                    </div>
+                    <div id="cart-items-container" class="flex-1 overflow-y-auto p-4 space-y-3 ios-scroll bg-gray-50/50"></div>
 
-                    <div class="p-4 bg-white border-t border-gray-200 space-y-3">
+                    <div class="p-4 bg-white border-t border-gray-200">
                         <div class="flex gap-2">
-                            <input type="text" id="register-sku-input" placeholder="Scan barcode or input item SKU..." class="flex-1 px-4 py-3 bg-gray-100 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-mono text-lg">
-                            <button onclick="handleManualSkuScan()" class="bg-iosBlue text-white px-6 font-semibold rounded-xl active:scale-95 transition">Enter SKU</button>
-                            <button onclick="initializeCameraScannerMock()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 rounded-xl transition" title="Simulate Camera Scan">
-                                <i data-lucide="camera" class="w-6 h-6"></i>
-                            </button>
+                            <input type="text" id="register-sku-input" placeholder="Scan barcode or input item SKU..." class="flex-1 px-4 py-3 bg-gray-100 rounded-xl border focus:outline-none font-mono text-lg">
+                            <button onclick="RegisterView.handleManualSkuScan()" class="bg-iosBlue text-white px-6 font-semibold rounded-xl active:scale-95 transition">Enter SKU</button>
+                            <button onclick="RegisterView.initializeCameraScannerMock()" class="bg-gray-100 text-gray-700 p-3 rounded-xl transition"><i data-lucide="camera" class="w-6 h-6"></i></button>
                         </div>
                     </div>
                 </div>
@@ -257,17 +242,15 @@
                     <div id="register-customer-frame" class="p-4 bg-white border-b border-gray-200 m-4 rounded-2xl shadow-sm">
                         <div id="cust-state-unlinked" class="flex flex-col items-center justify-center py-4">
                             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Linked Customer Profile</p>
-                            <div class="flex gap-2 w-full">
-                                <button onclick="openCustomerSearchAttachmentModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-iosBlue font-semibold py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-1.5"><i data-lucide="user-plus" class="w-4 h-4"></i> Attach Customer Account</button>
-                            </div>
+                            <button onclick="RegisterView.openCustomerAttachmentModal()" class="w-full bg-gray-100 text-iosBlue font-bold py-2.5 rounded-xl text-sm transition"><i data-lucide="user-plus" class="w-4 h-4 inline"></i> Attach Customer Account</button>
                         </div>
                         <div id="cust-state-linked" class="hidden flex justify-between items-center">
-                            <div onclick="viewLinkedCustomerProfileDetails()" class="cursor-pointer flex-1">
+                            <div onclick="RegisterView.viewLinkedCustomerProfileDetails()" class="cursor-pointer flex-1">
                                 <p class="text-xs font-semibold text-iosBlue uppercase tracking-wider">Linked Account (Click for Profile)</p>
                                 <h4 id="linked-cust-name" class="font-bold text-lg text-gray-900 mt-0.5">---</h4>
                                 <p class="text-xs text-gray-500">ID: <span id="linked-cust-id" class="font-mono">---</span> &bull; Status: <span id="linked-cust-status" class="font-bold">Active</span></p>
                             </div>
-                            <button onclick="detachCustomerFromActiveRegisterInvoice()" class="text-iosRed p-2 bg-iosRed/10 hover:bg-iosRed/20 rounded-xl transition"><i data-lucide="user-minus" class="w-4 h-4"></i></button>
+                            <button onclick="RegisterView.detachCustomerFromActiveRegisterInvoice()" class="text-iosRed p-2 bg-iosRed/10 rounded-xl"><i data-lucide="user-minus" class="w-4 h-4"></i></button>
                         </div>
                     </div>
 
@@ -275,32 +258,14 @@
 
                     <div class="p-6 bg-white border-t border-gray-200 rounded-t-3xl shadow-xl space-y-4">
                         <div class="space-y-2 text-sm text-gray-600 font-medium">
-                            <div class="flex justify-between">
-                                <span>Total Item Units</span>
-                                <span id="calc-total-units" class="font-bold text-black">0</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>Subtotal</span>
-                                <span id="calc-subtotal">$0.00</span>
-                            </div>
-                            <div class="flex justify-between text-iosRed hidden" id="calc-discount-row">
-                                <span id="calc-discount-label">Discounts</span>
-                                <span id="calc-discount-val">-$0.00</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span id="calc-tax-label">Sales Tax</span>
-                                <span id="calc-tax-val">$0.00</span>
-                            </div>
+                            <div class="flex justify-between"><span>Total Item Units</span><span id="calc-total-units" class="font-bold text-black">0</span></div>
+                            <div class="flex justify-between"><span>Subtotal</span><span id="calc-subtotal">$0.00</span></div>
+                            <div class="flex justify-between text-iosRed hidden" id="calc-discount-row"><span id="calc-discount-label">Discounts</span><span id="calc-discount-val">-$0.00</span></div>
+                            <div class="flex justify-between"><span id="calc-tax-label">Sales Tax</span><span id="calc-tax-val">$0.00</span></div>
                             <hr class="border-gray-100 my-2">
-                            <div class="flex justify-between text-black font-bold text-2xl tracking-tight">
-                                <span>Total Due</span>
-                                <span id="calc-grand-total" class="text-iosBlue">$0.00</span>
-                            </div>
+                            <div class="flex justify-between text-black font-bold text-2xl tracking-tight"><span>Total Due</span><span id="calc-grand-total" class="text-iosBlue">$0.00</span></div>
                         </div>
-
-                        <button onclick="openTenderInterfaceStage()" class="w-full bg-iosGreen text-white py-4 rounded-xl font-bold text-xl shadow-md active:scale-98 transition flex items-center justify-center gap-2">
-                            <i data-lucide="banknote" class="w-6 h-6"></i> Finalize Payment / Tender
-                        </button>
+                        <button onclick="RegisterView.openTenderInterfaceStage()" class="w-full bg-iosGreen text-white py-4 rounded-xl font-bold text-xl shadow-md active:scale-98 transition flex items-center justify-center gap-2"><i data-lucide="banknote" class="w-6 h-6"></i> Finalize Payment / Tender</button>
                     </div>
                 </div>
             </div>
@@ -308,236 +273,128 @@
             <div id="view-customer-mgmt" class="absolute inset-0 flex flex-col hidden-view p-6 gap-6 overflow-hidden">
                 <div class="flex justify-between items-center shrink-0">
                     <div class="flex items-center space-x-2">
-                        <button onclick="navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1"><i data-lucide="chevron-left" class="w-5 h-5"></i> Back</button>
+                        <button onclick="AppRouter.navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1"><i data-lucide="chevron-left" class="w-5 h-5"></i> Back</button>
                         <h1 class="text-2xl font-bold ml-2">Customer Account Management</h1>
                     </div>
-                    <button onclick="openCustomerEnrollmentModal()" class="bg-iosBlue text-white px-4 py-2 rounded-xl font-semibold text-sm shadow-sm flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i> Enroll New Customer</button>
+                    <button onclick="CustomerView.openCustomerEnrollmentModal()" class="bg-iosBlue text-white px-4 py-2 rounded-xl font-semibold text-sm shadow-sm"><i data-lucide="plus" class="w-4 h-4 inline"></i> Enroll New Customer</button>
                 </div>
-
                 <div class="bg-white rounded-2xl p-4 border border-gray-200 flex gap-2 items-center shadow-sm shrink-0">
                     <div class="flex-1 relative">
                         <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-3"></i>
-                        <input type="text" id="cust-search-input" placeholder="Query profile using exact Phone Number or Email Identity..." class="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-medium">
+                        <input type="text" id="cust-search-input" placeholder="Query profile using exact Phone Number or Email Identity..." class="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl border focus:outline-none focus:border-iosBlue font-medium">
                     </div>
-                    <button onclick="executeCustomerSearchRegistry()" class="bg-iosBlue text-white px-6 py-2.5 rounded-xl font-semibold transition active:scale-95 shadow-sm">Search Records</button>
+                    <button onclick="CustomerView.executeCustomerSearchRegistry()" class="bg-iosBlue text-white px-6 py-2.5 rounded-xl font-semibold shadow-sm">Search Records</button>
                 </div>
-
-                <div id="cust-mgmt-results-pane" class="flex-1 overflow-y-auto ios-scroll bg-white border border-gray-200 rounded-2xl p-6 space-y-6">
-                    <div class="text-center text-gray-400 py-20 flex flex-col items-center justify-center">
-                        <i data-lucide="users-2" class="w-16 h-16 stroke-[1] text-gray-300 mb-2"></i>
-                        <p class="font-semibold text-sm">No Active Ledger Card Selected</p>
-                    </div>
-                </div>
+                <div id="cust-mgmt-results-pane" class="flex-1 overflow-y-auto ios-scroll bg-white border border-gray-200 rounded-2xl p-6 space-y-6"></div>
             </div>
 
             <div id="view-employee-mgmt" class="absolute inset-0 flex hidden-view p-6 gap-6 overflow-hidden">
                 <div class="w-1/3 h-full flex flex-col gap-4">
                     <div class="flex justify-between items-center">
-                        <button onclick="navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1"><i data-lucide="chevron-left" class="w-5 h-5"></i> Back</button>
+                        <button onclick="AppRouter.navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1"><i data-lucide="chevron-left" class="w-5 h-5"></i> Back</button>
                         <h2 class="font-bold text-xl">Staff Roster</h2>
                     </div>
-                    <button onclick="openEmployeeEnrollmentModal()" class="w-full bg-iosBlue py-2.5 rounded-xl font-semibold text-sm shadow-sm flex items-center justify-center gap-1.5"><i data-lucide="user-plus" class="w-4 h-4"></i> Recruit New Associate</button>
-                    <div id="emp-roster-list" class="flex-1 bg-white border border-gray-200 rounded-2xl overflow-y-auto ios-scroll p-2 space-y-1"></div>
+                    <button onclick="EmployeeView.openEmployeeEnrollmentModal()" class="w-full bg-iosBlue py-2.5 text-white rounded-xl font-semibold text-sm shadow-sm"><i data-lucide="user-plus" class="w-4 h-4 inline"></i> Recruit New Associate</button>
+                    <div id="emp-roster-list" class="flex-1 bg-white border rounded-2xl overflow-y-auto ios-scroll p-2 space-y-1"></div>
                 </div>
-                <div id="emp-inspection-sheet" class="w-2/3 h-full bg-white border border-gray-200 rounded-2xl p-6 overflow-y-auto ios-scroll">
-                    <div class="text-center text-gray-400 py-32 flex flex-col items-center justify-center">
-                        <i data-lucide="shield-alert" class="w-16 h-16 stroke-[1] text-gray-300 mb-2"></i>
-                        <p class="font-semibold text-sm">No Profile Selected For Security Audit</p>
-                    </div>
-                </div>
+                <div id="emp-inspection-sheet" class="w-2/3 h-full bg-white border rounded-2xl p-6 overflow-y-auto ios-scroll"></div>
             </div>
 
             <div id="view-inventory-mgmt" class="absolute inset-0 flex hidden-view p-6 gap-6 overflow-hidden">
                 <div class="w-7/12 h-full flex flex-col gap-4">
                     <div class="flex justify-between items-center">
-                        <button onclick="navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1"><i data-lucide="chevron-left" class="w-5 h-5"></i> Back</button>
+                        <button onclick="AppRouter.navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1"><i data-lucide="chevron-left" class="w-5 h-5"></i> Back</button>
                         <h2 class="font-bold text-xl">Core SKU Inventory Matrix</h2>
                     </div>
-                    <div class="bg-white border border-gray-200 rounded-2xl p-3 flex gap-2 items-center shadow-sm">
+                    <div class="bg-white border p-3 rounded-2xl flex gap-2 items-center shadow-sm">
                         <div class="flex-1 relative">
                             <i data-lucide="search" class="w-4 h-4 text-iosGray absolute left-3 top-2.5"></i>
-                            <input type="text" id="inv-search-box" oninput="renderInventoryCatalogTable()" placeholder="Filter current items by name or tracking SKU code..." class="w-full pl-9 pr-4 py-1.5 bg-gray-100 rounded-xl text-sm focus:outline-none focus:border-iosBlue">
+                            <input type="text" id="inv-search-box" oninput="InventoryView.renderInventoryCatalogTable()" placeholder="Filter current items by name or tracking SKU code..." class="w-full pl-9 pr-4 py-1.5 bg-gray-100 rounded-xl text-sm focus:outline-none focus:border-iosBlue">
                         </div>
-                        <button onclick="openSkuCreationModal()" class="bg-iosBlue text-white px-3 py-1.5 rounded-xl font-semibold text-xs shadow-sm flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Create Product</button>
-                        <button onclick="openCategorySetupModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl font-semibold text-xs flex items-center gap-1"><i data-lucide="folder-tree" class="w-3.5 h-3.5"></i> Setup Categories</button>
+                        <button onclick="InventoryView.openSkuCreationModal()" class="bg-iosBlue text-white px-3 py-1.5 rounded-xl font-semibold text-xs shadow-sm"><i data-lucide="plus" class="w-3.5 h-3.5 inline"></i> Create Product</button>
+                        <button onclick="InventoryView.openCategorySetupModal()" class="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-xl font-semibold text-xs"><i data-lucide="folder-tree" class="w-3.5 h-3.5 inline"></i> Setup Categories</button>
                     </div>
-                    <div class="flex-1 bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col">
-                        <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 grid grid-cols-12 text-xs font-bold uppercase tracking-wider text-gray-400">
-                            <span class="col-span-3">Product Description</span>
-                            <span class="col-span-3">SKU ID</span>
-                            <span class="col-span-2">Category</span>
-                            <span class="col-span-2 text-right">Price</span>
-                            <span class="col-span-2 text-right">Stock Level</span>
+                    <div class="flex-1 bg-white border rounded-2xl overflow-hidden flex flex-col">
+                        <div class="bg-gray-50 px-4 py-2 border-b grid grid-cols-12 text-xs font-bold uppercase tracking-wider text-gray-400">
+                            <span class="col-span-3">Product Description</span><span class="col-span-3">SKU ID</span><span class="col-span-2">Category</span><span class="col-span-2 text-right">Price</span><span class="col-span-2 text-right">Stock Level</span>
                         </div>
-                        <div id="inv-catalog-rows" class="flex-1 overflow-y-auto ios-scroll divide-y divide-gray-100"></div>
+                        <div id="inv-catalog-rows" class="flex-1 overflow-y-auto ios-scroll divide-y"></div>
                     </div>
                 </div>
-                <div id="inv-inspect-pane" class="w-5/12 h-full bg-white border border-gray-200 rounded-2xl p-6 overflow-y-auto ios-scroll">
-                    <div class="text-center text-gray-400 py-32 flex flex-col items-center justify-center">
-                        <i data-lucide="boxes" class="w-16 h-16 stroke-[1] text-gray-300 mb-2"></i>
-                        <p class="font-semibold text-sm">No Active SKU Selection</p>
-                    </div>
-                </div>
+                <div id="inv-inspect-pane" class="w-5/12 h-full bg-white border rounded-2xl p-6 overflow-y-auto ios-scroll"></div>
             </div>
 
             <div id="view-system-settings" class="absolute inset-0 flex hidden-view p-6 gap-6 overflow-hidden">
                 <div class="w-1/4 h-full flex flex-col gap-4">
                     <div class="flex items-center space-x-2">
-                        <button onclick="navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1"><i data-lucide="chevron-left" class="w-5 h-5"></i> Back</button>
+                        <button onclick="AppRouter.navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1"><i data-lucide="chevron-left" class="w-5 h-5"></i> Back</button>
                         <h2 class="font-bold text-xl ml-1">Settings</h2>
                     </div>
-                    <div class="bg-white border border-gray-200 rounded-2xl p-2 space-y-1 shadow-sm font-medium text-sm flex-1">
-                        <button onclick="switchSettingsActiveTab('sett-pane-company')" id="tab-btn-sett-pane-company" class="w-full text-left px-4 py-3 rounded-xl transition bg-iosBlue text-white flex items-center gap-2"><i data-lucide="building-2" class="w-4 h-4"></i> Corporate Profile</button>
-                        <button onclick="switchSettingsActiveTab('sett-pane-timecards')" id="tab-btn-sett-pane-timecards" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="calendar-days" class="w-4 h-4"></i> Staff Time Cards</button>
-                        <button onclick="switchSettingsActiveTab('sett-pane-giftcards')" id="tab-btn-sett-pane-giftcards" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="credit-card" class="w-4 h-4"></i> Gift Card Registry</button>
-                        <button onclick="switchSettingsActiveTab('sett-pane-transactions')" id="tab-btn-sett-pane-transactions" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Historical Invoices</button>
-                        <button onclick="switchSettingsActiveTab('sett-pane-logs')" id="tab-btn-sett-pane-logs" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="scroll-text" class="w-4 h-4"></i> System Audit Trail</button>
-                        <button onclick="switchSettingsActiveTab('sett-pane-about')" id="tab-btn-sett-pane-about" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4"></i> About Application</button>
+                    <div class="bg-white border rounded-2xl p-2 space-y-1 shadow-sm font-medium text-sm flex-1">
+                        <button onclick="SettingsView.switchSettingsActiveTab('sett-pane-company')" id="tab-btn-sett-pane-company" class="w-full text-left px-4 py-3 rounded-xl transition bg-iosBlue text-white flex items-center gap-2"><i data-lucide="building-2" class="w-4 h-4"></i> Corporate Profile</button>
+                        <button onclick="SettingsView.switchSettingsActiveTab('sett-pane-timecards')" id="tab-btn-sett-pane-timecards" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="calendar-days" class="w-4 h-4"></i> Staff Time Cards</button>
+                        <button onclick="SettingsView.switchSettingsActiveTab('sett-pane-giftcards')" id="tab-btn-sett-pane-giftcards" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="credit-card" class="w-4 h-4"></i> Gift Card Registry</button>
+                        <button onclick="SettingsView.switchSettingsActiveTab('sett-pane-transactions')" id="tab-btn-sett-pane-transactions" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Historical Invoices</button>
+                        <button onclick="SettingsView.switchSettingsActiveTab('sett-pane-logs')" id="tab-btn-sett-pane-logs" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="scroll-text" class="w-4 h-4"></i> System Audit Trail</button>
+                        <button onclick="SettingsView.switchSettingsActiveTab('sett-pane-about')" id="tab-btn-sett-pane-about" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4"></i> About Application</button>
                     </div>
                 </div>
-
-                <div class="w-3/4 h-full bg-white border border-gray-200 rounded-2xl p-6 overflow-y-auto ios-scroll shadow-sm">
+                <div class="w-3/4 h-full bg-white border rounded-2xl p-6 overflow-y-auto ios-scroll shadow-sm">
                     <div id="sett-pane-company" class="settings-tab-view space-y-6">
-                        <h3 class="text-xl font-bold border-b border-gray-100 pb-2 flex items-center gap-2"><i data-lucide="building-2" class="w-5 h-5 text-iosBlue"></i> Corporate Profile & Rules</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Company Trade Title</label>
-                                <input type="text" id="cfg-comp-name" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-medium">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Operational Store Code ID</label>
-                                <input type="text" id="cfg-store-num" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-medium">
-                            </div>
-                            <div class="col-span-2">
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Physical Store Address Structure</label>
-                                <input type="text" id="cfg-store-address" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-medium">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Store Direct Dial Telephone</label>
-                                <input type="text" id="cfg-store-phone" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-medium">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Guest Support Line Hot-Wire</label>
-                                <input type="text" id="cfg-cust-phone" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-medium">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Regional Applied Sales Tax Rate (%)</label>
-                                <input type="number" step="0.001" id="cfg-tax-rate" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-bold text-iosBlue">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Standard Drawer Base Vault Float ($)</label>
-                                <input type="number" step="0.01" id="cfg-cash-float" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-bold text-iosGreen">
-                            </div>
+                        <h3 class="text-xl font-bold border-b pb-2 flex items-center gap-2"><i data-lucide="building-2" class="w-5 h-5 text-iosBlue"></i> Corporate Profile & Rules</h3>
+                        <div class="grid grid-cols-2 gap-4 text-xs font-semibold">
+                            <div><label class="block text-gray-400 mb-1">Company Trade Title</label><input type="text" id="cfg-comp-name" class="w-full px-3 py-2 bg-gray-50 border rounded-xl font-medium"></div>
+                            <div><label class="block text-gray-400 mb-1">Store Number</label><input type="text" id="cfg-store-num" class="w-full px-3 py-2 bg-gray-50 border rounded-xl font-medium"></div>
+                            <div class="col-span-2"><label class="block text-gray-400 mb-1">Physical Store Address</label><input type="text" id="cfg-store-address" class="w-full px-3 py-2 bg-gray-50 border rounded-xl font-medium"></div>
+                            <div><label class="block text-gray-400 mb-1">Store Phone Number</label><input type="text" id="cfg-store-phone" class="w-full px-3 py-2 bg-gray-50 border rounded-xl font-medium"></div>
+                            <div><label class="block text-gray-400 mb-1">Customer Support Phone Number</label><input type="text" id="cfg-cust-phone" class="w-full px-3 py-2 bg-gray-50 border rounded-xl font-medium"></div>
+                            <div><label class="block text-gray-400 mb-1">Regional Applied Sales Tax Rate (%)</label><input type="number" step="0.001" id="cfg-tax-rate" class="w-full px-3 py-2 bg-gray-50 border rounded-xl font-bold text-iosBlue"></div>
+                            <div><label class="block text-gray-400 mb-1">Standard Drawer Base Cash Float ($)</label><input type="number" step="0.01" id="cfg-cash-float" class="w-full px-3 py-2 bg-gray-50 border rounded-xl font-bold text-iosGreen"></div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Corporate System Vector Logo Mock Upload</label>
-                            <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center hover:bg-gray-50 transition cursor-pointer">
-                                <i data-lucide="image-plus" class="w-8 h-8 text-gray-400 mx-auto mb-1"></i>
-                                <span class="text-xs font-medium text-gray-500 block">Click or pull assets here to update the dynamic UI skin</span>
-                            </div>
-                        </div>
-                        <button onclick="saveGlobalCorporateProfileSettings()" class="bg-iosBlue text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition active:scale-95">Commit Parameters</button>
+                        <button onclick="SettingsView.saveGlobalCorporateProfileSettings()" class="bg-iosBlue text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm">Commit Parameters</button>
                     </div>
-
                     <div id="sett-pane-timecards" class="settings-tab-view hidden-view space-y-4">
-                        <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                        <div class="flex justify-between items-center border-b pb-2">
                             <h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="calendar-days" class="w-5 h-5 text-cyan-500"></i> Corporate Time Card Management Console</h3>
-                            <button onclick="openTimeCardOverrideForm()" class="bg-iosBlue text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow-sm"><i data-lucide="plus" class="w-3 h-3 inline"></i> Add Manual Punch</button>
+                            <button onclick="SettingsView.openTimeCardOverrideForm()" class="bg-iosBlue text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow-sm"><i data-lucide="plus" class="w-3 h-3 inline"></i> Add Manual Punch</button>
                         </div>
-                        <div class="overflow-x-auto ios-scroll">
-                            <table class="w-full text-left text-xs divide-y divide-gray-200">
-                                <thead class="bg-gray-50 font-bold uppercase tracking-wider text-gray-400">
-                                    <tr>
-                                        <th class="p-3">Staff Associate</th>
-                                        <th class="p-3">Clock-In Punch</th>
-                                        <th class="p-3">Clock-Out Punch</th>
-                                        <th class="p-3">Break Statement</th>
-                                        <th class="p-3 text-right">Hours Logged</th>
-                                        <th class="p-3 text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-body-sett-timecards" class="divide-y divide-gray-100 font-medium"></tbody>
-                            </table>
-                        </div>
+                        <div class="overflow-x-auto ios-scroll"><table class="w-full text-left text-xs divide-y"><thead class="bg-gray-50 text-gray-400 font-bold uppercase"><tr><th class="p-3">Staff Associate</th><th class="p-3">Clock-In Punch</th><th class="p-3">Clock-Out Punch</th><th class="p-3">Break Statement</th><th class="p-3 text-right">Hours Logged</th><th class="p-3 text-center">Actions</th></tr></thead><tbody id="table-body-sett-timecards" class="divide-y font-medium"></tbody></table></div>
                     </div>
-
                     <div id="sett-pane-giftcards" class="settings-tab-view hidden-view space-y-4">
-                        <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                        <div class="flex justify-between items-center border-b pb-2">
                             <h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="credit-card" class="w-5 h-5 text-purple-500"></i> Corporate Card Asset Registry</h3>
-                            <button onclick="triggerManualGiftCardCreationWizard()" class="bg-iosBlue text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow-sm"><i data-lucide="plus" class="w-3 h-3 inline"></i> Vault New Asset Card</button>
+                            <button onclick="SettingsView.triggerManualGiftCardCreationWizard()" class="bg-iosBlue text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow-sm"><i data-lucide="plus" class="w-3 h-3 inline"></i> Vault New Asset Card</button>
                         </div>
-                        <div class="overflow-x-auto ios-scroll">
-                            <table class="w-full text-left text-xs divide-y divide-gray-200">
-                                <thead class="bg-gray-50 font-bold uppercase tracking-wider text-gray-400">
-                                    <tr>
-                                        <th class="p-3">Card Control String</th>
-                                        <th class="p-3 text-right">Initial Vault Load</th>
-                                        <th class="p-3 text-right">Live Remaining Balance</th>
-                                        <th class="p-3">Transaction Link Ledger</th>
-                                        <th class="p-3 text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-body-sett-giftcards" class="divide-y divide-gray-100 font-medium"></tbody>
-                            </table>
-                        </div>
+                        <div class="overflow-x-auto ios-scroll"><table class="w-full text-left text-xs divide-y"><thead class="bg-gray-50 text-gray-400 font-bold uppercase"><tr><th class="p-3">Card Control String</th><th class="p-3 text-right">Initial Vault Load</th><th class="p-3 text-right">Live Remaining Balance</th><th class="p-3">Transaction History Logs</th><th class="p-3 text-center">Actions</th></tr></thead><tbody id="table-body-sett-giftcards" class="divide-y font-medium"></tbody></table></div>
                     </div>
-
                     <div id="sett-pane-transactions" class="settings-tab-view hidden-view space-y-4">
-                        <h3 class="text-xl font-bold border-b border-gray-100 pb-2 flex items-center gap-2"><i data-lucide="history" class="w-5 h-5 text-indigo-500"></i> Corporate Historical Invoice Log</h3>
-                        <div class="overflow-x-auto ios-scroll">
-                            <table class="w-full text-left text-xs divide-y divide-gray-200">
-                                <thead class="bg-gray-50 font-bold uppercase tracking-wider text-gray-400">
-                                    <tr>
-                                        <th class="p-3">Invoice Number ID</th>
-                                        <th class="p-3">Timestamp Block</th>
-                                        <th class="p-3">Operator Associate</th>
-                                        <th class="p-3 text-right">Invoice Value Gross</th>
-                                        <th class="p-3">Tender Execution Vector</th>
-                                        <th class="p-3">System Flags</th>
-                                        <th class="p-3 text-center">Operational Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-body-sett-transactions" class="divide-y divide-gray-100 font-medium"></tbody>
-                            </table>
-                        </div>
+                        <h3 class="text-xl font-bold border-b pb-2 flex items-center gap-2"><i data-lucide="history" class="w-5 h-5 text-indigo-500"></i> Corporate Historical Invoice Log</h3>
+                        <div class="overflow-x-auto ios-scroll"><table class="w-full text-left text-xs divide-y"><thead class="bg-gray-50 text-gray-400 font-bold uppercase"><tr><th class="p-3">Invoice Number ID</th><th class="p-3">Timestamp Block</th><th class="p-3">Operator Associate</th><th class="p-3 text-right">Invoice Value Gross</th><th class="p-3">Tender Execution Vector</th><th class="p-3">System Flags</th><th class="p-3 text-center">Operational Actions</th></tr></thead><tbody id="table-body-sett-transactions" class="divide-y font-medium"></tbody></table></div>
                     </div>
-
                     <div id="sett-pane-logs" class="settings-tab-view hidden-view space-y-4">
-                        <h3 class="text-xl font-bold border-b border-gray-100 pb-2 flex items-center gap-2"><i data-lucide="scroll-text" class="w-5 h-5 text-orange-500"></i> System Operational Audit Trail Log</h3>
-                        <div class="bg-gray-900 rounded-2xl p-4 font-mono text-[11px] text-green-400 h-[450px] overflow-y-auto ios-scroll space-y-1.5 shadow-inner">
-                            <div id="terminal-audit-stream"></div>
-                        </div>
+                        <h3 class="text-xl font-bold border-b pb-2 flex items-center gap-2"><i data-lucide="scroll-text" class="w-5 h-5 text-orange-500"></i> System Operational Audit Trail Log</h3>
+                        <div class="bg-gray-900 rounded-2xl p-4 font-mono text-[11px] text-green-400 h-[450px] overflow-y-auto ios-scroll space-y-1.5 shadow-inner"><div id="terminal-audit-stream"></div></div>
                     </div>
-
                     <div id="sett-pane-about" class="settings-tab-view hidden-view flex flex-col items-center text-center justify-center py-20 space-y-4">
-                        <div class="w-24 h-24 bg-gradient-to-tr from-gray-800 to-gray-900 text-white flex items-center justify-center rounded-3xl shadow-xl">
-                            <i data-lucide="terminal" class="w-12 h-12"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-black tracking-tight text-gray-800">Dexis Retail Enterprise</h2>
-                            <p class="text-sm font-semibold text-iosBlue uppercase tracking-wider mt-0.5">Core Kernel Layer Production Target</p>
-                        </div>
-                        <div class="bg-gray-50 px-6 py-4 rounded-2xl border border-gray-200/60 font-mono text-left text-xs space-y-1.5 w-full max-w-sm">
+                        <div class="w-24 h-24 bg-gradient-to-tr from-gray-800 to-gray-900 text-white flex items-center justify-center rounded-3xl shadow-xl"><i data-lucide="terminal" class="w-12 h-12"></i></div>
+                        <div><h2 class="text-2xl font-black tracking-tight text-gray-800">Dexis Retail Enterprise</h2><p class="text-sm font-semibold text-iosBlue uppercase tracking-wider mt-0.5">Core Kernel Layer Production Target</p></div>
+                        <div class="bg-gray-50 px-6 py-4 rounded-2xl border font-mono text-left text-xs space-y-1.5 w-full max-w-sm">
                             <p><span class="font-bold text-gray-400">Release Build:</span> v1.0.0</p>
                             <p><span class="font-bold text-gray-400">Runtime Target:</span> Build: 077841392</p>
                             <p><span class="font-bold text-gray-400">Storage Engine:</span> Firebase Cloud Firestore</p>
-                            <p><span class="font-bold text-gray-400">Hardware Profile:</span> Apple iPad iOS Client</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div id="view-manage-till" class="absolute inset-0 flex hidden-view p-6 justify-center items-center select-none">
-                <div class="w-full max-w-xl bg-white border border-gray-200 rounded-3xl p-8 shadow-2xl space-y-6">
-                    <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                <div class="w-full max-w-xl bg-white border rounded-3xl p-8 shadow-2xl space-y-6">
+                    <div class="flex justify-between items-center border-b pb-3">
                         <div class="flex items-center space-x-3">
                             <div class="p-3 bg-teal-50 text-teal-600 rounded-2xl"><i data-lucide="landmark" class="w-6 h-6"></i></div>
-                            <div>
-                                <h2 class="font-bold text-xl">Register Till Management Console</h2>
-                                <p class="text-xs text-gray-400">System State Tracking and Session Audits</p>
-                            </div>
+                            <div><h2 class="font-bold text-xl">Register Till Management Console</h2><p class="text-xs text-gray-400">System State Tracking and Session Audits</p></div>
                         </div>
-                        <button onclick="navigateTo('view-home')" class="text-iosGray font-semibold px-3 py-1 bg-gray-100 rounded-lg text-sm">Dismiss</button>
+                        <button onclick="AppRouter.navigateTo('view-home')" class="text-iosGray font-semibold px-3 py-1 bg-gray-100 rounded-lg text-sm">Dismiss</button>
                     </div>
                     <div id="till-flow-workspace" class="space-y-4"></div>
                 </div>
@@ -551,1491 +408,27 @@
 
     </div>
 
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/database/employees-db.js"></script>
+    <script src="assets/js/database/customers-db.js"></script>
+    <script src="assets/js/database/inventory-db.js"></script>
+    <script src="assets/js/database/till-db.js"></script>
+    <script src="assets/js/database/transactions-db.js"></script>
+    <script src="assets/js/views/shared-modal.js"></script>
+    <script src="assets/js/views/login-view.js"></script>
+    <script src="assets/js/views/register-view.js"></script>
+    <script src="assets/js/views/customer-view.js"></script>
+    <script src="assets/js/views/employee-view.js"></script>
+    <script src="assets/js/views/inventory-view.js"></script>
+    <script src="assets/js/views/till-view.js"></script>
+
     <script>
-        // =========================================================================
-        // INITIALIZE CLOUD CONNECT VIA FIREBASE CREDENTIALS
-        // =========================================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyAgPn_U7_cEqQ7zUAWEtN7cojI-QeTZJSs",
-            authDomain: "dexis-retail-enterprise.firebaseapp.com",
-            projectId: "dexis-retail-enterprise",
-            storageBucket: "dexis-retail-enterprise.firebasestorage.app",
-            messagingSenderId: "881136477212",
-            appId: "1:881136477212:web:f26c8582667de2572b8bd9",
-            measurementId: "G-7X726V28TG"
-        };
-
-        // Initialize Firebase safely
-        try {
-            firebase.initializeApp(firebaseConfig);
-            console.log("Firebase initialized successfully.");
-        } catch(e) {
-            console.error("Firebase Initialization Critical Error: ", e);
-        }
-        
-        const db = firebase.firestore();
-
-        // Enable responsive local cache operations for iPad offline resilience
-        db.enablePersistence().catch((err) => {
-            console.warn("Offline persistence sync module fallback running: ", err.code);
-        });
-
-        let state = {
-            activeEmployee: null,
-            activeTillSession: { isOpen: false, businessDate: "", openingAmount: 0.00, expectedCashBalance: 0.00, isClosed: false },
-            invoiceContext: { items: [], customer: null, globalDiscount: { type: 'none', value: 0 }, employeeDiscount: null, isTaxExempt: false, taxExemptionNumber: "", isGiftReceipt: false, tenders: [] },
-            corporateProfile: { name: "Dexis Enterprise", storeNum: "182", address: "Sartell Minnesota 56377", phone: "(320) 555-0199", custSupport: "(800) 555-0100", taxRate: 7.375, cashFloat: 250.00 },
-            dbCache: { employees: [], customers: [], inventory: [], categories: [], giftCards: [], transactions: [], suspendedTransactions: [], timeCards: [], logs: [] }
-        };
-
-        // =========================================================================
-        // SYNC KERNEL CHANNELS WITH FIREBASE INSTEAD OF INDEXEDDB
-        // =========================================================================
-        async function syncCacheFromFirestoreEngine() {
-            console.log("Starting full Firestore cache sync pipeline...");
-            
-            state.dbCache = {
-                employees: [],
-                customers: [],
-                inventory: [],
-                categories: [],
-                giftCards: [],
-                transactions: [],
-                suspendedTransactions: [],
-                timeCards: [],
-                logs: []
-            };
-
-            try {
-                state.dbCache.employees = await getAllRecordsFromStore("employees");
-                state.dbCache.customers = await getAllRecordsFromStore("customers");
-                state.dbCache.inventory = await getAllRecordsFromStore("inventory");
-                state.dbCache.categories = await getAllRecordsFromStore("categories");
-                state.dbCache.giftCards = await getAllRecordsFromStore("giftcards");
-                state.dbCache.transactions = await getAllRecordsFromStore("transactions");
-                state.dbCache.suspendedTransactions = await getAllRecordsFromStore("suspended");
-                state.dbCache.timeCards = await getAllRecordsFromStore("timecards");
-                state.dbCache.logs = await getAllRecordsFromStore("audit_logs");
-                
-                let savedCorp = await getSingleDocFromStore("system_state", "corporate_profile").catch(() => null);
-                if(savedCorp) state.corporateProfile = savedCorp;
-                
-                let savedTill = await getSingleDocFromStore("system_state", "active_till_session").catch(() => null);
-                if(savedTill) state.activeTillSession = savedTill;
-                
-                console.log("Firestore cache sync sequence finished cleanly.");
-            } catch (err) {
-                console.error("Non-blocking error caught during sync lifecycle step: ", err);
-            }
-        }
-
-        async function writeRecordToStore(storeName, record) {
-            let docId = record.invoiceId || record.employeeNum || record.customerId || record.punchId || record.cardNum || record.sku || record.logId || record.suspendId || record.id || record.key;
-            if(!docId) return;
-            try {
-                await db.collection(storeName).doc(docId).set(record);
-                return true;
-            } catch(e) {
-                console.error(`Cloud write sync error inside ${storeName}: `, e);
-            }
-        }
-
-        async function deleteRecordFromStore(storeName, key) {
-            try {
-                await db.collection(storeName).doc(key).delete();
-                return true;
-            } catch(e) {
-                console.error("Cloud item purge exception: ", e);
-            }
-        }
-
-        async function getAllRecordsFromStore(storeName) {
-            try {
-                let snap = await db.collection(storeName).get();
-                let arr = [];
-                if (snap && !snap.empty) {
-                    snap.forEach(doc => arr.push(doc.data()));
-                }
-                return arr;
-            } catch(e) {
-                console.warn(`Query path empty or restrained for store: ${storeName}`);
-                return [];
-            }
-        }
-
-        async function getSingleDocFromStore(storeName, key) {
-            try {
-                let doc = await db.collection(storeName).doc(key).get();
-                return doc.exists ? doc.data() : null;
-            } catch(e) {
-                return null;
-            }
-        }
-
-        async function writeAuditTrailLogEntry(actorId, messageString) {
-            let logObj = {
-                logId: "LOG_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
-                timestamp: new Date().toISOString(),
-                actor: actorId,
-                message: messageString
-            };
-            await writeRecordToStore("audit_logs", logObj);
-            state.dbCache.logs.push(logObj);
-            appendLogStringToTerminalDOM(logObj);
-        }
-
-        async function enforceFoundationalSystemSeedData() {
-            if(!state.dbCache.employees || state.dbCache.employees.length === 0) {
-                let masterManager = {
-                    employeeNum: "1000001",
-                    fullName: "Corporate Admin / System Manager",
-                    phone: "(555) 019-9999",
-                    email: "admin@dexisretail.enterprise",
-                    address: "Corporate HQ Vault Frame",
-                    positionTitle: "store director",
-                    positionType: "full time",
-                    managerAuthority: "yes",
-                    payType: "salary",
-                    payAmount: 120000,
-                    password: "password123",
-                    status: "active"
-                };
-                await writeRecordToStore("employees", masterManager);
-                state.dbCache.employees = [masterManager];
-            }
-            
-            if(!state.dbCache.categories || state.dbCache.categories.length === 0) {
-                let defaultCats = [
-                    { id: "cat_01", name: "Apparel & Streetwear" },
-                    { id: "cat_02", name: "Luxury Cosmetics & Fragrance" },
-                    { id: "cat_03", name: "Core Home Electronics" }
-                ];
-                for(let c of defaultCats) {
-                    await writeRecordToStore("categories", c);
-                }
-                state.dbCache.categories = defaultCats;
-            }
-
-            document.getElementById("app-company-name").innerText = state.corporateProfile.name;
-            document.getElementById("header-brand").innerText = state.corporateProfile.name;
-            document.getElementById("header-store-num").innerText = state.corporateProfile.storeNum;
-            updateGlobalHeaderTillStatusBarIndicators();
-        }
-
-        // =========================================================================
-        // UI CORE ROUTER & ROUTINE AUTH PANELS
-        // =========================================================================
-        function navigateTo(targetViewId) {
-            const views = ['view-login', 'view-home', 'view-register', 'view-customer-mgmt', 'view-employee-mgmt', 'view-inventory-mgmt', 'view-system-settings', 'view-manage-till'];
-            views.forEach(v => { if(document.getElementById(v)) document.getElementById(v).classList.add("hidden-view"); });
-            document.getElementById(targetViewId).classList.remove("hidden-view");
-            
-            if(targetViewId === 'view-login') document.getElementById("global-header").classList.add("hidden-view");
-            else document.getElementById("global-header").classList.remove("hidden-view");
-
-            if(targetViewId === 'view-employee-mgmt') renderEmployeeManagementRosterDirectory();
-            if(targetViewId === 'view-inventory-mgmt') { renderInventoryCatalogTable(); clearInventoryInspectionPane(); }
-            if(targetViewId === 'view-system-settings') syncAndRenderSettingsSubsystemsTabs();
-            if(targetViewId === 'view-manage-till') buildTillManagementInterfaceFrame();
-            hideElementWithId("register-hamburger-menu");
-        }
-
-        async function handleLogin() {
-            let numInp = document.getElementById("login-emp-num").value.trim();
-            let passInp = document.getElementById("login-emp-pass").value;
-            
-            if(!state.dbCache.employees) state.dbCache.employees = [];
-            let matchedUser = state.dbCache.employees.find(e => e.employeeNum === numInp);
-            
-            if(!matchedUser) { triggerAppNotificationAlert("Authentication Rejected", "Invalid profile number credentials."); return; }
-            if(matchedUser.status !== "active") { triggerAppNotificationAlert("Account Restrained", "User profile holds restricted state flags."); return; }
-            if(matchedUser.password !== passInp) { triggerAppNotificationAlert("Security Mismatch", "Incorrect entry key parameters."); return; }
-            
-            state.activeEmployee = matchedUser;
-            document.getElementById("header-user").innerText = `${matchedUser.fullName} (${matchedUser.positionTitle.toUpperCase()})`;
-            await writeAuditTrailLogEntry(matchedUser.employeeNum, `Authorized terminal checkout session link.`);
-            
-            document.getElementById("login-emp-num").value = "";
-            document.getElementById("login-emp-pass").value = "";
-            navigateTo('view-home');
-        }
-
-        function handleLogout() {
-            if(state.activeEmployee) writeAuditTrailLogEntry(state.activeEmployee.employeeNum, "Terminated secure operational console access link.");
-            state.activeEmployee = null;
-            navigateTo('view-login');
-        }
-
-        function requireManagerAuth(successDestinationViewId) {
-            if(!state.activeEmployee) return;
-            if(state.activeEmployee.managerAuthority === "yes") { navigateTo(successDestinationViewId); return; }
-            
-            openGlobalModalOverlay(`
-                <div class="space-y-4">
-                    <div class="flex items-center space-x-2 text-iosRed"><i data-lucide="shield-alert" class="w-6 h-6"></i><h3 class="text-lg font-bold">Privilege Escalation Required</h3></div>
-                    <p class="text-xs text-gray-500">Provide authority verification tokens to proceed:</p>
-                    <div class="space-y-2">
-                        <input type="text" id="auth-override-num" placeholder="Manager Employee Number ID" class="w-full px-3 py-2 bg-gray-50 border rounded-xl font-medium text-sm focus:outline-none">
-                        <input type="password" id="auth-override-pass" placeholder="Manager Secure Override Password" class="w-full px-3 py-2 bg-gray-50 border rounded-xl font-medium text-sm focus:outline-none">
-                    </div>
-                    <div class="flex gap-2 justify-end pt-2">
-                        <button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl font-semibold text-xs text-gray-600">Cancel Action</button>
-                        <button onclick="processManagerOverrideAuthorization('${successDestinationViewId}')" class="px-4 py-2 bg-iosBlue text-white rounded-xl font-semibold text-xs">Authorize Override</button>
-                    </div>
-                </div>
-            `);
-            lucide.createIcons();
-        }
-
-        function processManagerOverrideAuthorization(targetDestinationView) {
-            let num = document.getElementById("auth-override-num").value.trim();
-            let pass = document.getElementById("auth-override-pass").value;
-            let manager = state.dbCache.employees.find(e => e.employeeNum === num && e.managerAuthority === 'yes');
-            
-            if(!manager || manager.password !== pass || manager.status !== 'active') {
-                triggerAppNotificationAlert("Override Rejected", "Elevation trace denied."); return;
-            }
-            writeAuditTrailLogEntry(state.activeEmployee.employeeNum, `Elevated controls via supervisor token: [${manager.employeeNum}].`);
-            closeGlobalModalOverlay();
-            navigateTo(targetDestinationView);
-        }
-
-        // =========================================================================
-        // CHECKOUT ACCUMULATORS & CART METRICS TRACES
-        // =========================================================================
-        function updateRegisterInvoiceCalculationSummaryDOM() {
-            let items = state.invoiceContext.items;
-            let totalUnits = items.length;
-            let runningRawSubtotal = 0;
-            items.forEach(it => { runningRawSubtotal += it.computedPrice; });
-            
-            let calculatedDiscountsTotal = 0;
-            if(state.invoiceContext.globalDiscount.type === 'dollar') calculatedDiscountsTotal = state.invoiceContext.globalDiscount.value;
-            else if(state.invoiceContext.globalDiscount.type === 'percent') calculatedDiscountsTotal = runningRawSubtotal * (state.invoiceContext.globalDiscount.value / 100);
-            else if(state.invoiceContext.employeeDiscount) calculatedDiscountsTotal = runningRawSubtotal * 0.50;
-            if(calculatedDiscountsTotal > runningRawSubtotal) calculatedDiscountsTotal = runningRawSubtotal;
-            
-            let netSubtotalAfterInvoiceDiscounts = runningRawSubtotal - calculatedDiscountsTotal;
-            let calculatedTaxAggregate = 0;
-            
-            if(!state.invoiceContext.isTaxExempt) {
-                items.forEach(it => {
-                    if(it.inventoryRef.taxEligible === "yes") {
-                        let itemProportionRatio = runningRawSubtotal > 0 ? (it.computedPrice / runningRawSubtotal) : 0;
-                        let lineProportionateDiscountAmount = calculatedDiscountsTotal * itemProportionRatio;
-                        let lineNetTaxableBasis = it.computedPrice - lineProportionateDiscountAmount;
-                        if(lineNetTaxableBasis < 0) lineNetTaxableBasis = 0;
-                        calculatedTaxAggregate += lineNetTaxableBasis * (state.corporateProfile.taxRate / 100);
-                    }
-                });
-            }
-            
-            let aggregateFinalGrandTotalDue = netSubtotalAfterInvoiceDiscounts + calculatedTaxAggregate;
-            document.getElementById("calc-total-units").innerText = totalUnits;
-            document.getElementById("calc-subtotal").innerText = formatCurrencyField(runningRawSubtotal);
-            
-            if(calculatedDiscountsTotal > 0) {
-                document.getElementById("calc-discount-row").classList.remove("hidden");
-                document.getElementById("calc-discount-label").innerText = state.invoiceContext.employeeDiscount ? "Associate Disc (50%)" : "Applied Promo Markdown";
-                document.getElementById("calc-discount-val").innerText = "-" + formatCurrencyField(calculatedDiscountsTotal);
-            } else document.getElementById("calc-discount-row").classList.add("hidden");
-            
-            if(state.invoiceContext.isTaxExempt) {
-                document.getElementById("calc-tax-label").innerHTML = `<span class="text-iosGreen font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Exempt (${state.invoiceContext.taxExemptionNumber})</span>`;
-            } else document.getElementById("calc-tax-label").innerText = `Sales Tax (${state.corporateProfile.taxRate}%)`;
-            
-            document.getElementById("calc-tax-val").innerText = formatCurrencyField(calculatedTaxAggregate);
-            document.getElementById("calc-grand-total").innerText = formatCurrencyField(aggregateFinalGrandTotalDue);
-            
-            buildRegisterModifierBadgesDisplayFrame();
-            renderRegisterLineItemsCartLayoutList();
-            lucide.createIcons();
-        }
-
-        function buildRegisterModifierBadgesDisplayFrame() {
-            let container = document.getElementById("invoice-modifier-badges");
-            container.innerHTML = "";
-            if(state.invoiceContext.employeeDiscount) {
-                container.innerHTML += `<div class="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center justify-between shadow-sm"><span>Associate Markdown Locked: ${state.invoiceContext.employeeDiscount.fullName}</span><button onclick="removeEmployeeDiscountFromCartInvoice()" class="font-extrabold text-sm ml-2">&times;</button></div>`;
-            }
-            if(state.invoiceContext.isGiftReceipt) {
-                container.innerHTML += `<div class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center justify-between shadow-sm"><span>Gift Receipt Mode Flagged Active</span><button onclick="triggerGiftReceiptToggling()" class="font-extrabold text-sm ml-2">&times;</button></div>`;
-            }
-        }
-
-        function renderRegisterLineItemsCartLayoutList() {
-            let container = document.getElementById("cart-items-container");
-            if(state.invoiceContext.items.length === 0) {
-                container.innerHTML = `<div class="text-center text-gray-400 py-20 flex flex-col items-center justify-center"><i data-lucide="barcode" class="w-16 h-16 stroke-[1] text-gray-300 mb-2"></i><p class="text-sm font-medium">No items present in current invoice frame.</p></div>`;
-                return;
-            }
-            container.innerHTML = "";
-            state.invoiceContext.items.forEach((it, index) => {
-                let hasMarkdown = it.computedPrice < it.inventoryRef.price;
-                let variantText = it.selectedVariant ? ` [${it.selectedVariant.color} / ${it.selectedVariant.size}]` : "";
-                let itemDiv = document.createElement("div");
-                itemDiv.className = "bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex items-center justify-between relative";
-                itemDiv.innerHTML = `
-                    <div class="flex-1 min-w-0 pr-4">
-                        <span class="text-[10px] bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">${it.inventoryRef.categoryId}</span>
-                        <h4 class="font-bold text-sm text-gray-900 truncate mt-1">${it.inventoryRef.nameDescription}${variantText}</h4>
-                        <p class="font-mono text-xs text-gray-400 mt-0.5">SKU: ${it.inventoryRef.sku}</p>
-                    </div>
-                    <div class="text-right flex items-center space-x-4 shrink-0">
-                        <div>
-                            <div class="font-bold text-base text-black">${formatCurrencyField(it.computedPrice)}</div>
-                            ${hasMarkdown ? `<div class="text-xs text-gray-400 line-through">${formatCurrencyField(it.inventoryRef.price)}</div>` : ''}
-                        </div>
-                        <div class="relative">
-                            <button onclick="toggleElementVisibility('cart-item-popover-${index}')" class="bg-gray-100 text-gray-600 p-2 rounded-xl"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i></button>
-                            <div id="cart-item-popover-${index}" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-1 hidden z-50 text-xs font-semibold">
-                                <button onclick="triggerLineItemPriceOverridePrompt(${index})" class="w-full px-3 py-2 text-left hover:bg-gray-50"><i data-lucide="pencil" class="w-3.5 h-3.5 inline text-iosBlue"></i> Override Price</button>
-                                <button onclick="triggerLineItemDiscountPrompt(${index}, 'percent')" class="w-full px-3 py-2 text-left hover:bg-gray-50"><i data-lucide="percent" class="w-3.5 h-3.5 inline text-iosBlue"></i> Markdown %</button>
-                                <button onclick="triggerLineItemDiscountPrompt(${index}, 'dollar')" class="w-full px-3 py-2 text-left hover:bg-gray-50"><i data-lucide="dollar-sign" class="w-3.5 h-3.5 inline text-iosBlue"></i> Markdown $</button>
-                                <button onclick="removeLineItemFromInvoiceCartIndex(${index})" class="w-full px-3 py-2 text-left hover:bg-gray-50 text-iosRed"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i> Purge Line</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(itemDiv);
-            });
-        }
-
-        function handleManualSkuScan() {
-            if(!verifyRegisterTillSessionIsActive()) return;
-            let box = document.getElementById("register-sku-input");
-            let inputSku = box.value.trim();
-            if(!inputSku) return;
-            
-            let product = state.dbCache.inventory.find(p => p.sku === inputSku);
-            if(!product) { triggerAppNotificationAlert("SKU Not Located", "No product links reconcile this signature code."); return; }
-            
-            if(product.variants && product.variants.length > 0) openVariantSelectorOverlayForCartInsertion(product);
-            else insertProductInstanceIntoActiveInvoiceCart(product, null);
-            
-            box.value = "";
-            box.focus();
-        }
-
-        function openVariantSelectorOverlayForCartInsertion(productObj) {
-            let htmlOptions = "";
-            productObj.variants.forEach((v, idx) => {
-                htmlOptions += `<button onclick="processVariantSelectionCartInsertion('${productObj.sku}', ${idx})" class="w-full text-left p-3 bg-gray-50 border rounded-xl hover:border-iosBlue flex justify-between items-center transition font-medium"><div><span class="block text-sm text-gray-900">${v.color} / Size: ${v.size}</span><span class="block text-xs text-gray-400">Stock: ${v.stock} units remain</span></div><i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i></button>`;
-            });
-            openGlobalModalOverlay(`<div class="space-y-4"><h3 class="text-lg font-bold">Select Variant Attribute</h3><div class="space-y-2 max-h-60 overflow-y-auto ios-scroll">${htmlOptions}</div><button onclick="closeGlobalModalOverlay()" class="w-full py-2.5 bg-gray-100 rounded-xl text-xs font-semibold">Abort Mapping</button></div>`);
-            lucide.createIcons();
-        }
-
-        function processVariantSelectionCartInsertion(skuCode, variantIndex) {
-            let prod = state.dbCache.inventory.find(p => p.sku === skuCode);
-            let selectedVariant = prod.variants[variantIndex];
-            closeGlobalModalOverlay();
-            insertProductInstanceIntoActiveInvoiceCart(prod, selectedVariant);
-        }
-
-        function insertProductInstanceIntoActiveInvoiceCart(productObject, variantObjectReference = null) {
-            let lineItem = { cartId: "LINE_" + Date.now(), inventoryRef: JSON.parse(JSON.stringify(productObject)), selectedVariant: variantObjectReference, computedPrice: productObject.price };
-            state.invoiceContext.items.push(lineItem);
-            updateRegisterInvoiceCalculationSummaryDOM();
-        }
-
-        function removeLineItemFromInvoiceCartIndex(idx) { state.invoiceContext.items.splice(idx, 1); updateRegisterInvoiceCalculationSummaryDOM(); }
-
-        function triggerLineItemPriceOverridePrompt(idx) {
-            let current = state.invoiceContext.items[idx].computedPrice;
-            openGlobalModalOverlay(`<div class="space-y-4"><h3 class="text-lg font-bold">Override Pricing Parameter</h3><input type="number" step="0.01" id="line-override-price-val" value="${current}" class="w-full px-4 py-3 bg-gray-100 border rounded-xl font-bold text-lg"><div class="flex gap-2 justify-end"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl font-semibold text-xs">Dismiss</button><button onclick="processLineItemPriceOverride(${idx})" class="px-4 py-2 bg-iosBlue text-white rounded-xl font-semibold text-xs">Apply Override</button></div></div>`);
-        }
-
-        function processLineItemPriceOverride(idx) {
-            let val = parseFloat(document.getElementById("line-override-price-val").value);
-            if(isNaN(val) || val < 0) return;
-            state.invoiceContext.items[idx].computedPrice = val;
-            closeGlobalModalOverlay();
-            updateRegisterInvoiceCalculationSummaryDOM();
-        }
-
-        function triggerLineItemDiscountPrompt(idx, type) {
-            openGlobalModalOverlay(`<div class="space-y-4"><h3 class="text-lg font-bold">Apply Line Markdown (${type === 'dollar' ? '$' : '%'})</h3><input type="number" step="0.01" id="line-markdown-input-val" class="w-full px-4 py-3 bg-gray-100 border font-bold text-lg" placeholder="Markdown Value"><div class="flex gap-2 justify-end"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl font-semibold text-xs">Dismiss</button><button onclick="processLineItemDiscountExecution(${idx}, '${type}')" class="px-4 py-2 bg-iosBlue text-white rounded-xl font-semibold text-xs">Commit</button></div></div>`);
-        }
-
-        function processLineItemDiscountExecution(idx, type) {
-            let val = parseFloat(document.getElementById("line-markdown-input-val").value);
-            if(isNaN(val) || val <= 0) return;
-            let item = state.invoiceContext.items[idx];
-            if(type === 'dollar') item.computedPrice = item.computedPrice - val;
-            else item.computedPrice = item.computedPrice * (1 - (val / 100));
-            if(item.computedPrice < 0) item.computedPrice = 0;
-            closeGlobalModalOverlay();
-            updateRegisterInvoiceCalculationSummaryDOM();
-        }
-
-        function triggerTransactionDiscountPrompt(type) {
-            hideElementWithId("register-hamburger-menu");
-            openGlobalModalOverlay(`<div class="space-y-4"><h3 class="text-lg font-bold">Invoice Markdown (${type === 'dollar' ? '$' : '%'})</h3><input type="number" step="0.01" id="invoice-markdown-input-val" class="w-full px-4 py-3 bg-gray-100 border font-bold text-lg"><div class="flex gap-2 justify-end"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl font-semibold text-xs">Dismiss</button><button onclick="processTransactionDiscountExecution('${type}')" class="px-4 py-2 bg-iosBlue text-white rounded-xl font-semibold text-xs">Apply</button></div></div>`);
-        }
-
-        function processTransactionDiscountExecution(type) {
-            let val = parseFloat(document.getElementById("invoice-markdown-input-val").value);
-            if(isNaN(val) || val <= 0) return;
-            state.invoiceContext.globalDiscount = { type: type, value: val };
-            state.invoiceContext.employeeDiscount = null;
-            closeGlobalModalOverlay();
-            updateRegisterInvoiceCalculationSummaryDOM();
-        }
-
-        function triggerEmployeeDiscountWorkflow() {
-            hideElementWithId("register-hamburger-menu");
-            openGlobalModalOverlay(`<div class="space-y-4"><h3 class="text-lg font-bold text-purple-700">Associate Discount Linkage</h3><input type="text" id="emp-disc-scan-id" placeholder="Associate ID Number" class="w-full px-4 py-2 bg-gray-50 border rounded-xl font-mono text-center tracking-widest font-bold"><div class="flex gap-2 justify-end"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs">Cancel</button><button onclick="processEmployeeDiscountLinkageVerification()" class="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs">Verify File</button></div></div>`);
-        }
-
-        function processEmployeeDiscountLinkageVerification() {
-            let empNum = document.getElementById("emp-disc-scan-id").value.trim();
-            let targetEmp = state.dbCache.employees.find(e => e.employeeNum === empNum);
-            if(!targetEmp || targetEmp.status !== 'active') { triggerAppNotificationAlert("Verification Fault", "No active associate files match that credential matrix code."); return; }
-            
-            openGlobalModalOverlay(`<div class="space-y-4 text-center"><div class="w-12 h-12 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center mx-auto"><i data-lucide="user" class="w-6 h-6"></i></div><div><h3 class="font-bold text-lg">Verify Staff Identity</h3><p class="text-sm font-black text-purple-700 mt-0.5">${targetEmp.fullName}</p></div><p class="text-xs text-gray-500 bg-gray-50 p-3 rounded-xl border border-dashed">Cashier Statement: I hereby verify the face profile matches this record tracker line.</p><div class="flex gap-2 justify-center"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs">Denied</button><button onclick="commitEmployeeDiscountToCartInstance('${targetEmp.employeeNum}')" class="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs">Apply 50% Overage</button></div></div>`);
-            lucide.createIcons();
-        }
-
-        function commitEmployeeDiscountToCartInstance(empNum) {
-            let targetEmp = state.dbCache.employees.find(e => e.employeeNum === empNum);
-            state.invoiceContext.employeeDiscount = targetEmp;
-            state.invoiceContext.globalDiscount = { type: 'none', value: 0 };
-            closeGlobalModalOverlay();
-            updateRegisterInvoiceCalculationSummaryDOM();
-        }
-
-        function removeEmployeeDiscountFromCartInvoice() { state.invoiceContext.employeeDiscount = null; updateRegisterInvoiceCalculationSummaryDOM(); }
-        function triggerTaxExemptEntry() {
-            hideElementWithId("register-hamburger-menu");
-            openGlobalModalOverlay(`<div class="space-y-4"><h3 class="text-lg font-bold">Tax Exemption Certification</h3><input type="text" id="tax-exempt-cert-id" placeholder="Exemption ID Number" class="w-full px-4 py-2.5 bg-gray-50 border rounded-xl font-mono"><div class="flex gap-2 justify-end"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs">Dismiss</button><button onclick="processTaxExemptApplication()" class="px-4 py-2 bg-iosBlue text-white rounded-xl text-xs">Strip Taxes</button></div></div>`);
-        }
-
-        function processTaxExemptApplication() {
-            let num = document.getElementById("tax-exempt-cert-id").value.trim();
-            if(!num) return;
-            state.invoiceContext.isTaxExempt = true;
-            state.invoiceContext.taxExemptionNumber = num;
-            closeGlobalModalOverlay();
-            updateRegisterInvoiceCalculationSummaryDOM();
-        }
-
-        function triggerGiftReceiptToggling() { hideElementWithId("register-hamburger-menu"); state.invoiceContext.isGiftReceipt = !state.invoiceContext.isGiftReceipt; updateRegisterInvoiceCalculationSummaryDOM(); }
-        function initializeCameraScannerMock() {
-            if(!verifyRegisterTillSessionIsActive()) return;
-            if(state.dbCache.inventory.length === 0) return;
-            let randProduct = state.dbCache.inventory[Math.floor(Math.random() * state.dbCache.inventory.length)];
-            let variant = (randProduct.variants && randProduct.variants.length > 0) ? randProduct.variants[0] : null;
-            insertProductInstanceIntoActiveInvoiceCart(randProduct, variant);
-            triggerAppNotificationAlert("Camera Target Captured", `Appended product element: ${randProduct.nameDescription}`);
-        }
-
-        // =========================================================================
-        // CONSUMER REGISTRY ATTACHMENT PIPELINES
-        // =========================================================================
-        function openCustomerSearchAttachmentModal() {
-            openGlobalModalOverlay(`<div class="space-y-4"><h3 class="text-lg font-bold">Attach Loyalty Account</h3><input type="text" id="cart-cust-search-query" placeholder="Phone Number or Email" class="w-full px-3 py-2 bg-gray-50 border rounded-xl text-sm"><div id="cart-cust-search-results" class="space-y-1 max-h-48 overflow-y-auto ios-scroll"></div><div class="flex justify-between pt-2"><button onclick="openRegisterCustomerEnrollmentSubform()" class="text-xs text-iosBlue font-bold"><i data-lucide="user-plus" class="w-3.5 h-3.5 inline"></i> Fast Enroll</button><div class="flex gap-2"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs">Cancel</button><button onclick="executeCartCustomerLookupQuery()" class="px-4 py-2 bg-iosBlue text-white rounded-xl text-xs">Search</button></div></div></div>`);
-            lucide.createIcons();
-        }
-
-        function executeCartCustomerLookupQuery() {
-            let query = document.getElementById("cart-cust-search-query").value.trim().toLowerCase();
-            if(!query) return;
-            let filtered = state.dbCache.customers.filter(c => c.phone.includes(query) || c.email.toLowerCase().includes(query));
-            let container = document.getElementById("cart-cust-search-results");
-            container.innerHTML = "";
-            if(filtered.length === 0) { container.innerHTML = `<p class="text-xs text-iosRed font-medium text-center p-2">No matching entries recorded.</p>`; return; }
-            
-            filtered.forEach(c => {
-                let div = document.createElement("div");
-                div.className = "p-2 hover:bg-gray-50 border-b flex justify-between items-center cursor-pointer";
-                div.onclick = () => { state.invoiceContext.customer = c; closeGlobalModalOverlay(); syncRegisterCustomerPanelState(); };
-                div.innerHTML = `<div><div class="text-xs font-bold text-gray-900">${c.fullName}</div><div class="text-[10px] text-gray-400 font-mono">${c.phone}</div></div><i data-lucide="user-check" class="w-4 h-4 text-iosGreen"></i>`;
-                container.appendChild(div);
-            });
-            lucide.createIcons();
-        }
-
-        function syncRegisterCustomerPanelState() {
-            let unlinkedFrame = document.getElementById("cust-state-unlinked");
-            let linkedFrame = document.getElementById("cust-state-linked");
-            if(state.invoiceContext.customer) {
-                unlinkedFrame.classList.add("hidden"); linkedFrame.classList.remove("hidden");
-                document.getElementById("linked-cust-name").innerText = state.invoiceContext.customer.fullName;
-                document.getElementById("linked-cust-id").innerText = state.invoiceContext.customer.customerId;
-                document.getElementById("linked-cust-status").innerText = state.invoiceContext.customer.status.toUpperCase();
-                document.getElementById("linked-cust-status").className = `font-bold ${state.invoiceContext.customer.status === 'active' ? 'text-iosGreen' : 'text-iosRed'}`;
-            } else { unlinkedFrame.classList.remove("hidden"); linkedFrame.classList.add("hidden"); }
-        }
-
-        function detachCustomerFromActiveRegisterInvoice() { state.invoiceContext.customer = null; syncRegisterCustomerPanelState(); }
-        function viewLinkedCustomerProfileDetails() {
-            if(!state.invoiceContext.customer) return;
-            navigateTo('view-customer-mgmt');
-            document.getElementById("cust-search-input").value = state.invoiceContext.customer.phone;
-            executeCustomerSearchRegistry();
-        }
-
-        function openRegisterCustomerEnrollmentSubform() {
-            openGlobalModalOverlay(`
-                <div class="space-y-4"><h3 class="text-lg font-bold">Fast Loyalty Account Enrollment</h3>
-                    <div class="grid grid-cols-2 gap-3 text-xs">
-                        <div class="col-span-2"><label class="block font-semibold text-gray-500 mb-0.5">Full Legal Name *</label><input type="text" id="reg-cust-new-name" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
-                        <div><label class="block font-semibold text-gray-500 mb-0.5">Phone Line Identity *</label><input type="text" id="reg-cust-new-phone" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
-                        <div><label class="block font-semibold text-gray-500 mb-0.5">Email Parameters *</label><input type="email" id="reg-cust-new-email" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
-                        <div><label class="block font-semibold text-gray-500 mb-0.5">Postal Zip Code *</label><input type="text" id="reg-cust-new-zip" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
-                        <div><label class="block font-semibold text-gray-500 mb-0.5">Home Address Line (Optional)</label><input type="text" id="reg-cust-new-address" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
-                    </div>
-                    <div class="flex gap-2 justify-end pt-2"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs">Dismiss</button><button onclick="processRegisterCustomerEnrollmentExecution()" class="px-4 py-2 bg-iosBlue text-white rounded-xl text-xs shadow-sm">Generate Registry Ledger</button></div>
-                </div>
-            `);
-        }
-
-        async function processRegisterCustomerEnrollmentExecution() {
-            let name = document.getElementById("reg-cust-new-name").value.trim();
-            let phone = document.getElementById("reg-cust-new-phone").value.trim();
-            let email = document.getElementById("reg-cust-new-email").value.trim();
-            let zip = document.getElementById("reg-cust-new-zip").value.trim();
-            let address = document.getElementById("reg-cust-new-address").value.trim() || "Not Provided";
-            
-            if(!name || !phone || !email || !zip) { triggerAppNotificationAlert("Data Deficiency", "Fill all required elements."); return; }
-            let dup = state.dbCache.customers.filter(c => c.phone === phone || c.email.toLowerCase() === email.toLowerCase());
-            if(dup.length > 0) { triggerAppNotificationAlert("Registry Conflict", "A duplicate value matches historical files."); return; }
-            
-            let newCustId = generateCryptographicNumericalIdString(10);
-            let customerObj = { customerId: newCustId, fullName: name, phone: phone, email: email, zip: zip, homeAddress: address, status: "active", pointsAccumulated: 0, rewardsAvailable: 0, lifetimePreTaxSpend: 0.00 };
-            
-            await writeRecordToStore("customers", customerObj);
-            state.dbCache.customers.push(customerObj);
-            await writeAuditTrailLogEntry(state.activeEmployee ? state.activeEmployee.employeeNum : "SYSTEM", `Registered customer file [${newCustId}]`);
-            
-            state.invoiceContext.customer = customerObj;
-            closeGlobalModalOverlay();
-            syncRegisterCustomerPanelState();
-        }
-
-        // =========================================================================
-        // CHECKOUT DISCHARGE & PAYMENTS REVOLUTION OVERLAYS
-        // =========================================================================
-        function calculateActiveInvoiceFinancialBreakdownMatrix() {
-            let items = state.invoiceContext.items;
-            let runningRawSubtotal = 0;
-            items.forEach(it => { runningRawSubtotal += it.computedPrice; });
-            let calculatedDiscountsTotal = 0;
-            if(state.invoiceContext.globalDiscount.type === 'dollar') calculatedDiscountsTotal = state.invoiceContext.globalDiscount.value;
-            else if(state.invoiceContext.globalDiscount.type === 'percent') calculatedDiscountsTotal = runningRawSubtotal * (state.invoiceContext.globalDiscount.value / 100);
-            else if(state.invoiceContext.employeeDiscount) calculatedDiscountsTotal = runningRawSubtotal * 0.50;
-            if(calculatedDiscountsTotal > runningRawSubtotal) calculatedDiscountsTotal = runningRawSubtotal;
-            
-            let netSubtotalAfterInvoiceDiscounts = runningRawSubtotal - calculatedDiscountsTotal;
-            let calculatedTaxAggregate = 0;
-            if(!state.invoiceContext.isTaxExempt) {
-                items.forEach(it => {
-                    if(it.inventoryRef.taxEligible === "yes") {
-                        let itemProportionRatio = runningRawSubtotal > 0 ? (it.computedPrice / runningRawSubtotal) : 0;
-                        let lineProportionateDiscountAmount = calculatedDiscountsTotal * itemProportionRatio;
-                        let lineNetTaxableBasis = it.computedPrice - lineProportionateDiscountAmount;
-                        if(lineNetTaxableBasis < 0) lineNetTaxableBasis = 0;
-                        calculatedTaxAggregate += lineNetTaxableBasis * (state.corporateProfile.taxRate / 100);
-                    }
-                });
-            }
-            return { rawSubtotal: runningRawSubtotal, discountTotal: calculatedDiscountsTotal, taxableBasis: netSubtotalAfterInvoiceDiscounts, taxTotal: calculatedTaxAggregate, grandTotal: netSubtotalAfterInvoiceDiscounts + calculatedTaxAggregate };
-        }
-
-        function openTenderInterfaceStage() {
-            if(state.invoiceContext.items.length === 0) { triggerAppNotificationAlert("Cart Void", "No data lines present inside active basket array frames."); return; }
-            if(!verifyRegisterTillSessionIsActive()) return;
-            
-            let financialMatrix = calculateActiveInvoiceFinancialBreakdownMatrix();
-            let structuredTendersAggregatedSum = 0;
-            state.invoiceContext.tenders.forEach(t => structuredTendersAggregatedSum += t.amountApplied);
-            
-            let remainingDeficitBalanceDue = financialMatrix.grandTotal - structuredTendersAggregatedSum;
-            if(remainingDeficitBalanceDue < 0) remainingDeficitBalanceDue = 0;
-            
-            let htmlSplitsLog = "";
-            if(state.invoiceContext.tenders.length > 0) {
-                htmlSplitsLog += `<div class="bg-gray-50 rounded-xl p-3 border text-xs space-y-1.5 font-semibold"><p class="text-gray-400 uppercase tracking-wider text-[10px]">Processed Payment Stack</p>`;
-                state.invoiceContext.tenders.forEach((t, tIdx) => {
-                    htmlSplitsLog += `<div class="flex justify-between items-center text-gray-700 bg-white p-1.5 rounded-lg border"><span>${t.type.toUpperCase()} Mapping Line</span><div class="flex items-center space-x-2"><span class="font-mono font-bold text-black">${formatCurrencyField(t.amountApplied)}</span><button onclick="purgeTenderLineItemFromStack(${tIdx})" class="text-iosRed font-black text-sm">&times;</button></div></div>`;
-                });
-                htmlSplitsLog += `</div>`;
-            }
-
-            openGlobalModalOverlay(`
-                <div class="space-y-5">
-                    <h3 class="text-lg font-bold border-b pb-2">Checkout Tender Desk</h3>
-                    <div class="grid grid-cols-2 gap-4 bg-iosLightBg p-4 rounded-2xl border text-sm font-semibold">
-                        <div><span class="text-gray-400 text-xs block">Invoice Financial Basis</span><span>${formatCurrencyField(financialMatrix.grandTotal)}</span></div>
-                        <div class="text-right"><span class="text-gray-400 text-xs block">Outstanding Due</span><span class="text-2xl text-iosBlue font-black block">${formatCurrencyField(remainingDeficitBalanceDue)}</span></div>
-                    </div>
-                    ${htmlSplitsLog}
-                    <div class="space-y-2">
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider px-1">Tender Input Amount</label>
-                        <input type="number" step="0.01" id="tender-payment-magnitude-input" value="${remainingDeficitBalanceDue.toFixed(2)}" class="w-full p-3 bg-gray-50 border font-bold text-xl text-center">
-                    </div>
-                    <div class="grid grid-cols-3 gap-3">
-                        <button onclick="processTenderPaymentExecutionVector('cash')" class="bg-white border p-4 rounded-2xl flex flex-col items-center"><i data-lucide="banknote" class="w-6 h-6 text-iosGreen"></i><span class="text-xs font-bold mt-1">Cash</span></button>
-                        <button onclick="processTenderPaymentExecutionVector('card')" class="bg-white border p-4 rounded-2xl flex flex-col items-center"><i data-lucide="credit-card" class="w-6 h-6 text-iosBlue"></i><span class="text-xs font-bold mt-1">Debit/Credit</span></button>
-                        <button onclick="processTenderPaymentExecutionVector('giftcard')" class="bg-white border p-4 rounded-2xl flex flex-col items-center"><i data-lucide="gift" class="w-6 h-6 text-purple-500"></i><span class="text-xs font-bold mt-1">Gift Card</span></button>
-                    </div>
-                    <div class="flex justify-end pt-2"><button onclick="closeGlobalModalOverlay()" class="px-5 py-2.5 bg-gray-100 rounded-xl text-xs font-semibold">Back</button></div>
-                </div>
-            `);
-            lucide.createIcons();
-        }
-
-        function purgeTenderLineItemFromStack(idx) { state.invoiceContext.tenders.splice(idx, 1); openTenderInterfaceStage(); }
-
-        async function processTenderPaymentExecutionVector(tenderTypeKey) {
-            let inputAmt = parseFloat(document.getElementById("tender-payment-magnitude-input").value);
-            let financialMatrix = calculateActiveInvoiceFinancialBreakdownMatrix();
-            let totalProcessedTendersSoFar = 0;
-            state.invoiceContext.tenders.forEach(t => totalProcessedTendersSoFar += t.amountApplied);
-            let absoluteOutstandingBalanceLeft = financialMatrix.grandTotal - totalProcessedTendersSoFar;
-            
-            if(isNaN(inputAmt) || inputAmt <= 0) { triggerAppNotificationAlert("Value Error", "Provide real numeric figures."); return; }
-            let mappedTenderAllotment = inputAmt > absoluteOutstandingBalanceLeft ? absoluteOutstandingBalanceLeft : inputAmt;
-
-            if(tenderTypeKey === 'cash') {
-                state.invoiceContext.tenders.push({ type: 'cash', amountApplied: inputAmt });
-                let computedChangeDueValue = inputAmt - absoluteOutstandingBalanceLeft;
-                if(computedChangeDueValue < 0) computedChangeDueValue = 0;
-                
-                openGlobalModalOverlay(`
-                    <div class="space-y-4 text-center"><div class="w-14 h-14 bg-iosGreen/10 text-iosGreen rounded-full flex items-center justify-center mx-auto"><i data-lucide="check-circle" class="w-8 h-8"></i></div>
-                        <div class="bg-gray-50 border p-4 rounded-2xl"><span class="text-xs text-gray-400 font-bold block uppercase">Change Due</span><span class="text-3xl font-black text-iosGreen block mt-1">${formatCurrencyField(computedChangeDueValue)}</span></div>
-                        <div class="bg-amber-50 border text-amber-800 text-xs font-bold p-3 rounded-xl">CRITICAL SYSTEM ADVISORY: CLOSE THE CASH DRAWER PROMPTLY.</div>
-                        <button onclick="commitAndFinalizeInvoiceTransactionRecord()" class="w-full py-3 bg-iosBlue text-white font-bold rounded-xl">Acknowledge & Save</button>
-                    </div>`);
-                lucide.createIcons();
-            } else if(tenderTypeKey === 'card') {
-                openGlobalModalOverlay(`<div class="space-y-4"><h3>Gateway Payment Direct Routing</h3><p class="text-xs text-gray-400">Capture last 4 trailing credit digits:</p><input type="text" id="card-last-four-input" maxlength="4" placeholder="••••" class="w-full p-3 font-mono text-center text-xl tracking-widest font-black"><button onclick="executeMockCardNetworkAuthorization('${mappedTenderAllotment}')" class="w-full py-3 bg-iosBlue text-white font-bold rounded-xl shadow-md">Request Gateway Auth Code</button></div>`);
-            } else if(tenderTypeKey === 'giftcard') {
-                openGlobalModalOverlay(`<div class="space-y-4"><h3>Gift Card Asset Balance Capture</h3><input type="text" id="tender-giftcard-num-input" placeholder="Gift Card Serial Number" class="w-full p-3 bg-gray-50 border text-center font-mono"><button onclick="executeGiftCardPaymentTenderVerification('${mappedTenderAllotment}')" class="w-full py-3 bg-purple-600 text-white font-bold rounded-xl shadow-md">Deduct & Capture</button></div>`);
-            }
-        }
-
-        function executeMockCardNetworkAuthorization(appliedAmountValue) {
-            let lastFour = document.getElementById("card-last-four-input").value.trim();
-            if(lastFour.length !== 4 || isNaN(lastFour)) { triggerAppNotificationAlert("Data Fault", "Exactly 4 digits required."); return; }
-            
-            openGlobalModalOverlay(`<div class="space-y-4 text-center py-6"><div class="w-12 h-12 border-4 border-iosBlue border-t-transparent rounded-full animate-spin mx-auto"></div><div><h3 class="font-bold">Authorizing Credit Token...</h3></div></div>`);
-            setTimeout(() => {
-                let generatedAuthCode = "AUTH_" + Math.floor(100000 + Math.random() * 900000);
-                state.invoiceContext.tenders.push({ type: 'credit/debit', amountApplied: parseFloat(appliedAmountValue), cardDetails: `•••• •••• •••• ${lastFour}`, authCode: generatedAuthCode });
-                evaluateInvoiceTenderCompletionMatrix();
-            }, 1000);
-        }
-
-        async function executeGiftCardPaymentTenderVerification(appliedAmountValue) {
-            let cardNum = document.getElementById("tender-giftcard-num-input").value.trim();
-            let cardRecord = state.dbCache.giftCards.find(g => g.cardNum === cardNum);
-            if(!cardRecord) { triggerAppNotificationAlert("Asset Mismatch", "Serial control string not located."); return; }
-            
-            let requestedCharge = parseFloat(appliedAmountValue);
-            if(cardRecord.currentBalance < requestedCharge) { triggerAppNotificationAlert("Threshold Fault", `Available limit balance is only ${formatCurrencyField(cardRecord.currentBalance)}`); return; }
-            
-            cardRecord.currentBalance -= requestedCharge;
-            cardRecord.history.push({ type: "debit_charge", amount: requestedCharge, date: new Date().toISOString() });
-            await writeRecordToStore("giftcards", cardRecord);
-            
-            state.invoiceContext.tenders.push({ type: 'giftcard', amountApplied: requestedCharge, cardNum: cardNum, remainingBalanceOnCard: cardRecord.currentBalance });
-            openGlobalModalOverlay(`<div class="space-y-4 text-center"><h3 class="font-bold">Card Balance Transferred</h3><div class="bg-gray-50 p-3 rounded-xl font-mono text-xs">New Remaining Token Balance: <span class="font-bold text-purple-700">${formatCurrencyField(cardRecord.currentBalance)}</span></div><button onclick="evaluateInvoiceTenderCompletionMatrix()" class="w-full py-2 bg-iosBlue text-white rounded-xl text-xs font-semibold">Proceed</button></div>`);
-        }
-
-        function evaluateInvoiceTenderCompletionMatrix() {
-            let financialMatrix = calculateActiveInvoiceFinancialBreakdownMatrix();
-            let sumTenders = 0;
-            state.invoiceContext.tenders.forEach(t => sumTenders += t.amountApplied);
-            if(sumTenders >= (financialMatrix.grandTotal - 0.01)) commitAndFinalizeInvoiceTransactionRecord();
-            else openTenderInterfaceStage();
-        }
-
-        async function commitAndFinalizeInvoiceTransactionRecord() {
-            let financialMatrix = calculateActiveInvoiceFinancialBreakdownMatrix();
-            let finalGeneratedInvoiceId = "INV_" + Date.now() + "_" + Math.floor(1000 + Math.random() * 9000);
-            
-            let transactionRecord = {
-                invoiceId: finalGeneratedInvoiceId, timestamp: new Date().toISOString(), associateId: state.activeEmployee ? state.activeEmployee.employeeNum : "SYSTEM", storeNum: state.corporateProfile.storeNum,
-                itemsSnapshot: JSON.parse(JSON.stringify(state.invoiceContext.items)), financials: financialMatrix, tendersApplied: JSON.parse(JSON.stringify(state.invoiceContext.tenders)),
-                customerSnapshot: state.invoiceContext.customer ? JSON.parse(JSON.stringify(state.invoiceContext.customer)) : null, isTaxExempt: state.invoiceContext.isTaxExempt, taxExemptionNumber: state.invoiceContext.taxExemptionNumber, isGiftReceipt: state.invoiceContext.isGiftReceipt, status: "closed_posted"
-            };
-
-            for(let it of transactionRecord.itemsSnapshot) {
-                let masterProd = state.dbCache.inventory.find(p => p.sku === it.inventoryRef.sku);
-                if(masterProd) {
-                    masterProd.stockOnHand -= 1;
-                    if(it.selectedVariant) {
-                        let masterVariant = masterProd.variants.find(v => v.color === it.selectedVariant.color && v.size === it.selectedVariant.size);
-                        if(masterVariant) masterVariant.stock -= 1;
-                    }
-                    await writeRecordToStore("inventory", masterProd);
-                }
-            }
-
-            if(state.invoiceContext.customer && state.invoiceContext.customer.status === 'active') {
-                let masterCust = state.dbCache.customers.find(c => c.customerId === state.invoiceContext.customer.customerId);
-                if(masterCust) {
-                    masterCust.lifetimePreTaxSpend += financialMatrix.taxableBasis;
-                    masterCust.pointsAccumulated += Math.floor(financialMatrix.taxableBasis);
-                    while(masterCust.pointsAccumulated >= 250) { masterCust.pointsAccumulated -= 250; masterCust.rewardsAvailable += 1; }
-                    await writeRecordToStore("customers", masterCust);
-                }
-            }
-
-            await writeRecordToStore("transactions", transactionRecord);
-            await writeAuditTrailLogEntry(transactionRecord.associateId, `Finalized transaction ledger record: [${finalGeneratedInvoiceId}] total ${formatCurrencyField(financialMatrix.grandTotal)}`);
-            
-            if(state.activeTillSession.isOpen) {
-                transactionRecord.tendersApplied.forEach(t => { if(t.type === 'cash') state.activeTillSession.expectedCashBalance += t.amountApplied; });
-                await writeRecordToStore("system_state", { key: "active_till_session", value: state.activeTillSession });
-            }
-            openReceiptDispatchConsoleOverlay(transactionRecord);
-        }
-
-        function openReceiptDispatchConsoleOverlay(invoiceObjectRecord) {
-            let preloadedEmailStr = invoiceObjectRecord.customerSnapshot ? invoiceObjectRecord.customerSnapshot.email : "";
-            openGlobalModalOverlay(`
-                <div class="space-y-4 text-center"><div class="w-12 h-12 bg-iosGreen/10 text-iosGreen rounded-full flex items-center justify-center mx-auto"><i data-lucide="printer" class="w-6 h-6"></i></div>
-                    <h3>Dispatch Receipt Channels</h3>
-                    <div class="space-y-2 p-2 text-xs font-semibold">
-                        <button onclick="triggerReceiptOutputSignal('print')" class="w-full py-2 bg-gray-100 border text-gray-700 rounded-xl">Hardware Spool Print Slip</button>
-                        <div class="border rounded-xl p-3 bg-gray-50 text-left space-y-2">
-                            <input type="email" id="receipt-target-email-box" value="${preloadedEmailStr}" placeholder="name@domain.com" class="w-full p-2 border rounded-lg">
-                            <button onclick="triggerReceiptOutputSignal('email')" class="w-full py-2 bg-iosBlue text-white rounded-lg">Transmit E-Receipt Matrix</button>
-                        </div>
-                    </div>
-                    <button onclick="purgeRegisterWorkspaceAndResetInvoiceContext()" class="w-full py-3 bg-gray-900 text-white font-bold text-sm rounded-xl">Reset Core Register</button>
-                </div>`);
-            lucide.createIcons();
-        }
-
-        function triggerReceiptOutputSignal(channelKey) {
-            if(channelKey === 'email') triggerAppNotificationAlert("Sent", "Digital mail delivery spooled.");
-            else triggerAppNotificationAlert("Hardware Alert", "Thermal printing spooled successfully.");
-        }
-
-        function purgeRegisterWorkspaceAndResetInvoiceContext() {
-            state.invoiceContext = { items: [], customer: null, globalDiscount: { type: 'none', value: 0 }, employeeDiscount: null, isTaxExempt: false, taxExemptionNumber: "", isGiftReceipt: false, tenders: [] };
-            closeGlobalModalOverlay(); syncRegisterCustomerPanelState(); updateRegisterInvoiceCalculationSummaryDOM(); navigateTo('view-home');
-        }
-
-        // =========================================================================
-        // REVERSIBLE BALANCING METRICS (RETURNS PORTAL)
-        // =========================================================================
-        function openReturnContextScreen() {
-            hideElementWithId("register-hamburger-menu");
-            openGlobalModalOverlay suicide: `
-                <div class="space-y-4"><h3 class="text-lg font-bold text-iosRed">Return Logistics Intake</h3>
-                    <div class="space-y-2 bg-gray-50 p-3 rounded-2xl border">
-                        <div class="flex gap-2">
-                            <input type="text" id="return-invoice-search-input" placeholder="Invoice ID tracking identifier" class="flex-1 p-2 bg-white border rounded-lg text-xs font-mono">
-                            <button onclick="executeReturnInvoiceLookupTarget()" class="bg-iosBlue text-white px-4 py-1.5 rounded-lg text-xs font-bold">Query</button>
-                        </div>
-                    </div>
-                    <button onclick="triggerNoReceiptReturnFrameworkOverride()" class="w-full py-2 bg-gray-100 text-iosRed font-bold text-xs rounded-xl">Process No-Receipt Alternative Return Routing</button>
-                    <button onclick="closeGlobalModalOverlay()" class="w-full py-2 bg-gray-50 text-xs font-semibold rounded-xl text-gray-500">Dismiss</button>
-                </div>`;
-        }
-
-        function executeReturnInvoiceLookupTarget() {
-            let invId = document.getElementById("return-invoice-search-input").value.trim();
-            let matchedInv = state.dbCache.transactions.find(t => t.invoiceId === invId);
-            if(!matchedInv) { triggerAppNotificationAlert("Query Failed", "No transaction records exist for that validation string."); return; }
-            
-            let deltaCurrentTimeDurationMillis = Date.now() - new Date(matchedInv.timestamp).getTime();
-            if(deltaCurrentTimeDurationMillis > (30 * 24 * 60 * 60 * 1000)) {
-                openGlobalModalOverlay(`<div class="space-y-4 text-center"><div class="w-12 h-12 bg-iosRed/10 text-iosRed rounded-full flex items-center justify-center mx-auto"><i data-lucide="clock-alert" class="w-6 h-6"></i></div><h3 class="text-lg font-bold text-iosRed">Policy Lock Engaged</h3><p class="text-xs text-gray-500 font-semibold bg-gray-50 p-4 rounded-xl">"this receipt is past the return policy and cannot be returned"</p><button onclick="closeGlobalModalOverlay()" class="w-full py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold">Dismiss</button></div>`);
-                lucide.createIcons(); return;
-            }
-            
-            let htmlLines = "";
-            matchedInv.itemsSnapshot.forEach((it, idx) => {
-                htmlLines += `<div class="p-2 border-b flex justify-between items-center text-xs"><div><span class="font-bold text-gray-900 block">${it.inventoryRef.nameDescription}</span><span class="text-[10px] text-gray-400 font-mono block">Basis: ${formatCurrencyField(it.computedPrice)}</span></div><button onclick="triggerReturnItemReasonInquireBlock('${matchedInv.invoiceId}', ${idx})" class="bg-iosBlue text-white px-3 py-1 rounded-lg text-[10px]">Select Line</button></div>`;
-            });
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Select Return Target Lines</h3><div class="divide-y max-h-48 overflow-y-auto ios-scroll border rounded-xl p-2 bg-gray-50">${htmlLines}</div><button onclick="closeGlobalModalOverlay()" class="w-full py-2 bg-gray-100 rounded-xl text-xs">Close</button></div>`);
-        }
-
-        function triggerReturnItemReasonInquireBlock(invoiceId, itemIdx) {
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Log Return Reason Code</h3><select id="return-reason-dropdown" class="w-full p-2 border text-xs font-semibold rounded-xl"><option value="Defective / Quality Failure">Defective / Quality Failure</option><option value="Buyer Remorse / Size Incompatibility">Buyer Remorse / Size Incompatibility</option></select><button onclick="processVouchedReturnLineExecution('${invoiceId}', ${itemIdx})" class="w-full py-2 bg-iosRed text-white font-bold text-xs rounded-xl shadow-md">Confirm Authorization</button></div>`);
-        }
-
-        async function processVouchedReturnLineExecution(invoiceId, itemIdx) {
-            let reason = document.getElementById("return-reason-dropdown").value;
-            let inv = state.dbCache.transactions.find(t => t.invoiceId === invoiceId);
-            let item = inv.itemsSnapshot[itemIdx];
-            let recommendedTenderRefundTarget = inv.tendersApplied[0] ? inv.tendersApplied[0].type : "cash";
-            
-            let masterProd = state.dbCache.inventory.find(p => p.sku === item.inventoryRef.sku);
-            if(masterProd) { masterProd.stockOnHand += 1; await writeRecordToStore("inventory", masterProd); }
-            
-            if(state.activeTillSession.isOpen && recommendedTenderRefundTarget === 'cash') {
-                state.activeTillSession.expectedCashBalance -= item.computedPrice;
-                await writeRecordToStore("system_state", { key: "active_till_session", value: state.activeTillSession });
-            }
-            
-            await writeAuditTrailLogEntry(state.activeEmployee ? state.activeEmployee.employeeNum : "SYSTEM", `Vouched return for SKU [${item.inventoryRef.sku}]. Reason: ${reason}`);
-            openGlobalModalOverlay(`<div class="space-y-4 text-center"><div class="w-12 h-12 bg-iosGreen/10 text-iosGreen rounded-full flex items-center justify-center mx-auto"><i data-lucide="badge-dollar-sign" class="w-6 h-6"></i></div><div class="bg-gray-50 border p-4 rounded-2xl"><span class="text-[10px] text-gray-400 block uppercase font-black">Original Payout Target Vector</span><span class="text-xl font-bold block mt-0.5">${recommendedTenderRefundTarget.toUpperCase()}</span><span class="text-2xl font-black text-iosRed block mt-1">${formatCurrencyField(item.computedPrice)}</span></div><button onclick="purgeRegisterWorkspaceAndResetInvoiceContext()" class="w-full py-2.5 bg-gray-900 text-white text-xs">Conclude Session</button></div>`);
-            lucide.createIcons();
-        }
-
-        function triggerNoReceiptReturnFrameworkOverride() {
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Government ID Compliance Capture</h3><div class="space-y-2 text-xs font-semibold"><div><label>Full Legal Passenger/Driver Name</label><input type="text" id="nr-id-name" class="w-full p-2 border rounded-xl"></div><div><label>Government ID Document Number</label><input type="text" id="nr-id-num" class="w-full p-2 border rounded-xl font-mono"></div></div><button onclick="processUnvouchedIdVerificationStage()" class="w-full py-2.5 bg-iosBlue text-white font-bold text-xs rounded-xl shadow-md">Verify & Open Intake Matrix</button></div>`);
-        }
-
-        function processUnvouchedIdVerificationStage() {
-            let name = document.getElementById("nr-id-name").value.trim();
-            let num = document.getElementById("nr-id-num").value.trim();
-            if(!name || !num) { triggerAppNotificationAlert("ID Capture Missing", "Anti-fraud protocols mandate verification data strings."); return; }
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Unvouched Inventory Line Intake</h3><input type="text" id="nr-sku-input" class="w-full p-3 bg-gray-50 border text-center font-mono" placeholder="Enter Product SKU"><button onclick="executeUnvouchedSkuReturnIntake('${name}', '${num}')" class="w-full py-2.5 bg-gray-900 text-white font-bold text-xs rounded-xl">Load Merchandise Voucher Card</button></div>`);
-        }
-
-        async function executeUnvouchedSkuReturnIntake(legalName, idNum) {
-            let sku = document.getElementById("nr-sku-input").value.trim();
-            let prod = state.dbCache.inventory.find(p => p.sku === sku);
-            if(!prod) { triggerAppNotificationAlert("Data Fault", "SKU selection unknown."); return; }
-            
-            let systemGeneratedGiftCardString = "MERCH_" + Math.floor(100000 + Math.random() * 900000);
-            let merchCardObj = { cardNum: systemGeneratedGiftCardString, initialLoad: prod.price, currentBalance: prod.price, history: [{ type: "unvouched_return", date: new Date().toISOString() }] };
-            
-            await writeRecordToStore("giftcards", merchCardObj);
-            state.dbCache.giftCards.push(merchCardObj);
-            prod.stockOnHand += 1; await writeRecordToStore("inventory", prod);
-            
-            await writeAuditTrailLogEntry(state.activeEmployee ? state.activeEmployee.employeeNum : "SYSTEM", `Unvouched Return tracked from ID: ${idNum}`);
-            openGlobalModalOverlay(`<div class="space-y-4 text-center"><div class="w-12 h-12 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center mx-auto"><i data-lucide="gift" class="w-6 h-6"></i></div>
-                    <div class="bg-gray-50 border p-4 text-xs font-mono text-left space-y-1">
-                        <p>Voucher Control Code: <span class="font-bold text-purple-700">${systemGeneratedGiftCardString}</span></p>
-                        <p>Capital Transferred Value: <span class="font-bold text-iosGreen">${formatCurrencyField(prod.price)}</span></p>
-                    </div><button onclick="purgeRegisterWorkspaceAndResetInvoiceContext()" class="w-full py-2.5 bg-gray-900 text-white text-xs">Conclude Processing Loop</button></div>`);
-            lucide.createIcons();
-        }
-
-        // =========================================================================
-        // TIMECARDS & PRICE INQUIRY DESK
-        // =========================================================================
-        function openPriceInquiryModal() {
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Price Inquiry Desk</h3><div class="flex gap-2"><input type="text" id="inquiry-sku-input" placeholder="Scan or enter item SKU" class="flex-1 p-2 border font-mono rounded-xl"><button onclick="executeInquiryLookup()" class="bg-iosBlue text-white px-4 rounded-xl text-xs font-bold">Search</button></div><div id="inquiry-result-dock"></div><button onclick="closeGlobalModalOverlay()" class="w-full py-2 bg-gray-100 rounded-xl text-xs font-semibold text-gray-500">Dismiss</button></div>`);
-        }
-
-        function executeInquiryLookup() {
-            let sku = document.getElementById("inquiry-sku-input").value.trim();
-            let prod = state.dbCache.inventory.find(p => p.sku === sku);
-            let dock = document.getElementById("inquiry-result-dock");
-            if(!prod) { dock.innerHTML = `<p class="text-xs text-iosRed p-3 text-center bg-iosRed/5 rounded-xl border border-dashed">No item matches that signature array reference.</p>`; return; }
-            
-            let htmlVariants = "";
-            if(prod.variants && prod.variants.length > 0) {
-                htmlVariants += `<div class="mt-2 p-2 bg-white rounded-lg border text-[11px] space-y-1">`;
-                prod.variants.forEach(v => { htmlVariants += `<div class="flex justify-between border-b last:border-0 pb-0.5"><span>${v.color} / Size: ${v.size}</span><span class="font-bold">${v.stock} units</span></div>`; });
-                htmlVariants += `</div>`;
-            }
-            dock.innerHTML = `<div class="bg-iosLightBg p-4 border rounded-2xl text-xs space-y-2"><div><span class="text-gray-400 text-[10px] uppercase">Title Description</span><div class="text-sm font-bold">${prod.nameDescription}</div></div><div class="grid grid-cols-2 gap-2"><div><span class="text-gray-400 text-[10px] uppercase">Retail Pricing</span><div class="text-base font-black text-iosBlue">${formatCurrencyField(prod.price)}</div></div><div><span class="text-gray-400 text-[10px] uppercase">On Hand Matrix Level</span><div class="text-base font-bold">${prod.stockOnHand} Units</div></div></div>${htmlVariants}</div>`;
-        }
-
-        function openTimeClockModal() {
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Labor Force Time Clock Terminal</h3><input type="text" id="tc-emp-num" placeholder="Employee Number ID" class="w-full p-3 bg-gray-50 border text-center text-lg font-bold rounded-xl"><div class="grid grid-cols-2 gap-3"><button onclick="processTimeClockPunchAction('in')" class="bg-iosGreen text-white py-3 rounded-xl font-bold text-sm">Punch In</button><button onclick="processTimeClockPunchAction('out')" class="bg-iosRed text-white py-3 rounded-xl font-bold text-sm">Punch Out</button></div><div class="text-center pt-2"><button onclick="triggerTimeCardInspectionWorkspace()" class="text-xs text-iosBlue font-bold underline">Review Time Card Projection Preview Sheets</button></div></div>`);
-        }
-
-        async function processTimeClockPunchAction(type) {
-            let num = document.getElementById("tc-emp-num").value.trim();
-            let emp = state.dbCache.employees.find(e => e.employeeNum === num);
-            if(!emp || emp.status !== 'active') { triggerAppNotificationAlert("Access Blocked", "Employment record links inactive."); return; }
-            
-            if(type === 'in') {
-                let activePunch = state.dbCache.timeCards.find(t => t.employeeNum === num && !t.clockOut);
-                if(activePunch) { triggerAppNotificationAlert("Sequence Fault", "Prior shift trace holds open states."); return; }
-                
-                let punchObj = { punchId: "PUNCH_" + Date.now(), employeeNum: num, employeeName: emp.fullName, clockIn: new Date().toISOString(), clockOut: null, breakAttestation: null, hoursLogged: 0 };
-                await writeRecordToStore("timecards", punchObj);
-                await writeAuditTrailLogEntry(num, "Registered shift labor punch-in sequence trace.");
-                closeGlobalModalOverlay();
-                triggerAppNotificationAlert("Shift Registered", `Welcome, ${emp.fullName}. Punch captured.`);
-            } else {
-                let openPunch = state.dbCache.timeCards.find(t => t.employeeNum === num && !t.clockOut);
-                if(!openPunch) { triggerAppNotificationAlert("Sequence Fault", "No dynamic running shift parameters found."); return; }
-                
-                openGlobalModalOverlay(`<div class="space-y-4 text-center"><div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto"><i data-lucide="scale" class="w-6 h-6"></i></div><p class="text-xs text-gray-600 font-semibold bg-gray-50 p-3 rounded-xl">"Were you authorized and permitted by leadership to completely access all structured rest periods and mandatory shift meal breaks required for this shift timeframe?"</p><div class="grid grid-cols-2 gap-3"><button onclick="commitShiftOutPunchClosing('${openPunch.punchId}', 'yes')" class="bg-iosGreen text-white font-bold py-2 rounded-xl text-xs">YES, Verified</button><button onclick="commitShiftOutPunchClosing('${openPunch.punchId}', 'no')" class="bg-iosRed text-white font-bold py-2 rounded-xl text-xs">NO, Discrepancy</button></div></div>`);
-                lucide.createIcons();
-            }
-        }
-
-        async function commitShiftOutPunchClosing(punchId, attestationValueString) {
-            let punch = state.dbCache.timeCards.find(t => t.punchId === punchId);
-            punch.clockOut = new Date().toISOString(); punch.breakAttestation = attestationValueString;
-            let deltaHours = (new Date(punch.clockOut).getTime() - new Date(punch.clockIn).getTime()) / (1000 * 60 * 60);
-            punch.hoursLogged = parseFloat(deltaHours.toFixed(2));
-            
-            await writeRecordToStore("timecards", punch);
-            await writeAuditTrailLogEntry(punch.employeeNum, `Shift closed out. Break attestation: ${attestationValueString.toUpperCase()}`);
-            closeGlobalModalOverlay();
-            triggerAppNotificationAlert("Punch Saved", `Shift closed successfully. Duration logged: ${punch.hoursLogged} Hours.`);
-        }
-
-        function triggerTimeCardInspectionWorkspace() {
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Query Employee Sheets</h3><input type="text" id="tc-inspect-num" class="w-full p-2 border rounded-xl font-mono text-center" placeholder="Associate 7-Digit ID"><div id="tc-inspect-results-panel"></div><button onclick="executeTimeCardInspectionQuery()" class="w-full py-2 bg-iosBlue text-white rounded-xl text-xs font-bold">Compile Logs</button></div>`);
-        }
-
-        function executeTimeCardInspectionQuery() {
-            let num = document.getElementById("tc-inspect-num").value.trim();
-            let emp = state.dbCache.employees.find(e => e.employeeNum === num);
-            let panel = document.getElementById("tc-inspect-results-panel"); panel.innerHTML = "";
-            if(!emp) { panel.innerHTML = `<p class="text-xs text-iosRed text-center">Profile link mismatch.</p>`; return; }
-            
-            let filteredPunches = state.dbCache.timeCards.filter(t => t.employeeNum === num);
-            let summaryHoursAggregate = 0; filteredPunches.forEach(p => summaryHoursAggregate += p.hoursLogged);
-            let hourlyBasis = emp.payType === 'hourly' ? emp.payAmount : (emp.payAmount / 2080);
-            
-            panel.innerHTML = `<div class="bg-gray-50 border p-3 rounded-xl text-xs space-y-1"><div>Name: <b>${emp.fullName}</b></div><div>Total Logged: <b>${summaryHoursAggregate.toFixed(2)} Hrs</b></div><div class="text-iosGreen font-bold">Projected Gross: ${formatCurrencyField(summaryHoursAggregate * hourlyBasis)}</div></div>`;
-        }
-
-        // =========================================================================
-        // VAULT TILL BALANCE CONTROLS
-        // =========================================================================
-        function updateGlobalHeaderTillStatusBarIndicators() {
-            let el = document.getElementById("header-till-status");
-            if(state.activeTillSession.isOpen) {
-                el.className = "bg-iosGreen/10 text-iosGreen px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1";
-                el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-iosGreen animate-pulse"></span> Open [Business Date: ${state.activeTillSession.businessDate}]`;
-            } else {
-                el.className = "bg-iosRed/10 text-iosRed px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1";
-                el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-iosRed"></span> Till Closed`;
-            }
-        }
-
-        function verifyRegisterTillSessionIsActive() {
-            if(!state.activeTillSession.isOpen) { triggerAppNotificationAlert("Till Closed Intercept", "Sales logic processing blocks execute safely strictly while drawer state tracking vectors hold unencumbered open values."); return false; }
-            return true;
-        }
-
-        function buildTillManagementInterfaceFrame() {
-            let container = document.getElementById("till-flow-workspace"); container.innerHTML = "";
-            if(!state.activeTillSession.isOpen) {
-                let todayIsoStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
-                container.innerHTML = `<div class="space-y-4"><div class="bg-gray-50 border p-4 rounded-2xl text-xs space-y-2"><h3>Stage 1: Declare Business Session Date</h3><input type="text" id="till-open-date" value="${todayIsoStr}" class="w-full p-2 border font-bold font-mono rounded-lg" readonly><h3>Stage 2: Input Counted Float</h3><input type="number" step="0.01" id="till-open-cash-count" value="${state.corporateProfile.cashFloat.toFixed(2)}" class="w-full p-2 border font-bold text-iosGreen text-lg rounded-lg"></div><button onclick="executeTillOpeningLifecycleAction()" class="w-full py-3 bg-iosBlue text-white font-bold rounded-xl">Verify Opening Count & Open Register</button></div>`;
-            } else {
-                container.innerHTML = `<div class="space-y-4"><div class="bg-gray-50 border p-4 rounded-2xl text-xs space-y-2"><div>Active Business Frame: <b>${state.activeTillSession.businessDate}</b></div><div>Opening Balance Basis: <b>${formatCurrencyField(state.activeTillSession.openingAmount)}</b></div><hr><h3>End of Day (EOD) Vault Count</h3><input type="number" step="0.01" id="till-close-cash-count" class="w-full p-2.5 border text-lg font-bold text-purple-700 rounded-lg" placeholder="Count cash inside register drawer tray"><p class="text-[10px] text-gray-400 mt-1">Expected Internal Book Calculation: <b>${formatCurrencyField(state.activeTillSession.expectedCashBalance)}</b></p></div><button onclick="executeTillClosingLifecycleAction()" class="w-full py-3 bg-gray-900 text-white font-bold rounded-xl">Audit Discrepancies & Run EOD Close</button></div>`;
-            }
-        }
-
-        async function executeTillOpeningLifecycleAction() {
-            let bDate = document.getElementById("till-open-date").value;
-            let countAmt = parseFloat(document.getElementById("till-open-cash-count").value);
-            if(isNaN(countAmt) || countAmt < 0) return;
-            
-            if(Math.abs(countAmt - state.corporateProfile.cashFloat) > 0.01) {
-                openGlobalModalOverlay(`<div class="space-y-4 text-center"><h3>Opening Float Variance Detected</h3><p class="text-xs text-gray-500">The declared opening count deviates from base configuration thresholds.</p><div class="grid grid-cols-2 gap-3"><button onclick="closeGlobalModalOverlay()" class="bg-gray-100 py-2 rounded-xl text-xs">Recount Drawer</button><button onclick="commitTillOpeningLifecycleState('${bDate}', ${countAmt}, true)" class="bg-amber-600 text-white py-2 rounded-xl text-xs">Accept Discrepancy Override</button></div></div>`);
-                return;
-            }
-            await commitTillOpeningLifecycleState(bDate, countAmt, false);
-        }
-
-        async function commitTillOpeningLifecycleState(bDate, countAmt, wasVarianceFlagged) {
-            state.activeTillSession = { isOpen: true, businessDate: bDate, openingAmount: countAmt, expectedCashBalance: countAmt, isClosed: false };
-            await writeRecordToStore("system_state", { id: "active_till_session", key: "active_till_session", value: state.activeTillSession });
-            await writeAuditTrailLogEntry(state.activeEmployee.employeeNum, `Opened session day [${bDate}] with float ${formatCurrencyField(countAmt)}`);
-            if(wasVarianceFlagged) closeGlobalModalOverlay();
-            updateGlobalHeaderTillStatusBarIndicators(); buildTillManagementInterfaceFrame();
-        }
-
-        async function executeTillClosingLifecycleAction() {
-            let closeCount = parseFloat(document.getElementById("till-close-cash-count").value);
-            if(isNaN(closeCount) || closeCount < 0) { triggerAppNotificationAlert("Input Needed", "Declare physical drawer values."); return; }
-            let expectedAmt = state.activeTillSession.expectedCashBalance;
-            let varianceAmountDelta = closeCount - expectedAmt;
-            
-            if(Math.abs(varianceAmountDelta) > 0.01) {
-                openGlobalModalOverlay(`<div class="space-y-4 text-center"><h3 class="text-iosRed font-bold">EOD Close Audit Discrepancy Detected</h3><div class="bg-gray-50 border p-3 rounded-xl text-xs text-left font-semibold"><p class="flex justify-between"><span>Expected Book Cash Value:</span><span>${formatCurrencyField(expectedAmt)}</span></p><p class="flex justify-between"><span>Your Declared Count:</span><span>${formatCurrencyField(closeCount)}</span></p><p class="flex justify-between border-t pt-1 text-iosRed"><span>Variance Adjustment Overage/Shortage:</span><span>${formatCurrencyField(varianceAmountDelta)}</span></p></div><div class="grid grid-cols-2 gap-3"><button onclick="closeGlobalModalOverlay()" class="bg-gray-100 py-2 rounded-xl text-xs">Recount Drawer</button><button onclick="commitTillClosingLifecycleFinalization(${closeCount}, ${varianceAmountDelta})" class="bg-iosRed text-white py-2 rounded-xl text-xs">Authorize Variance & Close Store</button></div></div>`);
-                return;
-            }
-            await commitTillClosingLifecycleFinalization(closeCount, 0);
-        }
-
-        async function commitTillClosingLifecycleFinalization(finalCount, variance) {
-            let baselineStandardFloat = state.corporateProfile.cashFloat;
-            let structuredBankDepositCashOverageDrop = finalCount - baselineStandardFloat;
-            if(structuredBankDepositCashOverageDrop < 0) structuredBankDepositCashOverageDrop = 0;
-            
-            state.activeTillSession = { isOpen: false, businessDate: "", openingAmount: 0.00, expectedCashBalance: 0.00, isClosed: true };
-            await writeRecordToStore("system_state", { id: "active_till_session", key: "active_till_session", value: state.activeTillSession });
-            await writeAuditTrailLogEntry(state.activeEmployee.employeeNum, `Closed terminal session till logic completely.`);
-            
-            closeGlobalModalOverlay(); updateGlobalHeaderTillStatusBarIndicators();
-            openGlobalModalOverlay(`<div class="space-y-4 text-center"><div class="w-14 h-14 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center mx-auto"><i data-lucide="vault" class="w-8 h-8"></i></div><h3>Store EOD Close Completed</h3><div class="bg-iosLightBg border p-4 rounded-2xl text-xs text-left space-y-2"><div class="flex justify-between"><span>Retained Cash Float In Drawer:</span><span>${formatCurrencyField(baselineStandardFloat)}</span></div><div class="flex justify-between border-t pt-2 font-bold text-gray-900"><span>Required Bank Drop Deposit Slip Value:</span><span>${formatCurrencyField(structuredBankDepositCashOverageDrop)}</span></div></div><button onclick="closeGlobalModalOverlay(); navigateTo('view-home');" class="w-full py-3 bg-gray-900 text-white font-bold rounded-xl text-sm">Return to Dashboard Mainframe</button></div>`);
-            lucide.createIcons();
-        }
-
-        // =========================================================================
-        // CONSUMER DATABASE SEARCH MODULATION CODES
-        // =========================================================================
-        function executeCustomerSearchRegistry() {
-            let input = document.getElementById("cust-search-input").value.trim().toLowerCase();
-            let pane = document.getElementById("cust-mgmt-results-pane"); pane.innerHTML = "";
-            if(!input) { triggerAppNotificationAlert("Parameter Error", "Input email or phone values."); return; }
-            
-            let matched = state.dbCache.customers.filter(c => c.phone.includes(input) || c.email.toLowerCase().includes(input));
-            if(matched.length === 0) { pane.innerHTML = `<div class="text-center py-20 text-gray-400">No profile matches registered inside datastores.</div>`; return; }
-            
-            matched.forEach(c => {
-                let div = document.createElement("div"); div.className = "bg-gray-50 border rounded-2xl p-6 space-y-4";
-                let receipts = state.dbCache.transactions.filter(t => t.customerSnapshot && t.customerSnapshot.customerId === c.customerId);
-                let receiptsHtml = "";
-                
-                receipts.forEach(r => {
-                    receiptsHtml += `<div onclick="openReceiptViewerDetailsModal('${r.invoiceId}')" class="bg-white border p-3 rounded-xl text-xs font-semibold flex justify-between items-center cursor-pointer"><div><span class="font-mono text-gray-900 block">${r.invoiceId}</span></div><div class="text-right"><span class="text-black font-mono font-bold block">${formatCurrencyField(r.financials.grandTotal)}</span></div></div>`;
-                });
-                
-                div.innerHTML = `
-                    <div class="flex justify-between border-b pb-4"><div><h2>${c.fullName}</h2><p class="text-xs text-gray-400 font-mono">ID: ${c.customerId}</p></div><div><select onchange="updateCustomerStatusParameter('${c.customerId}', this.value)" class="p-1.5 bg-white border text-xs font-bold rounded-xl"><option value="active" ${c.status === 'active' ? 'selected' : ''}>Active</option><option value="inactive" ${c.status === 'inactive' ? 'selected' : ''}>Inactive</option></select></div></div>
-                    <div class="grid grid-cols-2 gap-4 text-xs font-semibold">
-                        <div class="space-y-3 bg-white border p-4 rounded-xl shadow-sm"><p>Phone: <b>${c.phone}</b></p><p>Email: <b>${c.email}</b></p></div>
-                        <div class="space-y-3 bg-white border p-4 rounded-xl shadow-sm"><p>Loyalty Balance: <b>${c.pointsAccumulated} Pts</b></p><p>Vouchers ($20 Off): <b class="text-iosGreen">${c.rewardsAvailable} Available</b></p></div>
-                    </div>
-                    <div class="space-y-2"><h4>Historical Purchase Receipt Trails</h4><div class="space-y-1.5 max-h-40 overflow-y-auto ios-scroll">${receiptsHtml = receiptsHtml || '<p class="text-xs text-gray-400 text-center py-4 bg-white border rounded-xl">No historical operations logged.</p>'}</div></div>
-                `;
-                pane.appendChild(div);
-            });
-        }
-
-        async function updateCustomerStatusParameter(custId, statusValueKey) {
-            let cust = state.dbCache.customers.find(c => c.customerId === custId); if(!cust) return;
-            cust.status = statusValueKey; await writeRecordToStore("customers", cust);
-            writeAuditTrailLogEntry(state.activeEmployee ? state.activeEmployee.employeeNum : "SYSTEM", `Changed customer profile flags state down to: ${statusValueKey}`);
-        }
-
-        function openReceiptViewerDetailsModal(invoiceId) {
-            let inv = state.dbCache.transactions.find(t => t.invoiceId === invoiceId); if(!inv) return;
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Invoice Snapshot: ${inv.invoiceId}</h3><div class="bg-gray-50 p-3 rounded-xl text-xs space-y-1"><div>Timestamp: <b>${formatIsoStringShortDate(inv.timestamp)}</b></div><div>Associate Operator: <b>${inv.associateId}</b></div><div class="text-iosBlue">Gross Value: <b>${formatCurrencyField(inv.financials.grandTotal)}</b></div></div><button onclick="closeGlobalModalOverlay()" class="w-full py-2 bg-gray-900 text-white rounded-xl text-xs font-bold">Dismiss</button></div>`);
-        }
-
-        // =========================================================================
-        // ROSTER CONFIG DETAILS INTERFACES
-        // =========================================================================
-        function openEmployeeManagementModal() {
-            openGlobalModalOverlay(`
-                <div class="space-y-4"><h3>Recruit New Associate Asset</h3>
-                    <div class="grid grid-cols-2 gap-3 text-xs font-semibold">
-                        <div class="col-span-2"><label>Full Staff Legal Name *</label><input type="text" id="new-emp-name" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
-                        <div><label>Phone Line Identity *</label><input type="text" id="new-emp-phone" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
-                        <div><label>Corporate Email *</label><input type="email" id="new-emp-email" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
-                        <div class="col-span-2"><label>Physical Home Address Line *</label><input type="text" id="new-emp-address" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
-                        <div><label>Role/Title Authorization Tier *</label><select id="new-emp-title" class="w-full p-2 bg-gray-50 border rounded-xl"><option value="sales associate">Sales Associate</option><option value="lead">Lead Keyholder</option><option value="assistant store director">Assistant Store Director</option><option value="store director">Store Director</option></select></div>
-                        <div><label>Employment Type *</label><select id="new-emp-type" class="w-full p-2 bg-gray-50 border rounded-xl"><option value="part time">Part Time Allocation</option><option value="full time">Full Time Dedication</option></select></div>
-                        <div><label>Manager Overrides Authority *</label><select id="new-emp-auth" class="w-full p-2 bg-gray-50 border rounded-xl"><option value="no">No</option><option value="yes">Yes</option></select></div>
-                        <div><label>Payroll Structure Class *</label><select id="new-emp-pay-type" class="w-full p-2 bg-gray-50 border rounded-xl"><option value="hourly">Hourly</option><option value="salary">Salary</option></select></div>
-                        <div><label>Compensation Rate ($) *</label><input type="number" step="0.01" id="new-emp-pay-amount" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
-                        <div><label>POS Entry Password *</label><input type="password" id="new-emp-pass" placeholder="6-15 Characters" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
-                    </div><div class="flex gap-2 justify-end pt-2"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs">Dismiss</button><button onclick="processEmployeeEnrollmentSubmission()" class="px-4 py-2 bg-iosBlue text-white rounded-xl text-xs">Commit onboarding</button></div>
-                </div>`);
-        }
-
-        async function processEmployeeEnrollmentSubmission() {
-            let name = document.getElementById("new-emp-name").value.trim(); let phone = document.getElementById("new-emp-phone").value.trim();
-            let email = document.getElementById("new-emp-email").value.trim(); let address = document.getElementById("new-emp-address").value.trim();
-            let title = document.getElementById("new-emp-title").value; let type = document.getElementById("new-emp-type").value;
-            let auth = document.getElementById("new-emp-auth").value; let pType = document.getElementById("new-emp-pay-type").value;
-            let pAmt = parseFloat(document.getElementById("new-emp-pay-amount").value); let pass = document.getElementById("new-emp-pass").value;
-            
-            if(!name || !phone || !email || !address || isNaN(pAmt) || !pass) { triggerAppNotificationAlert("Data Bound Error", "Fill values completely."); return; }
-            if(pass.length < 6 || pass.length > 15) { triggerAppNotificationAlert("Password Logic Range", "Must span exactly between 6 and 15 components."); return; }
-            
-            let generatedEmpNum = generateCryptographicNumericalIdString(7);
-            let empObj = { employeeNum: generatedEmpNum, fullName: name, phone: phone, email: email, address: address, positionTitle: title, positionType: type, managerAuthority: auth, payType: pType, payAmount: pAmt, password: pass, status: "active" };
-            
-            await writeRecordToStore("employees", empObj); state.dbCache.employees.push(empObj);
-            await writeAuditTrailLogEntry(state.activeEmployee ? state.activeEmployee.employeeNum : "SYSTEM", `Onboarded associate number ID string profile: ${generatedEmpNum}`);
-            closeGlobalModalOverlay(); renderEmployeeManagementRosterDirectory();
-        }
-
-        function renderEmployeeManagementRosterDirectory() {
-            let container = document.getElementById("emp-roster-list"); container.innerHTML = "";
-            state.dbCache.employees.forEach(e => {
-                let btn = document.createElement("button"); btn.className = "w-full text-left p-3 hover:bg-gray-50 border-b flex justify-between text-xs font-semibold rounded-xl";
-                btn.onclick = () => viewSpecificEmployeeInspectionPanelSheet(e.employeeNum);
-                btn.innerHTML = `<div><span><b>${e.fullName}</b></span><span class="block text-[10px] text-gray-400 font-mono">ID: ${e.employeeNum} &bull; ${e.positionTitle.toUpperCase()}</span></div><span class="w-2 h-2 rounded-full ${e.status === 'active' ? 'bg-iosGreen' : 'bg-iosRed'}"></span>`;
-                container.appendChild(btn);
-            });
-        }
-
-        function viewSpecificEmployeeInspectionPanelSheet(empNum) {
-            let e = state.dbCache.employees.find(x => x.employeeNum === empNum);
-            let sheet = document.getElementById("emp-inspection-sheet");
-            let auditedTransactions = state.dbCache.transactions.filter(t => t.associateId === e.employeeNum && t.financials.discountTotal > 0);
-            let auditLinesHtml = "";
-            
-            auditedTransactions.forEach(t => {
-                auditLinesHtml += `<div onclick="openReceiptViewerDetailsModal('${t.invoiceId}')" class="p-2.5 bg-gray-50 border rounded-xl text-[11px] flex justify-between items-center cursor-pointer"><div><span class="font-mono text-black block">${t.invoiceId}</span></div><div class="text-right"><span class="text-iosRed font-bold block">-${formatCurrencyField(t.financials.discountTotal)} Discount Given</span></div></div>`;
-            });
-            
-            sheet.innerHTML = `
-                <div class="space-y-6 text-xs font-semibold">
-                    <div class="flex justify-between border-b pb-4"><div><h2>${e.fullName}</h2><p class="font-mono text-gray-400">ID reference: ${e.employeeNum}</p></div><div><select onchange="updateEmployeeCorporateStatusFlags('${e.employeeNum}', this.value)" class="p-2 border rounded-xl font-bold"><option value="active" ${e.status === 'active' ? 'selected' : ''}>Active</option><option value="inactive" ${e.status === 'inactive' ? 'selected' : ''}>Inactive</option><option value="suspended" ${e.status === 'suspended' ? 'selected' : ''}>Suspended</option></select></div></div>
-                    <div class="grid grid-cols-2 gap-4"><div class="bg-gray-50 border p-4 rounded-2xl space-y-1"><div>Title: <b>${e.positionTitle.toUpperCase()}</b></div><div>Class: <b>${e.positionType.toUpperCase()}</b></div></div><div class="bg-gray-50 border p-4 rounded-2xl space-y-1"><div>Rate Basis: <b>${e.payType.toUpperCase()}</b></div><div>Pay rate: <b>${formatCurrencyField(e.payAmount)}</b></div><div>Keypad credential: <b>${e.password}</b></div></div></div>
-                    <div class="space-y-2 bg-white border p-4 rounded-2xl"><h4>Employee Discount Usage Audits Tracker</h4><div class="space-y-1.5 max-h-44 overflow-y-auto ios-scroll">${auditLinesHtml = auditLinesHtml || '<p class="text-xs text-gray-400 text-center py-2">No historical usages mapped logs on account register lists.</p>'}</div></div>
-                </div>`;
-        }
-
-        async function updateEmployeeCorporateStatusFlags(empNum, statusValueString) {
-            if(state.activeEmployee && state.activeEmployee.employeeNum === empNum && statusValueString !== 'active') { triggerAppNotificationAlert("Bypass Rejected", "Self de-authorization parameters are forbidden context constraints lines."); renderEmployeeManagementRosterDirectory(); return; }
-            let emp = state.dbCache.employees.find(x => x.employeeNum === empNum); emp.status = statusValueString;
-            await writeRecordToStore("employees", emp); await writeAuditTrailLogEntry(state.activeEmployee.employeeNum, `Changed associate state logic down to: ${statusValueString}`);
-            renderEmployeeManagementRosterDirectory();
-        }
-
-        // =========================================================================
-        // STOCK QUANTITY CONSOLES & INVENTORY MODIFIERS
-        // =========================================================================
-        function renderInventoryCatalogTable() {
-            let query = document.getElementById("inv-search-box").value.trim().toLowerCase();
-            let rowsContainer = document.getElementById("inv-catalog-rows"); rowsContainer.innerHTML = "";
-            let filtered = state.dbCache.inventory.filter(p => p.sku.includes(query) || p.nameDescription.toLowerCase().includes(query));
-            if(filtered.length === 0) { rowsContainer.innerHTML = `<p class="text-xs text-gray-400 font-medium py-12 text-center">No catalog matrix allocations exist matches constraints parameters maps.</p>`; return; }
-            
-            filtered.forEach(p => {
-                let div = document.createElement("div"); div.className = "px-4 py-3 grid grid-cols-12 text-xs font-semibold items-center hover:bg-gray-50 cursor-pointer";
-                div.onclick = () => openProductInspectionAdjustmentWorkspacePanel(p.sku);
-                div.innerHTML = `<span class="col-span-3 text-gray-900 font-bold truncate pr-2">${p.nameDescription}</span><span class="col-span-3 font-mono font-bold text-gray-500">${p.sku}</span><span class="col-span-2 text-gray-400 truncate">${p.categoryId}</span><span class="col-span-2 text-right font-mono font-bold text-iosBlue">${formatCurrencyField(p.price)}</span><span class="col-span-2 text-right font-mono font-bold">${p.stockOnHand} Units</span>`;
-                rowsContainer.appendChild(div);
-            });
-        }
-
-        function clearInventoryInspectionPane() {
-            document.getElementById("inv-inspect-pane").innerHTML = `<div class="text-center text-gray-400 py-32 flex flex-col items-center justify-center"><i data-lucide="boxes" class="w-16 h-16 stroke-[1] text-gray-300 mb-2"></i><p class="font-semibold text-sm">No Active SKU Selection</p></div>`;
-            lucide.createIcons();
-        }
-
-        function openProductInspectionAdjustmentWorkspacePanel(skuCode) {
-            let p = state.dbCache.inventory.find(x => x.sku === skuCode);
-            let pane = document.getElementById("inv-inspect-pane");
-            let variantsHtml = "";
-            if(p.variants && p.variants.length > 0) {
-                p.variants.forEach((v, vIdx) => {
-                    variantsHtml += `<div class="p-2.5 bg-white border rounded-xl text-xs flex justify-between items-center font-medium shadow-sm"><span>${v.color} / Size: <b>${v.size}</b></span><div class="flex items-center space-x-2"><span class="font-mono text-gray-500 font-bold">${v.stock} units</span><button onclick="triggerVariantAdjustmentFlowWizard('${p.sku}', ${vIdx})" class="text-iosBlue font-bold underline text-[10px]">Adjust</button></div></div>`;
-                });
-            }
-
-            pane.innerHTML = `
-                <div class="space-y-6 text-xs font-semibold">
-                    <div class="border-b pb-3"><h2>${p.nameDescription}</h2><p class="font-mono text-gray-400">SKU Reference: ${p.sku}</p></div>
-                    <div class="bg-gray-50 border p-4 rounded-2xl grid grid-cols-2 gap-3"><div>Retail Price<div class="text-xl font-black text-iosBlue font-mono">${formatCurrencyField(p.price)}</div></div><div>Cost Basis<div class="text-xl font-bold font-mono">${formatCurrencyField(p.cost)}</div></div></div>
-                    <div class="space-y-2 bg-gray-50 p-4 rounded-2xl border">
-                        <div class="flex justify-between items-center border-b pb-1"><h4>Unvouched Balance Count Variance Adjustments</h4><b class="text-purple-700 font-mono">${p.stockOnHand} Total</b></div>
-                        <div class="flex gap-2 pt-1"><input type="number" id="sku-adj-delta-qty" placeholder="Qty +/-" class="w-20 p-2 border font-mono rounded-xl font-bold text-center"><input type="text" id="sku-adj-reason-txt" placeholder="Log dynamic constraint reason" class="flex-1 p-2 border text-xs rounded-xl"><button onclick="processMapAdjustmentCountValue('${p.sku}')" class="bg-gray-900 text-white px-4 rounded-xl text-xs font-bold">Commit</button></div>
-                    </div>
-                    <div class="space-y-2">
-                        <div class="flex justify-between px-1"><span>Variant Chains</span><button onclick="triggerVariantAppenderWizard('${p.sku}')" class="text-iosBlue underline text-[10px]">Append Variant Node</button></div>
-                        <div class="space-y-1.5 max-h-40 overflow-y-auto p-2 border rounded-2xl bg-gray-50">${variantsHtml = variantsHtml || '<p class="text-[10px] text-center text-gray-400 py-4">No attributes variants nodes found on standalone SKU paths.</p>'}</div>
-                    </div>
-                    <hr><button onclick="requireManagerProductDeletionSequence('${p.sku}')" class="w-full py-2 bg-iosRed/10 text-iosRed rounded-xl font-bold flex justify-center items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> Purge SKU from POS Matrix completely</button>
-                </div>`;
-            lucide.createIcons();
-        }
-
-        async function processMapAdjustmentCountValue(skuCode) {
-            let delta = parseInt(document.getElementById("sku-adj-delta-qty").value);
-            let reason = document.getElementById("sku-adj-reason-txt").value.trim();
-            if(isNaN(delta) || delta === 0 || !reason) { triggerAppNotificationAlert("Data Parameter Missing", "Provide explicit count offsets value parameters and justifications."); return; }
-            
-            let p = state.dbCache.inventory.find(x => x.sku === skuCode); p.stockOnHand += delta; if(p.stockOnHand < 0) p.stockOnHand = 0;
-            await writeRecordToStore("inventory", p); await writeAuditTrailLogEntry(state.activeEmployee ? state.activeEmployee.employeeNum : "SYSTEM", `Inventory tracking adjusted code [${p.sku}] by delta magnitude [${delta}]. Reason Statement: ${reason}`);
-            renderInventoryCatalogTable(); openProductInspectionAdjustmentWorkspacePanel(skuCode);
-        }
-
-        function triggerVariantAdjustmentFlowWizard(skuCode, variantIdx) {
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Adjust Variant Attribute Node Count</h3><div class="flex gap-2"><input type="number" id="v-adj-qty" placeholder="Delta +/-" class="w-24 p-2 border font-mono text-center"><input type="text" id="v-adj-reason" placeholder="Reason Statement" class="flex-1 p-2 border text-xs"></div><button onclick="processVariantAdjustmentExecution('${skuCode}', ${variantIdx})" class="w-full py-2 bg-iosBlue text-white font-bold text-xs rounded-xl shadow-md">Commit Variant Update</button></div>`);
-        }
-
-        async function processVariantAdjustmentExecution(skuCode, variantIdx) {
-            let delta = parseInt(document.getElementById("v-adj-qty").value); let reason = document.getElementById("v-adj-reason").value.trim();
-            if(isNaN(delta) || !reason) return;
-            let p = state.dbCache.inventory.find(x => x.sku === skuCode); let v = p.variants[variantIdx];
-            v.stock += delta; if(v.stock < 0) v.stock = 0; p.stockOnHand += delta; if(p.stockOnHand < 0) p.stockOnHand = 0;
-            await writeRecordToStore("inventory", p); await writeAuditTrailLogEntry(state.activeEmployee ? state.activeEmployee.employeeNum : "SYSTEM", `Modulated attribute stock quantities line balance on variance index tracker keys line.`);
-            closeGlobalModalOverlay(); renderInventoryCatalogTable(); openProductInspectionAdjustmentWorkspacePanel(skuCode);
-        }
-
-        function triggerVariantAppenderWizard(skuCode) {
-            openGlobalModalOverlay(`
-                <div class="space-y-3"><h3>Append Variant Attribute Node</h3>
-                    <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
-                        <div><label>Color Option Descriptor *</label><input type="text" id="v-new-color" placeholder="Midnight Midnight Black" class="w-full p-2 border bg-gray-50 rounded-xl"></div>
-                        <div><label>Size Category Code *</label><input type="text" id="v-new-size" placeholder="L" class="w-full p-2 border bg-gray-50 rounded-xl"></div>
-                        <div class="col-span-2"><label>Initial Intake Count Balance Volume</label><input type="number" id="v-new-stock" value="0" class="w-full p-2 border bg-gray-50 text-center font-mono rounded-xl"></div>
-                    </div><button onclick="processVariantNodeAppenderExecution('${skuCode}')" class="w-full py-2 bg-gray-900 text-white font-bold text-xs rounded-xl mt-1">Append Attribute Structure</button>
-                </div>`);
-        }
-
-        async function processVariantNodeAppenderExecution(skuCode) {
-            let color = document.getElementById("v-new-color").value.trim(); let size = document.getElementById("v-new-size").value.trim();
-            let stock = parseInt(document.getElementById("v-new-stock").value) || 0; if(!color || !size) return;
-            
-            let p = state.dbCache.inventory.find(x => x.sku === skuCode); if(!p.variants) p.variants = [];
-            p.variants.push({ color: color, size: size, stock: stock }); p.stockOnHand += stock;
-            await writeRecordToStore("inventory", p); closeGlobalModalOverlay(); renderInventoryCatalogTable(); openProductInspectionAdjustmentWorkspacePanel(skuCode);
-        }
-
-        function openSkuCreationModal() {
-            if(state.activeEmployee && state.activeEmployee.managerAuthority !== 'yes') { triggerAppNotificationAlert("Access Denied", "Elevated roles attributes are required to write product vectors blocks mappings keys."); return; }
-            let optionsHtml = ""; state.dbCache.categories.forEach(c => { optionsHtml += `<option value="${c.id}">${c.name}</option>`; });
-            
-            openGlobalModalOverlay(`
-                <div class="space-y-4"><h3>Catalog New Master SKU Product</h3>
-                    <div class="grid grid-cols-2 gap-3 text-xs font-semibold">
-                        <div class="col-span-2"><label>Item Description Title *</label><input type="text" id="p-new-name" class="w-full p-2 border bg-gray-50 rounded-xl"></div>
-                        <div><label>Dynamic Barcode SKU Code *</label><input type="text" id="p-new-sku" class="w-full p-2 border bg-gray-50 font-mono rounded-xl"></div>
-                        <div><label>Category Linkage *</label><select id="p-new-cat" class="w-full p-2 border bg-gray-50 rounded-xl">${optionsHtml}</select></div>
-                        <div><label>Retail Price *</label><input type="number" step="0.01" id="p-new-price" class="w-full p-2 border bg-gray-50 font-mono rounded-xl"></div>
-                        <div><label>Acquisition Cost Basis *</label><input type="number" step="0.01" id="p-new-cost" class="w-full p-2 border bg-gray-50 font-mono rounded-xl"></div>
-                        <div><label>Sales Tax Obligation *</label><select id="p-new-tax" class="w-full p-2 border bg-gray-50 rounded-xl"><option value="yes">Taxable Standard Retail Item</option><option value="no">Exempt Category Asset</option></select></div>
-                        <div><label>Initial Stock Intake Balance</label><input type="number" id="p-new-stock" value="0" class="w-full p-2 border bg-gray-50 font-mono rounded-xl"></div>
-                    </div><div class="flex gap-2 justify-end pt-2"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs">Dismiss</button><button onclick="processNewProductSkuCreation()" class="px-4 py-2 bg-iosBlue text-white rounded-xl text-xs">Vault Item Matrix Product</button></div>
-                </div>`);
-        }
-
-        async function processNewProductSkuCreation() {
-            let name = document.getElementById("p-new-name").value.trim(); let sku = document.getElementById("p-new-sku").value.trim();
-            let cat = document.getElementById("p-new-cat").value; let price = parseFloat(document.getElementById("p-new-price").value);
-            let cost = parseFloat(document.getElementById("p-new-cost").value); let tax = document.getElementById("p-new-tax").value;
-            let stock = parseInt(document.getElementById("p-new-stock").value) || 0;
-            
-            if(!name || !sku || isNaN(price) || isNaN(cost)) { triggerAppNotificationAlert("Data Deficiency", "Fill required fields completely."); return; }
-            if(state.dbCache.inventory.some(p => p.sku === sku)) { triggerAppNotificationAlert("Collision Fault", "This exact unique code signature is already claimed inside database charts mapping indexes."); return; }
-            
-            let productObj = { sku: sku, nameDescription: name, price: price, cost: cost, taxEligible: tax, categoryId: cat, stockOnHand: stock, variants: [] };
-            await writeRecordToStore("inventory", productObj); state.dbCache.inventory.push(productObj);
-            await writeAuditTrailLogEntry(state.activeEmployee.employeeNum, `Vaulted product code reference keys arrays [${sku}]`);
-            closeGlobalModalOverlay(); renderInventoryCatalogTable();
-        }
-
-        function requireManagerProductDeletionSequence(skuCode) {
-            if(state.activeEmployee && state.activeEmployee.managerAuthority !== 'yes') { triggerAppNotificationAlert("Access Denied", "Supervisor role verification tokens required."); return; }
-            openGlobalModalOverlay(`<div class="space-y-4 text-center"><div class="w-12 h-12 bg-iosRed/10 text-iosRed rounded-full flex items-center justify-center mx-auto"><i data-lucide="trash-2" class="w-6 h-6"></i></div><h3>Authorize Permanent SKU Purging</h3><p class="text-xs text-gray-500">Confirm absolute compliance intent to wipe item profile maps [${skuCode}] from system database vectors completely.</p><div class="flex gap-2 justify-center"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs">Abort</button><button onclick="processProductPermanentlyPurged('${skuCode}')" class="px-4 py-2 bg-iosRed text-white rounded-xl text-xs shadow-sm">Confirm Permanent Purge</button></div></div>`);
-            lucide.createIcons();
-        }
-
-        async function processProductPermanentlyPurged(skuCode) {
-            await deleteRecordFromStore("inventory", skuCode);
-            await writeAuditTrailLogEntry(state.activeEmployee.employeeNum, `Purged SKU item tracking codes configuration profile lists blocks: ${skuCode}`);
-            closeGlobalModalOverlay(); renderInventoryCatalogTable(); clearInventoryInspectionPane();
-        }
-
-        function openCategorySetupModal() {
-            if(state.activeEmployee && state.activeEmployee.managerAuthority !== 'yes') { triggerAppNotificationAlert("Access Denied", "Administrative elevation tokens required."); return; }
-            let htmlList = ""; state.dbCache.categories.forEach(c => { htmlList += `<div class="p-2 border-b text-xs font-semibold"><span>${c.name} <span class="text-[9px] font-mono text-gray-400">[${c.id}]</span></span></div>`; });
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Category Blueprint Hierarchy Mappings</h3><div class="space-y-1 max-h-32 overflow-y-auto border p-2 rounded-xl bg-gray-50">${htmlList}</div><div class="border-t pt-2 space-y-2"><div class="flex gap-2"><input type="text" id="new-cat-title" placeholder="Forge New Merchandising Category Block" class="flex-1 p-2 bg-gray-50 border rounded-xl text-xs"><button onclick="executeCategoryCreationLine()" class="bg-iosBlue text-white px-4 rounded-xl text-xs font-bold">Create</button></div></div><button onclick="closeGlobalModalOverlay()" class="w-full py-2 bg-gray-100 rounded-xl text-xs font-bold text-gray-600">Close</button></div>`);
-        }
-
-        async function executeCategoryCreationLine() {
-            let title = document.getElementById("new-cat-title").value.trim(); if(!title) return;
-            let catObj = { id: "cat_" + Date.now(), name: title }; await writeRecordToStore("categories", catObj);
-            state.dbCache.categories.push(catObj); closeGlobalModalOverlay(); openCategorySetupModal();
-        }
-
-        // =========================================================================
-        // SETTINGS DISPATCH WORKWORKFOUNDATIONS PANELS
-        // =========================================================================
-        function syncAndRenderSettingsSubsystemsTabs() {
-            renderSettingsTimeCardsWorkspaceTable(); renderSettingsGiftCardsRegistryTable(); renderSettingsHistoricalInvoicesTable();
-            document.getElementById("cfg-comp-name").value = state.corporateProfile.name;
-            document.getElementById("cfg-store-num").value = state.corporateProfile.storeNum;
-            document.getElementById("cfg-store-address").value = state.corporateProfile.address;
-            document.getElementById("cfg-store-phone").value = state.corporateProfile.phone;
-            document.getElementById("cfg-cust-phone").value = state.corporateProfile.custSupport;
-            document.getElementById("cfg-tax-rate").value = state.corporateProfile.taxRate;
-            document.getElementById("cfg-cash-float").value = state.corporateProfile.cashFloat;
-            
-            let terminal = document.getElementById("terminal-audit-stream"); terminal.innerHTML = "";
-            state.dbCache.logs.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp)).forEach(l => appendLogStringToTerminalDOM(l));
-        }
-
-        function switchSettingsActiveTab(targetPaneId) {
-            const panes = ['sett-pane-company', 'sett-pane-timecards', 'sett-pane-giftcards', 'sett-pane-transactions', 'sett-pane-logs', 'sett-pane-about'];
-            panes.forEach(p => { if(document.getElementById(p)) document.getElementById(p).classList.add("hidden-view"); if(document.getElementById("tab-btn-" + p)) document.getElementById("tab-btn-" + p).className = "w-full text-left px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-50 flex items-center gap-2"; });
-            document.getElementById(targetPaneId).classList.remove("hidden-view"); document.getElementById("tab-btn-" + targetPaneId).className = "w-full text-left px-4 py-3 rounded-xl bg-iosBlue text-white flex items-center gap-2";
-            lucide.createIcons();
-        }
-
-        async function saveGlobalCorporateProfileSettings() {
-            state.corporateProfile.name = document.getElementById("cfg-comp-name").value.trim(); document.getElementById("cfg-store-num").value = state.corporateProfile.storeNum;
-            state.corporateProfile.address = document.getElementById("cfg-store-address").value.trim(); state.corporateProfile.phone = document.getElementById("cfg-store-phone").value.trim();
-            state.corporateProfile.custSupport = document.getElementById("cfg-cust-phone").value.trim(); state.corporateProfile.taxRate = parseFloat(document.getElementById("cfg-tax-rate").value) || 0;
-            state.corporateProfile.cashFloat = parseFloat(document.getElementById("cfg-cash-float").value) || 0;
-            
-            await writeRecordToStore("system_state", { id: "corporate_profile", key: "corporate_profile", value: state.corporateProfile });
-            await writeAuditTrailLogEntry(state.activeEmployee.employeeNum, "Synchronized modifications down to baseline settings fields vectors properties.");
-            document.getElementById("header-brand").innerText = state.corporateProfile.name; document.getElementById("header-store-num").innerText = state.corporateProfile.storeNum;
-        }
-
-        function renderSettingsTimeCardsWorkspaceTable() {
-            let tbody = document.getElementById("table-body-sett-timecards"); tbody.innerHTML = "";
-            if(state.dbCache.timeCards.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-center text-gray-400">No shift labor record lines mapped logs inside systems.</td></tr>`; return; }
-            
-            state.dbCache.timeCards.forEach(p => {
-                let tr = document.createElement("tr"); tr.innerHTML = `<td class="p-3 font-bold text-gray-900">${p.employeeName} <span class="text-[10px] text-gray-400 font-mono block">ID: ${p.employeeNum}</span></td><td class="p-3 font-mono text-gray-600">${formatIsoStringShortDate(p.clockIn)}</td><td class="p-3 font-mono text-gray-600">${p.clockOut ? formatIsoStringShortDate(p.clockOut) : '<b class="text-iosGreen animate-pulse">[SHIFT RUNNING]</b>'}</td><td class="p-3 uppercase font-bold text-[10px]">${p.breakAttestation || 'UNRESOLVED'}</td><td class="p-3 text-right font-mono font-bold">${p.hoursLogged} Hrs</td><td class="p-3 text-center"><button onclick="triggerTimeCardDeletionSequence('${p.punchId}')" class="text-iosRed font-bold hover:underline">Purge Record</button></td>`;
-                tbody.appendChild(tr);
-            });
-        }
-
-        async function triggerTimeCardDeletionSequence(punchId) { await deleteRecordFromStore("timecards", punchId); renderSettingsTimeCardsWorkspaceTable(); }
-        function openTimeCardOverrideForm() {
-            let options = ""; state.dbCache.employees.forEach(e => { options += `<option value="${e.employeeNum}">${e.fullName} [${e.employeeNum}]</option>`; });
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Inject Manual Labor Shift Record</h3><div class="space-y-3 text-xs font-semibold"><div><label>Target Associate</label><select id="tc-add-emp-num" class="w-full p-2 bg-gray-50 border rounded-xl">${options}</select></div><div><label>Duration Hours</label><input type="number" step="0.01" id="tc-add-hours" class="w-full p-2 border font-mono text-center font-bold" value="8.00"></div></div><button onclick="executeManualTimeCardInjection()" class="w-full py-2.5 bg-iosBlue text-white font-bold text-xs rounded-xl mt-2">Force Commit Labor Punch Line</button></div>`);
-        }
-
-        async function executeManualTimeCardInjection() {
-            let num = document.getElementById("tc-add-emp-num").value; let hours = parseFloat(document.getElementById("tc-add-hours").value);
-            let emp = state.dbCache.employees.find(e => e.employeeNum === num); if(isNaN(hours) || hours <= 0) return;
-            
-            let backDatedPunchObj = { punchId: "PUNCH_" + Date.now(), employeeNum: num, employeeName: emp.fullName, clockIn: new Date(Date.now() - (hours * 60 * 60 * 1000)).toISOString(), clockOut: new Date().toISOString(), breakAttestation: "yes", hoursLogged: hours };
-            await writeRecordToStore("timecards", backDatedPunchObj); state.dbCache.timeCards.push(backDatedPunchObj);
-            closeGlobalModalOverlay(); renderSettingsTimeCardsWorkspaceTable();
-        }
-
-        function renderSettingsGiftCardsRegistryTable() {
-            let tbody = document.getElementById("table-body-sett-giftcards"); tbody.innerHTML = "";
-            if(state.dbCache.giftCards.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-gray-400">No active card assets logged values paths balances cards.</td></tr>`; return; }
-            
-            state.dbCache.giftCards.forEach(g => {
-                let tr = document.createElement("tr"); tr.innerHTML = `<td class="p-3 font-mono font-bold text-purple-700">${g.cardNum}</td><td class="p-3 text-right font-mono text-gray-400">${formatCurrencyField(g.initialLoad)}</td><td class="p-3 text-right font-mono font-bold text-iosGreen">${formatCurrencyField(g.currentBalance)}</td><td class="p-3 text-gray-500">Logs count: ${g.history ? g.history.length : 0} lines</td><td class="p-3 text-center"><button onclick="triggerGiftCardAssetRegistryDeletion('${g.cardNum}')" class="text-iosRed font-bold hover:underline">Revoke Asset</button></td>`;
-                tbody.appendChild(tr);
-            });
-        }
-
-        async function triggerGiftCardAssetRegistryDeletion(cardNum) { await deleteRecordFromStore("giftcards", cardNum); renderSettingsGiftCardsRegistryTable(); }
-        function triggerManualGiftCardCreationWizard() {
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Forge Dynamic Store Credit Card</h3><div class="space-y-3 text-xs font-semibold"><div><label>Custom Reference Serial ID String</label><input type="text" id="gc-add-num" placeholder="Leave blank to randomize control token" class="w-full p-2 bg-gray-50 border text-center font-mono rounded-xl"></div><div><label>Initial Ledger Value Load Amount ($)</label><input type="number" step="0.01" id="gc-add-balance" value="50.00" class="w-full p-2 border font-mono text-center text-iosGreen rounded-xl font-bold"></div></div><button onclick="executeGiftCardCreationWizardLine()" class="w-full py-2.5 bg-purple-600 text-white text-xs font-bold rounded-xl shadow-md mt-1">Authorize Asset Provisioning</button></div>`);
-        }
-
-        async function executeGiftCardCreationWizardLine() {
-            let customNum = document.getElementById("gc-add-num").value.trim(); let bal = parseFloat(document.getElementById("gc-add-balance").value);
-            if(isNaN(bal) || bal <= 0) return; let finalCardStr = customNum || "CARD_" + Math.floor(100000 + Math.random() * 900000);
-            if(state.dbCache.giftCards.some(g => g.cardNum === finalCardStr)) { triggerAppNotificationAlert("Data Fault", "Serial code sequence claimed."); return; }
-            
-            let cardObj = { cardNum: finalCardStr, initialLoad: bal, currentBalance: bal, history: [{ type: "manual_load", amount: bal, date: new Date().toISOString() }] };
-            await writeRecordToStore("giftcards", cardObj); state.dbCache.giftCards.push(cardObj);
-            closeGlobalModalOverlay(); renderSettingsGiftCardsRegistryTable();
-        }
-
-        function triggerGiftCardValidationFlow() {
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Issue / Audit Gift Cards</h3><div class="grid grid-cols-2 gap-2 text-xs font-bold text-center"><button onclick="closeGlobalModalOverlay(); requireManagerAuth('view-system-settings');" class="bg-gray-50 border p-4 rounded-xl">Open Backoffice Master Gift Registry Management Panels</button><button onclick="triggerDirectGiftCardActivationWizard()" class="bg-purple-600 text-white p-4 rounded-xl">Instantly Issue & Load Fresh Consumer Gift Voucher</button></div></div>`);
-        }
-
-        function triggerDirectGiftCardActivationWizard() {
-            openGlobalModalOverlay(`<div class="space-y-3 text-xs font-semibold"><h3>Fast Activation Flow Channel</h3><input type="text" id="fast-gc-num" placeholder="Scan or input card barcode ID string" class="w-full p-2 border font-mono text-center rounded-xl"><input type="number" step="0.01" id="fast-gc-bal" class="w-full p-2 border text-center font-bold text-iosGreen" placeholder="Load Value Amount ($)"><button onclick="executeFastGiftCardActivationWorkflowLine()" class="w-full py-2 bg-iosBlue text-white text-xs font-bold rounded-xl mt-1">Activate Voucher Ledger Block</button></div>`);
-        }
-
-        async function executeFastGiftCardActivationWorkflowLine() {
-            let num = document.getElementById("fast-gc-num").value.trim(); let bal = parseFloat(document.getElementById("fast-gc-bal").value);
-            if(!num || isNaN(bal) || bal <= 0) { triggerAppNotificationAlert("Data Parameter Error", "Provide accurate dimensions figures."); return; }
-            if(state.dbCache.giftCards.some(g => g.cardNum === num)) { triggerAppNotificationAlert("Collision Fault", "This token backing barcode serial matches historically vaulted elements files."); return; }
-            
-            let cardObj = { cardNum: num, initialLoad: bal, currentBalance: bal, history: [{ type: "fast_activation_load", amount: bal, date: new Date().toISOString() }] };
-            await writeRecordToStore("giftcards", cardObj); state.dbCache.giftCards.push(cardObj);
-            closeGlobalModalOverlay(); triggerAppNotificationAlert("Voucher Online", "Card initialized.");
-        }
-
-        function renderSettingsHistoricalInvoicesTable() {
-            let tbody = document.getElementById("table-body-sett-transactions"); tbody.innerHTML = "";
-            if(state.dbCache.transactions.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="p-3 text-center text-gray-400">No sales transactions history archived data maps inside datastores.</td></tr>`; return; }
-            
-            state.dbCache.transactions.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).forEach(t => {
-                let tr = document.createElement("tr"); tr.className = t.status === 'post_voided' ? "bg-iosRed/5 line-through text-gray-400" : "";
-                let flagsText = ""; if(t.isTaxExempt) flagsText += `<span class="bg-iosGreen/10 text-iosGreen text-[9px] px-1 font-bold rounded">EXMPT</span> `; if(t.isGiftReceipt) flagsText += `<span class="bg-amber-100 text-amber-800 text-[9px] px-1 font-bold rounded">GIFT</span> `; if(t.status === 'post_voided') flagsText += `<span class="bg-iosRed text-white text-[9px] px-1 font-bold rounded">VOIDED</span>`;
-                
-                tr.innerHTML = `<td class="p-3 font-mono font-bold text-gray-900">${t.invoiceId}</td><td class="p-3 font-mono text-[10px]">${formatIsoStringShortDate(t.timestamp)}</td><td class="p-3 text-gray-600">${t.associateId}</td><td class="p-3 text-right font-mono font-bold text-black">${formatCurrencyField(t.financials.grandTotal)}</td><td class="p-3 uppercase font-bold text-[10px]">${t.tendersApplied[0] ? t.tendersApplied[0].type : 'CASH'}</td><td class="p-3">${flagsText || 'Standard Checkout'}</td><td class="p-3 text-center space-x-1"><button onclick="openReceiptViewerDetailsModal('${t.invoiceId}')" class="text-iosBlue font-bold">Inspect</button>${t.status !== 'post_voided' ? `<button onclick="triggerPostVoidInvoiceProcess('${t.invoiceId}')" class="text-iosRed font-bold">Void</button>` : ''}</td>`;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function triggerPostVoidInvoiceProcess(invoiceId) {
-            openGlobalModalOverlay(`<div class="space-y-4 text-center"><div class="w-12 h-12 bg-iosRed/10 text-iosRed rounded-full flex items-center justify-center mx-auto"><i data-lucide="shield-alert" class="w-6 h-6"></i></div><h3>Execute POST VOID balancing adjustment request</h3><p class="text-xs text-gray-500 leading-relaxed">Confirm absolute compliance intent to void historical log sheet row file tracker: <b>${invoiceId}</b>.</p><div class="flex gap-2 justify-center"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs font-semibold">Abort</button><button onclick="executePostVoidInvoiceAdjustmentLedger('${invoiceId}')" class="px-4 py-2 bg-iosRed text-white rounded-xl text-xs shadow-sm">Confirm Post Void Order</button></div></div>`);
-            lucide.createIcons();
-        }
-
-        async function executePostVoidInvoiceAdjustmentLedger(invoiceId) {
-            let inv = state.dbCache.transactions.find(t => t.invoiceId === invoiceId); inv.status = "post_voided";
-            for(let it of inv.itemsSnapshot) {
-                let masterProd = state.dbCache.inventory.find(p => p.sku === it.inventoryRef.sku);
-                if(masterProd) { masterProd.stockOnHand += 1; await writeRecordToStore("inventory", masterProd); }
-            }
-            if(state.activeTillSession.isOpen) {
-                inv.tendersApplied.forEach(t => { if(t.type === 'cash') state.activeTillSession.expectedCashBalance -= t.amountApplied; });
-                await writeRecordToStore("system_state", { key: "active_till_session", value: state.activeTillSession });
-            }
-            await writeRecordToStore("transactions", inv); await writeAuditTrailLogEntry(state.activeEmployee.employeeNum, `POST VOID operation executed balancing order row indices lines files: ${invoiceId}`);
-            closeGlobalModalOverlay(); renderSettingsHistoricalInvoicesTable();
-        }
-
-        function triggerResumeTransactionList() {
-            hideElementWithId("register-hamburger-menu");
-            let htmlRows = ""; state.dbCache.suspendedTransactions.forEach(s => {
-                htmlRows += `<div class="p-3 bg-gray-50 border rounded-xl flex justify-between items-center text-xs font-semibold cursor-pointer" onclick="processResumeSuspendedInvoiceToCart('${s.suspendId}')"><div><span class="text-gray-900 font-mono block">${s.suspendId}</span></div><div class="text-right"><span class="text-iosBlue font-mono block">${s.cartSnapshot.length} Units</span></div></div>`;
-            });
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Retrieve Suspended Invoice Basket snapshots</h3><div class="space-y-1.5 max-h-48 overflow-y-auto ios-scroll">${htmlRows = htmlRows || '<p class="text-xs text-center py-6 text-gray-400">No suspended traces present inside data streams buffers queues fields lines.</p>'}</div><button onclick="closeGlobalModalOverlay()" class="w-full py-2 bg-gray-100 rounded-xl text-xs">Close</button></div>`);
-        }
-
-        async function triggerSuspendTransaction() {
-            hideElementWithId("register-hamburger-menu"); if(state.invoiceContext.items.length === 0) return;
-            let id = "SUSP_" + Date.now();
-            let suspendRecord = { suspendId: id, timestamp: new Date().toISOString(), cartSnapshot: JSON.parse(JSON.stringify(state.invoiceContext.items)), customerSnapshot: state.invoiceContext.customer ? JSON.parse(JSON.stringify(state.invoiceContext.customer)) : null };
-            
-            await writeRecordToStore("suspended", suspendRecord); state.dbCache.suspendedTransactions.push(suspendRecord);
-            await writeAuditTrailLogEntry(state.activeEmployee ? state.activeEmployee.employeeNum : "SYSTEM", `Suspended running loop frame index trace parameters reference block keys: ${id}`);
-            purgeRegisterWorkspaceAndResetInvoiceContext();
-        }
-
-        async function processResumeSuspendedInvoiceToCart(suspendId) {
-            let match = state.dbCache.suspendedTransactions.find(s => s.suspendId === suspendId); if(!match) return;
-            state.invoiceContext.items = JSON.parse(JSON.stringify(match.cartSnapshot)); state.invoiceContext.customer = match.customerSnapshot ? JSON.parse(JSON.stringify(match.customerSnapshot)) : null;
-            
-            await deleteRecordFromStore("suspended", suspendId); await writeAuditTrailLogEntry(state.activeEmployee ? state.activeEmployee.employeeNum : "SYSTEM", `Extracted suspended context: ${suspendId}`);
-            closeGlobalModalOverlay(); syncRegisterCustomerPanelState(); updateRegisterInvoiceCalculationSummaryDOM();
-        }
-
-        // =========================================================================
-        // UTILITY LAYER INTERLACES DISMISSALS
-        // =========================================================================
-        function appendLogStringToTerminalDOM(logObj) {
-            let t = document.getElementById("terminal-audit-stream"); if(!t) return;
-            let div = document.createElement("div"); div.className = "border-b border-gray-800 pb-0.5";
-            div.innerHTML = `[${formatIsoStringShortDate(logObj.timestamp)}] <b class="text-blue-400">OP:${logObj.actor}</b> -- <span class="font-mono text-green-400">${logObj.message}</span>`;
-            t.appendChild(div);
-        }
-
-        function triggerAppNotificationAlert(title, message) {
-            openGlobalModalOverlay(`<div class="space-y-3"><h3>${title}</h3><p class="text-xs text-gray-500 leading-normal bg-gray-50 border p-3 rounded-xl font-medium">${message}</p><button onclick="closeGlobalModalOverlay()" class="w-full py-2 bg-gray-900 text-white rounded-xl text-xs font-bold">Acknowledge</button></div>`);
-        }
-
-        function triggerDisabledFeatureAlert(featureContextName) {
-            let msg = featureContextName === "Reports" ? "this section is being updated, please check back soon for updates" : "this feature is currently disabled by your organization";
-            openGlobalModalOverlay(`<div class="space-y-4 text-center"><div class="w-12 h-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto"><i data-lucide="construction" class="w-6 h-6"></i></div><p class="text-xs text-gray-500 font-semibold bg-gray-50 border p-4 rounded-xl leading-relaxed">"${msg}"</p><button onclick="closeGlobalModalOverlay()" class="w-full py-2 bg-gray-900 text-white font-bold text-xs">Dismiss</button></div>`);
-            lucide.createIcons();
-        }
-
-        function openGlobalModalOverlay(innerHtmlContentTemplate) { document.getElementById("global-modal-box").innerHTML = innerHtmlContentTemplate; document.getElementById("global-modal-layer").classList.remove("hidden"); }
-        function closeGlobalModalOverlay() { document.getElementById("global-modal-layer").classList.add("hidden"); }
-        function toggleElementVisibility(elementId) { let el = document.getElementById(elementId); if(el) el.classList.toggle("hidden"); }
-        function hideElementWithId(elementId) { let el = document.getElementById(elementId); if(el) el.classList.add("hidden"); }
-        function generateCryptographicNumericalIdString(characterLengthLengthValue) { let str = ""; for(let i=0; i<characterLengthLengthValue; i++) str += Math.floor(Math.random() * 10).toString(); return str; }
-        function formatCurrencyField(numericValueAmount) { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(numericValueAmount); }
-        function formatIsoStringShortDate(isoStringTimestamp) { let d = new Date(isoStringTimestamp); return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
-
-        function startSystemCoreClockEngineDaemon() {
-            setInterval(() => {
-                let now = new Date(); let shortDateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: '2-digit', year: 'numeric' }); let timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                if(document.getElementById("login-date")) document.getElementById("login-date").innerText = shortDateStr.toUpperCase();
-                if(document.getElementById("login-time")) document.getElementById("login-time").innerText = timeStr;
-                if(document.getElementById("header-datetime")) document.getElementById("header-datetime").innerText = shortDateStr + " " + timeStr;
-            }, 1000);
-        }
-
+        // Start Global Shell Lifecycle Bootstrapping Functions
         window.addEventListener("DOMContentLoaded", async () => {
-            startSystemCoreClockEngineDaemon();
-            await syncCacheFromFirestoreEngine();
-            await enforceFoundationalSystemSeedData();
-            navigateTo('view-login');
+            LoginView.startClockEngine();
+            await FirestoreEngine.syncCache();
+            await FirestoreEngine.enforceFallbackSeedData();
+            AppRouter.navigateTo('view-login');
             lucide.createIcons();
         });
     </script>
