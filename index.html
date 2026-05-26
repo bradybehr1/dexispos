@@ -593,16 +593,29 @@
         // =========================================================================
         async function syncCacheFromFirestoreEngine() {
             console.log("Starting full Firestore cache sync pipeline...");
+            
+            state.dbCache = {
+                employees: [],
+                customers: [],
+                inventory: [],
+                categories: [],
+                giftCards: [],
+                transactions: [],
+                suspendedTransactions: [],
+                timeCards: [],
+                logs: []
+            };
+
             try {
-                state.dbCache.employees = await getAllRecordsFromStore("employees").catch(() => []);
-                state.dbCache.customers = await getAllRecordsFromStore("customers").catch(() => []);
-                state.dbCache.inventory = await getAllRecordsFromStore("inventory").catch(() => []);
-                state.dbCache.categories = await getAllRecordsFromStore("categories").catch(() => []);
-                state.dbCache.giftCards = await getAllRecordsFromStore("giftcards").catch(() => []);
-                state.dbCache.transactions = await getAllRecordsFromStore("transactions").catch(() => []);
-                state.dbCache.suspendedTransactions = await getAllRecordsFromStore("suspended").catch(() => []);
-                state.dbCache.timeCards = await getAllRecordsFromStore("timecards").catch(() => []);
-                state.dbCache.logs = await getAllRecordsFromStore("audit_logs").catch(() => []);
+                state.dbCache.employees = await getAllRecordsFromStore("employees");
+                state.dbCache.customers = await getAllRecordsFromStore("customers");
+                state.dbCache.inventory = await getAllRecordsFromStore("inventory");
+                state.dbCache.categories = await getAllRecordsFromStore("categories");
+                state.dbCache.giftCards = await getAllRecordsFromStore("giftcards");
+                state.dbCache.transactions = await getAllRecordsFromStore("transactions");
+                state.dbCache.suspendedTransactions = await getAllRecordsFromStore("suspended");
+                state.dbCache.timeCards = await getAllRecordsFromStore("timecards");
+                state.dbCache.logs = await getAllRecordsFromStore("audit_logs");
                 
                 let savedCorp = await getSingleDocFromStore("system_state", "corporate_profile").catch(() => null);
                 if(savedCorp) state.corporateProfile = savedCorp;
@@ -640,7 +653,9 @@
             try {
                 let snap = await db.collection(storeName).get();
                 let arr = [];
-                snap.forEach(doc => arr.push(doc.data()));
+                if (snap && !snap.empty) {
+                    snap.forEach(doc => arr.push(doc.data()));
+                }
                 return arr;
             } catch(e) {
                 console.warn(`Query path empty or restrained for store: ${storeName}`);
@@ -1084,8 +1099,8 @@
             let address = document.getElementById("reg-cust-new-address").value.trim() || "Not Provided";
             
             if(!name || !phone || !email || !zip) { triggerAppNotificationAlert("Data Deficiency", "Fill all required elements."); return; }
-            let dup = state.dbCache.customers.find(c => c.phone === phone || c.email.toLowerCase() === email.toLowerCase());
-            if(dup) { triggerAppNotificationAlert("Registry Conflict", "A duplicate value matches historical files."); return; }
+            let dup = state.dbCache.customers.filter(c => c.phone === phone || c.email.toLowerCase() === email.toLowerCase());
+            if(dup.length > 0) { triggerAppNotificationAlert("Registry Conflict", "A duplicate value matches historical files."); return; }
             
             let newCustId = generateCryptographicNumericalIdString(10);
             let customerObj = { customerId: newCustId, fullName: name, phone: phone, email: email, zip: zip, homeAddress: address, status: "active", pointsAccumulated: 0, rewardsAvailable: 0, lifetimePreTaxSpend: 0.00 };
@@ -1216,7 +1231,7 @@
 
         async function executeGiftCardPaymentTenderVerification(appliedAmountValue) {
             let cardNum = document.getElementById("tender-giftcard-num-input").value.trim();
-            let cardRecord = state.dbCache.giftCards.find(g => g.cardNum === g.cardNum); // Dynamic cache validation sweep
+            let cardRecord = state.dbCache.giftCards.find(g => g.cardNum === cardNum);
             if(!cardRecord) { triggerAppNotificationAlert("Asset Mismatch", "Serial control string not located."); return; }
             
             let requestedCharge = parseFloat(appliedAmountValue);
@@ -1312,7 +1327,7 @@
         // =========================================================================
         function openReturnContextScreen() {
             hideElementWithId("register-hamburger-menu");
-            openGlobalModalOverlay(`
+            openGlobalModalOverlay suicide: `
                 <div class="space-y-4"><h3 class="text-lg font-bold text-iosRed">Return Logistics Intake</h3>
                     <div class="space-y-2 bg-gray-50 p-3 rounded-2xl border">
                         <div class="flex gap-2">
@@ -1322,7 +1337,7 @@
                     </div>
                     <button onclick="triggerNoReceiptReturnFrameworkOverride()" class="w-full py-2 bg-gray-100 text-iosRed font-bold text-xs rounded-xl">Process No-Receipt Alternative Return Routing</button>
                     <button onclick="closeGlobalModalOverlay()" class="w-full py-2 bg-gray-50 text-xs font-semibold rounded-xl text-gray-500">Dismiss</button>
-                </div>`);
+                </div>`;
         }
 
         function executeReturnInvoiceLookupTarget() {
@@ -1598,7 +1613,7 @@
         // =========================================================================
         // ROSTER CONFIG DETAILS INTERFACES
         // =========================================================================
-        function openEmployeeEnrollmentModal() {
+        function openEmployeeManagementModal() {
             openGlobalModalOverlay(`
                 <div class="space-y-4"><h3>Recruit New Associate Asset</h3>
                     <div class="grid grid-cols-2 gap-3 text-xs font-semibold">
