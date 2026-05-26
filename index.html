@@ -1,3 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Dexis Retail Enterprise POS</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link class="apple-touch-icon" href="https://via.placeholder.com/180/007AFF/FFFFFF?text=Dexis">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        iosBlue: '#007AFF',
+                        iosGreen: '#34C759',
+                        iosRed: '#FF3B30',
+                        iosGray: '#8E8E93',
+                        iosLightBg: '#F2F2F7',
+                        iosCardBg: '#FFFFFF'
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            background-color: #F2F2F7;
+        }
+        .ios-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .ios-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .ios-scroll::-webkit-scrollbar-thumb {
+            background: #C7C7CC;
+            border-radius: 3px;
+        }
+        .hidden-view { display: none !important; }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="overflow-hidden h-screen text-gray-900">
+
+    <div id="app" class="relative w-full h-full flex flex-col justify-between">
+        
+        <div id="view-login" class="absolute inset-0 flex flex-col items-center justify-between bg-iosLightBg p-8 z-50">
+            <div class="text-right w-full text-gray-500 font-medium">
+                <div id="login-date" class="text-lg"></div>
+                <div id="login-time" class="text-3xl font-bold text-black mt-1"></div>
+            </div>
+            
+            <div class="w-full max-w-md bg-iosCardBg rounded-3xl p-8 shadow-xl border border-gray-200/50 flex flex-col items-center">
+                <div id="app-logo-container" class="mb-6 flex flex-col items-center">
+                    <div class="w-20 h-20 bg-iosBlue rounded-2xl flex items-center justify-center shadow-md mb-3 text-white">
+                        <i data-lucide="shopping-bag" class="w-12 h-12"></i>
+                    </div>
+                    <h1 id="app-company-name" class="text-2xl font-bold tracking-tight">Dexis Enterprise</h1>
+                </div>
+                
+                <div class="w-full space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-1">Employee Number</label>
+                        <input type="text" id="login-emp-num" placeholder="7-Digit ID" class="w-full px-4 py-3 bg-gray-100 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue text-lg">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-1">Password</label>
+                        <input type="password" id="login-emp-pass" placeholder="6-15 Characters" class="w-full px-4 py-3 bg-gray-100 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue text-lg">
+                    </div>
+                    <button onclick="handleLogin()" class="w-full bg-iosBlue text-white py-3 font-semibold rounded-xl active:opacity-80 transition text-lg mt-2 shadow-sm">Sign In</button>
+                </div>
+            </div>
+            
+            <div class="text-xs text-iosGray">Dexis Retail Enterprise v1.0.0 (Build: 077841392)</div>
+        </div>
+
+        <header id="global-header" class="hidden-view bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 select-none shrink-0">
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-iosBlue rounded-lg flex items-center justify-center text-white">
+                        <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                    </div>
+                    <span id="header-brand" class="font-bold text-lg tracking-tight">Dexis Enterprise</span>
+                </div>
+                <div class="bg-gray-100 px-3 py-1 rounded-full text-xs font-medium text-gray-600">
+                    Store #<span id="header-store-num">182</span>
+                </div>
+                <div id="header-till-status" class="bg-iosRed/10 text-iosRed px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-iosRed"></span> Till Closed
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <div class="text-right">
+                    <div id="header-user" class="font-semibold text-sm">Not Logged In</div>
+                    <div id="header-datetime" class="text-xs text-gray-500">MM/DD/YYYY --:--</div>
+                </div>
+                <button onclick="handleLogout()" class="bg-iosRed/10 hover:bg-iosRed/20 text-iosRed p-2.5 rounded-full transition active:scale-95">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <main id="main-content" class="hidden-view flex-1 relative overflow-hidden bg-iosLightBg">
+            
+            <div id="view-home" class="absolute inset-0 p-6 flex flex-col gap-6 overflow-y-auto ios-scroll">
+                <div class="bg-white rounded-2xl p-4 border border-gray-200/80 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-amber-100 p-2 rounded-xl text-amber-500">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-sm">System Operations & Compliance Notice</p>
+                            <p class="text-xs text-gray-500">Ensure the active Register Till is systematically counted before initializing any customer transactions.</p>
+                        </div>
+                    </div>
+                    <span class="text-xs text-gray-400 font-medium">Just Now</span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-5">
+                    <button onclick="navigateTo('view-register')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                        <div class="bg-iosBlue text-white p-3 rounded-xl"><i data-lucide="calculator" class="w-6 h-6"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">Sales Register</h3>
+                            <p class="text-xs text-gray-400 mt-1">Process checkouts, scan items, and run transactions.</p>
+                        </div>
+                    </button>
+                    <button onclick="openPriceInquiryModal()" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                        <div class="bg-purple-500 text-white p-3 rounded-xl"><i data-lucide="tag" class="w-6 h-6"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">Price Inquiry</h3>
+                            <p class="text-xs text-gray-400 mt-1">Verify SKU properties, real-time inventory levels, and variants.</p>
+                        </div>
+                    </button>
+                    <button onclick="triggerDisabledFeatureAlert('BOPIS')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                        <div class="bg-orange-500 text-white p-3 rounded-xl"><i data-lucide="package-check" class="w-6 h-6"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">BOPIS</h3>
+                            <p class="text-xs text-gray-400 mt-1">Buy Online, Pick Up In Store management console.</p>
+                        </div>
+                    </button>
+                    <button onclick="navigateTo('view-customer-mgmt')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                        <div class="bg-iosGreen text-white p-3 rounded-xl"><i data-lucide="users" class="w-6 h-6"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">Customer Account Management</h3>
+                            <p class="text-xs text-gray-400 mt-1">Enroll customers, look up ledger accounts, check point totals.</p>
+                        </div>
+                    </button>
+                    <button onclick="openTimeClockModal()" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                        <div class="bg-cyan-500 text-white p-3 rounded-xl"><i data-lucide="clock" class="w-6 h-6"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">Time Clock</h3>
+                            <p class="text-xs text-gray-400 mt-1">Clock in/out, view working time cards, and preview gross payroll projections.</p>
+                        </div>
+                    </button>
+                    <button onclick="requireManagerAuth('view-employee-mgmt')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left relative overflow-hidden">
+                        <div class="bg-pink-500 text-white p-3 rounded-xl"><i data-lucide="shield-user" class="w-6 h-6"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg flex items-center gap-1.5">Employee Management <i data-lucide="lock" class="w-4 h-4 text-iosGray"></i></h3>
+                            <p class="text-xs text-gray-400 mt-1">Hire, terminate, modify profiles, audit employee discount files.</p>
+                        </div>
+                    </button>
+                    <button onclick="navigateTo('view-inventory-mgmt')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                        <div class="bg-amber-500 text-white p-3 rounded-xl"><i data-lucide="boxes" class="w-6 h-6"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">Inventory Management</h3>
+                            <p class="text-xs text-gray-400 mt-1">Adjust item balances, catalog variants, structure taxation rules.</p>
+                        </div>
+                    </button>
+                    <button onclick="requireManagerAuth('view-manage-till')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                        <div class="bg-teal-600 text-white p-3 rounded-xl"><i data-lucide="landmark" class="w-6 h-6"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg flex items-center gap-1.5">Manage Till <i data-lucide="lock" class="w-4 h-4 text-iosGray"></i></h3>
+                            <p class="text-xs text-gray-400 mt-1">Process opening counts, close operations, handle cash drops.</p>
+                        </div>
+                    </button>
+                    <button onclick="requireManagerAuth('view-system-settings')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                        <div class="bg-indigo-600 text-white p-3 rounded-xl"><i data-lucide="sliders" class="w-6 h-6"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg flex items-center gap-1.5">System Settings <i data-lucide="lock" class="w-4 h-4 text-iosGray"></i></h3>
+                            <p class="text-xs text-gray-400 mt-1">Access auditing logs, gift card configuration, post voids, metadata tables.</p>
+                        </div>
+                    </button>
+                    <button onclick="triggerDisabledFeatureAlert('Reports')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-98 flex flex-col items-start justify-between h-40 text-left">
+                        <div class="bg-emerald-600 text-white p-3 rounded-xl"><i data-lucide="bar-chart-3" class="w-6 h-6"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">Reports Console</h3>
+                            <p class="text-xs text-gray-400 mt-1">Review live gross receipts, margins, and associate metrics.</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <div id="view-register" class="absolute inset-0 flex hidden-view select-none">
+                <div class="w-7/12 h-full bg-white border-r border-gray-200 flex flex-col justify-between">
+                    <div class="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <button onclick="navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1 px-2 py-1 hover:bg-gray-200 rounded-lg transition">
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i> Dashboard
+                            </button>
+                            <h2 class="font-bold text-lg text-gray-800 ml-2">Current Cart</h2>
+                        </div>
+                        
+                        <div class="relative">
+                            <button onclick="toggleElementVisibility('register-hamburger-menu')" class="bg-gray-200 hover:bg-gray-300 p-2 rounded-xl transition active:scale-95">
+                                <i data-lucide="menu" class="w-5 h-5"></i>
+                            </button>
+                            <div id="register-hamburger-menu" class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-200 py-2 hidden z-50 text-sm">
+                                <button onclick="triggerTransactionDiscountPrompt('dollar')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="dollar-sign" class="w-4 h-4 text-iosBlue"></i> Discount Transaction ($)</button>
+                                <button onclick="triggerTransactionDiscountPrompt('percent')" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="percent" class="w-4 h-4 text-iosBlue"></i> Discount Transaction (%)</button>
+                                <button onclick="triggerEmployeeDiscountWorkflow()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-purple-600 font-medium"><i data-lucide="user-check" class="w-4 h-4"></i> Apply Associate Discount (50%)</button>
+                                <hr class="border-gray-100 my-1">
+                                <button onclick="openReturnContextScreen()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="undo-2" class="w-4 h-4 text-iosRed"></i> Initialize Return Mode</button>
+                                <button onclick="openPriceInquiryModal()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="search" class="w-4 h-4"></i> Standalone Price Inquiry</button>
+                                <button onclick="triggerGiftCardValidationFlow()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="credit-card" class="w-4 h-4"></i> Issue / Audit Gift Cards</button>
+                                <button onclick="triggerTaxExemptEntry()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="shield-alert" class="w-4 h-4"></i> Force Tax Exemption Status</button>
+                                <button onclick="triggerGiftReceiptToggling()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="gift" class="w-4 h-4"></i> Toggle Gift Receipts Flag</button>
+                                <button onclick="triggerSuspendTransaction()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="archive" class="w-4 h-4"></i> Suspend Active Invoice</button>
+                                <button onclick="triggerResumeTransactionList()" class="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"><i data-lucide="folder-open" class="w-4 h-4"></i> Resume Suspended Invoice</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="cart-items-container" class="flex-1 overflow-y-auto p-4 space-y-3 ios-scroll bg-gray-50/50">
+                        <div class="text-center text-gray-400 py-20 flex flex-col items-center justify-center">
+                            <i data-lucide="barcode" class="w-16 h-16 stroke-[1] text-gray-300 mb-2"></i>
+                            <p class="text-sm font-medium">No items present in current invoice frame.</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-white border-t border-gray-200 space-y-3">
+                        <div class="flex gap-2">
+                            <input type="text" id="register-sku-input" placeholder="Scan barcode or input item SKU..." class="flex-1 px-4 py-3 bg-gray-100 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-mono text-lg">
+                            <button onclick="handleManualSkuScan()" class="bg-iosBlue text-white px-6 font-semibold rounded-xl active:scale-95 transition">Enter SKU</button>
+                            <button onclick="initializeCameraScannerMock()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 rounded-xl transition" title="Simulate Camera Scan">
+                                <i data-lucide="camera" class="w-6 h-6"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-5/12 h-full bg-iosLightBg flex flex-col justify-between border-l border-gray-200">
+                    <div id="register-customer-frame" class="p-4 bg-white border-b border-gray-200 m-4 rounded-2xl shadow-sm">
+                        <div id="cust-state-unlinked" class="flex flex-col items-center justify-center py-4">
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Linked Customer Profile</p>
+                            <div class="flex gap-2 w-full">
+                                <button onclick="openCustomerSearchAttachmentModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-iosBlue font-semibold py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-1.5"><i data-lucide="user-plus" class="w-4 h-4"></i> Attach Customer Account</button>
+                            </div>
+                        </div>
+                        <div id="cust-state-linked" class="hidden flex justify-between items-center">
+                            <div onclick="viewLinkedCustomerProfileDetails()" class="cursor-pointer flex-1">
+                                <p class="text-xs font-semibold text-iosBlue uppercase tracking-wider">Linked Account (Click for Profile)</p>
+                                <h4 id="linked-cust-name" class="font-bold text-lg text-gray-900 mt-0.5">---</h4>
+                                <p class="text-xs text-gray-500">ID: <span id="linked-cust-id" class="font-mono">---</span> &bull; Status: <span id="linked-cust-status" class="font-bold">Active</span></p>
+                            </div>
+                            <button onclick="detachCustomerFromActiveRegisterInvoice()" class="text-iosRed p-2 bg-iosRed/10 hover:bg-iosRed/20 rounded-xl transition"><i data-lucide="user-minus" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+
+                    <div id="invoice-modifier-badges" class="px-6 space-y-1"></div>
+
+                    <div class="p-6 bg-white border-t border-gray-200 rounded-t-3xl shadow-xl space-y-4">
+                        <div class="space-y-2 text-sm text-gray-600 font-medium">
+                            <div class="flex justify-between">
+                                <span>Total Item Units</span>
+                                <span id="calc-total-units" class="font-bold text-black">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Subtotal</span>
+                                <span id="calc-subtotal">$0.00</span>
+                            </div>
+                            <div class="flex justify-between text-iosRed hidden" id="calc-discount-row">
+                                <span id="calc-discount-label">Discounts</span>
+                                <span id="calc-discount-val">-$0.00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span id="calc-tax-label">Sales Tax</span>
+                                <span id="calc-tax-val">$0.00</span>
+                            </div>
+                            <hr class="border-gray-100 my-2">
+                            <div class="flex justify-between text-black font-bold text-2xl tracking-tight">
+                                <span>Total Due</span>
+                                <span id="calc-grand-total" class="text-iosBlue">$0.00</span>
+                            </div>
+                        </div>
+
+                        <button onclick="openTenderInterfaceStage()" class="w-full bg-iosGreen text-white py-4 rounded-xl font-bold text-xl shadow-md active:scale-98 transition flex items-center justify-center gap-2">
+                            <i data-lucide="banknote" class="w-6 h-6"></i> Finalize Payment / Tender
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-customer-mgmt" class="absolute inset-0 flex flex-col hidden-view p-6 gap-6 overflow-hidden">
+                <div class="flex justify-between items-center shrink-0">
+                    <div class="flex items-center space-x-2">
+                        <button onclick="navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1"><i data-lucide="chevron-left" class="w-5 h-5"></i> Back</button>
+                        <h1 class="text-2xl font-bold ml-2">Customer Account Management</h1>
+                    </div>
+                    <button onclick="openCustomerEnrollmentModal()" class="bg-iosBlue text-white px-4 py-2 rounded-xl font-semibold text-sm shadow-sm flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i> Enroll New Customer</button>
+                </div>
+
+                <div class="bg-white rounded-2xl p-4 border border-gray-200 flex gap-2 items-center shadow-sm shrink-0">
+                    <div class="flex-1 relative">
+                        <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-3"></i>
+                        <input type="text" id="cust-search-input" placeholder="Query profile using exact Phone Number or Email Identity..." class="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-medium">
+                    </div>
+                    <button onclick="executeCustomerSearchRegistry()" class="bg-iosBlue text-white px-6 py-2.5 rounded-xl font-semibold transition active:scale-95 shadow-sm">Search Records</button>
+                </div>
+
+                <div id="cust-mgmt-results-pane" class="flex-1 overflow-y-auto ios-scroll bg-white border border-gray-200 rounded-2xl p-6 space-y-6">
+                    <div class="text-center text-gray-400 py-20 flex flex-col items-center justify-center">
+                        <i data-lucide="users-2" class="w-16 h-16 stroke-[1] text-gray-300 mb-2"></i>
+                        <p class="font-semibold text-sm">No Active Ledger Card Selected</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-employee-mgmt" class="absolute inset-0 flex hidden-view p-6 gap-6 overflow-hidden">
+                <div class="w-1/3 h-full flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <button onclick="navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1"><i data-lucide="chevron-left" class="w-5 h-5"></i> Back</button>
+                        <h2 class="font-bold text-xl">Staff Roster</h2>
+                    </div>
+                    <button onclick="openEmployeeEnrollmentModal()" class="w-full bg-iosBlue py-2.5 rounded-xl font-semibold text-sm shadow-sm flex items-center justify-center gap-1.5"><i data-lucide="user-plus" class="w-4 h-4"></i> Recruit New Associate</button>
+                    <div id="emp-roster-list" class="flex-1 bg-white border border-gray-200 rounded-2xl overflow-y-auto ios-scroll p-2 space-y-1"></div>
+                </div>
+                <div id="emp-inspection-sheet" class="w-2/3 h-full bg-white border border-gray-200 rounded-2xl p-6 overflow-y-auto ios-scroll">
+                    <div class="text-center text-gray-400 py-32 flex flex-col items-center justify-center">
+                        <i data-lucide="shield-alert" class="w-16 h-16 stroke-[1] text-gray-300 mb-2"></i>
+                        <p class="font-semibold text-sm">No Profile Selected For Security Audit</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-inventory-mgmt" class="absolute inset-0 flex hidden-view p-6 gap-6 overflow-hidden">
+                <div class="w-7/12 h-full flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <button onclick="navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1"><i data-lucide="chevron-left" class="w-5 h-5"></i> Back</button>
+                        <h2 class="font-bold text-xl">Core SKU Inventory Matrix</h2>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-2xl p-3 flex gap-2 items-center shadow-sm">
+                        <div class="flex-1 relative">
+                            <i data-lucide="search" class="w-4 h-4 text-iosGray absolute left-3 top-2.5"></i>
+                            <input type="text" id="inv-search-box" oninput="renderInventoryCatalogTable()" placeholder="Filter current items by name or tracking SKU code..." class="w-full pl-9 pr-4 py-1.5 bg-gray-100 rounded-xl text-sm focus:outline-none focus:border-iosBlue">
+                        </div>
+                        <button onclick="openSkuCreationModal()" class="bg-iosBlue text-white px-3 py-1.5 rounded-xl font-semibold text-xs shadow-sm flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Create Product</button>
+                        <button onclick="openCategorySetupModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl font-semibold text-xs flex items-center gap-1"><i data-lucide="folder-tree" class="w-3.5 h-3.5"></i> Setup Categories</button>
+                    </div>
+                    <div class="flex-1 bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col">
+                        <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 grid grid-cols-12 text-xs font-bold uppercase tracking-wider text-gray-400">
+                            <span class="col-span-3">Product Description</span>
+                            <span class="col-span-3">SKU ID</span>
+                            <span class="col-span-2">Category</span>
+                            <span class="col-span-2 text-right">Price</span>
+                            <span class="col-span-2 text-right">Stock Level</span>
+                        </div>
+                        <div id="inv-catalog-rows" class="flex-1 overflow-y-auto ios-scroll divide-y divide-gray-100"></div>
+                    </div>
+                </div>
+                <div id="inv-inspect-pane" class="w-5/12 h-full bg-white border border-gray-200 rounded-2xl p-6 overflow-y-auto ios-scroll">
+                    <div class="text-center text-gray-400 py-32 flex flex-col items-center justify-center">
+                        <i data-lucide="boxes" class="w-16 h-16 stroke-[1] text-gray-300 mb-2"></i>
+                        <p class="font-semibold text-sm">No Active SKU Selection</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-system-settings" class="absolute inset-0 flex hidden-view p-6 gap-6 overflow-hidden">
+                <div class="w-1/4 h-full flex flex-col gap-4">
+                    <div class="flex items-center space-x-2">
+                        <button onclick="navigateTo('view-home')" class="text-iosBlue font-semibold flex items-center gap-1"><i data-lucide="chevron-left" class="w-5 h-5"></i> Back</button>
+                        <h2 class="font-bold text-xl ml-1">Settings</h2>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-2xl p-2 space-y-1 shadow-sm font-medium text-sm flex-1">
+                        <button onclick="switchSettingsActiveTab('sett-pane-company')" id="tab-btn-sett-pane-company" class="w-full text-left px-4 py-3 rounded-xl transition bg-iosBlue text-white flex items-center gap-2"><i data-lucide="building-2" class="w-4 h-4"></i> Corporate Profile</button>
+                        <button onclick="switchSettingsActiveTab('sett-pane-timecards')" id="tab-btn-sett-pane-timecards" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="calendar-days" class="w-4 h-4"></i> Staff Time Cards</button>
+                        <button onclick="switchSettingsActiveTab('sett-pane-giftcards')" id="tab-btn-sett-pane-giftcards" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="credit-card" class="w-4 h-4"></i> Gift Card Registry</button>
+                        <button onclick="switchSettingsActiveTab('sett-pane-transactions')" id="tab-btn-sett-pane-transactions" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Historical Invoices</button>
+                        <button onclick="switchSettingsActiveTab('sett-pane-logs')" id="tab-btn-sett-pane-logs" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="scroll-text" class="w-4 h-4"></i> System Audit Trail</button>
+                        <button onclick="switchSettingsActiveTab('sett-pane-about')" id="tab-btn-sett-pane-about" class="w-full text-left px-4 py-3 rounded-xl transition text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4"></i> About Application</button>
+                    </div>
+                </div>
+
+                <div class="w-3/4 h-full bg-white border border-gray-200 rounded-2xl p-6 overflow-y-auto ios-scroll shadow-sm">
+                    <div id="sett-pane-company" class="settings-tab-view space-y-6">
+                        <h3 class="text-xl font-bold border-b border-gray-100 pb-2 flex items-center gap-2"><i data-lucide="building-2" class="w-5 h-5 text-iosBlue"></i> Corporate Profile & Rules</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Company Trade Title</label>
+                                <input type="text" id="cfg-comp-name" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Operational Store Code ID</label>
+                                <input type="text" id="cfg-store-num" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-medium">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Physical Store Address Structure</label>
+                                <input type="text" id="cfg-store-address" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Store Direct Dial Telephone</label>
+                                <input type="text" id="cfg-store-phone" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Guest Support Line Hot-Wire</label>
+                                <input type="text" id="cfg-cust-phone" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Regional Applied Sales Tax Rate (%)</label>
+                                <input type="number" step="0.001" id="cfg-tax-rate" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-bold text-iosBlue">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Standard Drawer Base Vault Float ($)</label>
+                                <input type="number" step="0.01" id="cfg-cash-float" class="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-iosBlue font-bold text-iosGreen">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Corporate System Vector Logo Mock Upload</label>
+                            <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center hover:bg-gray-50 transition cursor-pointer">
+                                <i data-lucide="image-plus" class="w-8 h-8 text-gray-400 mx-auto mb-1"></i>
+                                <span class="text-xs font-medium text-gray-500 block">Click or pull assets here to update the dynamic UI skin</span>
+                            </div>
+                        </div>
+                        <button onclick="saveGlobalCorporateProfileSettings()" class="bg-iosBlue text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition active:scale-95">Commit Parameters</button>
+                    </div>
+
+                    <div id="sett-pane-timecards" class="settings-tab-view hidden-view space-y-4">
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="calendar-days" class="w-5 h-5 text-cyan-500"></i> Corporate Time Card Management Console</h3>
+                            <button onclick="openTimeCardOverrideForm()" class="bg-iosBlue text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow-sm"><i data-lucide="plus" class="w-3 h-3 inline"></i> Add Manual Punch</button>
+                        </div>
+                        <div class="overflow-x-auto ios-scroll">
+                            <table class="w-full text-left text-xs divide-y divide-gray-200">
+                                <thead class="bg-gray-50 font-bold uppercase tracking-wider text-gray-400">
+                                    <tr>
+                                        <th class="p-3">Staff Associate</th>
+                                        <th class="p-3">Clock-In Punch</th>
+                                        <th class="p-3">Clock-Out Punch</th>
+                                        <th class="p-3">Break Statement</th>
+                                        <th class="p-3 text-right">Hours Logged</th>
+                                        <th class="p-3 text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body-sett-timecards" class="divide-y divide-gray-100 font-medium"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="sett-pane-giftcards" class="settings-tab-view hidden-view space-y-4">
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="credit-card" class="w-5 h-5 text-purple-500"></i> Corporate Card Asset Registry</h3>
+                            <button onclick="triggerManualGiftCardCreationWizard()" class="bg-iosBlue text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow-sm"><i data-lucide="plus" class="w-3 h-3 inline"></i> Vault New Asset Card</button>
+                        </div>
+                        <div class="overflow-x-auto ios-scroll">
+                            <table class="w-full text-left text-xs divide-y divide-gray-200">
+                                <thead class="bg-gray-50 font-bold uppercase tracking-wider text-gray-400">
+                                    <tr>
+                                        <th class="p-3">Card Control String</th>
+                                        <th class="p-3 text-right">Initial Vault Load</th>
+                                        <th class="p-3 text-right">Live Remaining Balance</th>
+                                        <th class="p-3">Transaction Link Ledger</th>
+                                        <th class="p-3 text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body-sett-giftcards" class="divide-y divide-gray-100 font-medium"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="sett-pane-transactions" class="settings-tab-view hidden-view space-y-4">
+                        <h3 class="text-xl font-bold border-b border-gray-100 pb-2 flex items-center gap-2"><i data-lucide="history" class="w-5 h-5 text-indigo-500"></i> Corporate Historical Invoice Log</h3>
+                        <div class="overflow-x-auto ios-scroll">
+                            <table class="w-full text-left text-xs divide-y divide-gray-200">
+                                <thead class="bg-gray-50 font-bold uppercase tracking-wider text-gray-400">
+                                    <tr>
+                                        <th class="p-3">Invoice Number ID</th>
+                                        <th class="p-3">Timestamp Block</th>
+                                        <th class="p-3">Operator Associate</th>
+                                        <th class="p-3 text-right">Invoice Value Gross</th>
+                                        <th class="p-3">Tender Execution Vector</th>
+                                        <th class="p-3">System Flags</th>
+                                        <th class="p-3 text-center">Operational Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body-sett-transactions" class="divide-y divide-gray-100 font-medium"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="sett-pane-logs" class="settings-tab-view hidden-view space-y-4">
+                        <h3 class="text-xl font-bold border-b border-gray-100 pb-2 flex items-center gap-2"><i data-lucide="scroll-text" class="w-5 h-5 text-orange-500"></i> System Operational Audit Trail Log</h3>
+                        <div class="bg-gray-900 rounded-2xl p-4 font-mono text-[11px] text-green-400 h-[450px] overflow-y-auto ios-scroll space-y-1.5 shadow-inner">
+                            <div id="terminal-audit-stream"></div>
+                        </div>
+                    </div>
+
+                    <div id="sett-pane-about" class="settings-tab-view hidden-view flex flex-col items-center text-center justify-center py-20 space-y-4">
+                        <div class="w-24 h-24 bg-gradient-to-tr from-gray-800 to-gray-900 text-white flex items-center justify-center rounded-3xl shadow-xl">
+                            <i data-lucide="terminal" class="w-12 h-12"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-black tracking-tight text-gray-800">Dexis Retail Enterprise</h2>
+                            <p class="text-sm font-semibold text-iosBlue uppercase tracking-wider mt-0.5">Core Kernel Layer Production Target</p>
+                        </div>
+                        <div class="bg-gray-50 px-6 py-4 rounded-2xl border border-gray-200/60 font-mono text-left text-xs space-y-1.5 w-full max-w-sm">
+                            <p><span class="font-bold text-gray-400">Release Build:</span> v1.0.0</p>
+                            <p><span class="font-bold text-gray-400">Runtime Target:</span> Build: 077841392</p>
+                            <p><span class="font-bold text-gray-400">Storage Engine:</span> Firebase Cloud Firestore</p>
+                            <p><span class="font-bold text-gray-400">Hardware Profile:</span> Apple iPad iOS Client</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-manage-till" class="absolute inset-0 flex hidden-view p-6 justify-center items-center select-none">
+                <div class="w-full max-w-xl bg-white border border-gray-200 rounded-3xl p-8 shadow-2xl space-y-6">
+                    <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-3 bg-teal-50 text-teal-600 rounded-2xl"><i data-lucide="landmark" class="w-6 h-6"></i></div>
+                            <div>
+                                <h2 class="font-bold text-xl">Register Till Management Console</h2>
+                                <p class="text-xs text-gray-400">System State Tracking and Session Audits</p>
+                            </div>
+                        </div>
+                        <button onclick="navigateTo('view-home')" class="text-iosGray font-semibold px-3 py-1 bg-gray-100 rounded-lg text-sm">Dismiss</button>
+                    </div>
+                    <div id="till-flow-workspace" class="space-y-4"></div>
+                </div>
+            </div>
+
+        </main>
+
+        <div id="global-modal-layer" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-6">
+            <div id="global-modal-box" class="bg-white rounded-3xl w-full max-w-lg shadow-2xl p-6 border border-gray-200"></div>
+        </div>
+
+    </div>
+
     <script>
         // =========================================================================
         // INITIALIZE CLOUD CONNECT VIA FIREBASE CREDENTIALS
@@ -41,7 +594,6 @@
         async function syncCacheFromFirestoreEngine() {
             console.log("Starting full Firestore cache sync pipeline...");
             try {
-                // Fetch each collection with individual try/catch wrappers so empty tables never freeze the app
                 state.dbCache.employees = await getAllRecordsFromStore("employees").catch(() => []);
                 state.dbCache.customers = await getAllRecordsFromStore("customers").catch(() => []);
                 state.dbCache.inventory = await getAllRecordsFromStore("inventory").catch(() => []);
@@ -118,7 +670,6 @@
         }
 
         async function enforceFoundationalSystemSeedData() {
-            // Check in-memory sync results or manually force seed parameters arrays
             if(!state.dbCache.employees || state.dbCache.employees.length === 0) {
                 let masterManager = {
                     employeeNum: "1000001",
@@ -178,7 +729,6 @@
             let numInp = document.getElementById("login-emp-num").value.trim();
             let passInp = document.getElementById("login-emp-pass").value;
             
-            // Safe array validation layer guard trace
             if(!state.dbCache.employees) state.dbCache.employees = [];
             let matchedUser = state.dbCache.employees.find(e => e.employeeNum === numInp);
             
@@ -1049,7 +1599,7 @@
         // ROSTER CONFIG DETAILS INTERFACES
         // =========================================================================
         function openEmployeeEnrollmentModal() {
-            openGlobalModalOverlay(`
+            openGlobalModalOverlay suicide: `
                 <div class="space-y-4"><h3>Recruit New Associate Asset</h3>
                     <div class="grid grid-cols-2 gap-3 text-xs font-semibold">
                         <div class="col-span-2"><label>Full Staff Legal Name *</label><input type="text" id="new-emp-name" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
@@ -1062,9 +1612,8 @@
                         <div><label>Payroll Structure Class *</label><select id="new-emp-pay-type" class="w-full p-2 bg-gray-50 border rounded-xl"><option value="hourly">Hourly</option><option value="salary">Salary</option></select></div>
                         <div><label>Compensation Rate ($) *</label><input type="number" step="0.01" id="new-emp-pay-amount" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
                         <div><label>POS Entry Password *</label><input type="password" id="new-emp-pass" placeholder="6-15 Characters" class="w-full p-2 bg-gray-50 border rounded-xl"></div>
-                    </div>
-                    <div class="flex gap-2 justify-end pt-2"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs">Dismiss</button><button onclick="processEmployeeEnrollmentSubmission()" class="px-4 py-2 bg-iosBlue text-white rounded-xl text-xs shadow-sm">Commit onboarding</button></div>
-                </div>`);
+                    </div><div class="flex gap-2 justify-end pt-2"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs">Dismiss</button><button onclick="processEmployeeEnrollmentSubmission()" class="px-4 py-2 bg-iosBlue text-white rounded-xl text-xs">Commit onboarding</button></div>
+                </div>`;
         }
 
         async function processEmployeeEnrollmentSubmission() {
@@ -1162,7 +1711,7 @@
                     </div>
                     <div class="space-y-2">
                         <div class="flex justify-between px-1"><span>Variant Chains</span><button onclick="triggerVariantAppenderWizard('${p.sku}')" class="text-iosBlue underline text-[10px]">Append Variant Node</button></div>
-                        <div class="space-y-1.5 max-h-44 overflow-y-auto p-2 border rounded-2xl bg-gray-50">${variantsHtml = variantsHtml || '<p class="text-[10px] text-center text-gray-400 py-4">No attributes variants nodes found on standalone SKU paths.</p>'}</div>
+                        <div class="space-y-1.5 max-h-40 overflow-y-auto p-2 border rounded-2xl bg-gray-50">${variantsHtml = variantsHtml || '<p class="text-[10px] text-center text-gray-400 py-4">No attributes variants nodes found on standalone SKU paths.</p>'}</div>
                     </div>
                     <hr><button onclick="requireManagerProductDeletionSequence('${p.sku}')" class="w-full py-2 bg-iosRed/10 text-iosRed rounded-xl font-bold flex justify-center items-center gap-1"><i data-lucide="trash-2" class="w-4 h-4"></i> Purge SKU from POS Matrix completely</button>
                 </div>`;
@@ -1190,83 +1739,6 @@
             v.stock += delta; if(v.stock < 0) v.stock = 0; p.stockOnHand += delta; if(p.stockOnHand < 0) p.stockOnHand = 0;
             await writeRecordToStore("inventory", p); await writeAuditTrailLogEntry(state.activeEmployee ? state.activeEmployee.employeeNum : "SYSTEM", `Modulated attribute stock quantities line balance on variance index tracker keys line.`);
             closeGlobalModalOverlay(); renderInventoryCatalogTable(); openProductInspectionAdjustmentWorkspacePanel(skuCode);
-        }
-
-        function triggerVariantAppenderWizard(skuCode) {
-            openGlobalModalOverlay(`
-                <div class="space-y-3"><h3>Append Variant Attribute Node</h3>
-                    <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
-                        <div><label>Color Option Descriptor *</label><input type="text" id="v-new-color" placeholder="Midnight Midnight Black" class="w-full p-2 border bg-gray-50 rounded-xl"></div>
-                        <div><label>Size Category Code *</label><input type="text" id="v-new-size" placeholder="L" class="w-full p-2 border bg-gray-50 rounded-xl"></div>
-                        <div class="col-span-2"><label>Initial Intake Count Balance Volume</label><input type="number" id="v-new-stock" value="0" class="w-full p-2 border bg-gray-50 text-center font-mono rounded-xl"></div>
-                    </div><button onclick="processVariantNodeAppenderExecution('${skuCode}')" class="w-full py-2 bg-gray-900 text-white font-bold text-xs rounded-xl mt-1">Append Attribute Structure</button>
-                </div>`);
-        }
-
-        async function processVariantNodeAppenderExecution(skuCode) {
-            let color = document.getElementById("v-new-color").value.trim(); let size = document.getElementById("v-new-size").value.trim();
-            let stock = parseInt(document.getElementById("v-new-stock").value) || 0; if(!color || !size) return;
-            
-            let p = state.dbCache.inventory.find(x => x.sku === skuCode); if(!p.variants) p.variants = [];
-            p.variants.push({ color: color, size: size, stock: stock }); p.stockOnHand += stock;
-            await writeRecordToStore("inventory", p); closeGlobalModalOverlay(); renderInventoryCatalogTable(); openProductInspectionAdjustmentWorkspacePanel(skuCode);
-        }
-
-        function openSkuCreationModal() {
-            if(state.activeEmployee && state.activeEmployee.managerAuthority !== 'yes') { triggerAppNotificationAlert("Access Denied", "Elevated roles attributes are required to write product vectors blocks mappings keys."); return; }
-            let optionsHtml = ""; state.dbCache.categories.forEach(c => { optionsHtml += `<option value="${c.id}">${c.name}</option>`; });
-            
-            openGlobalModalOverlay(`
-                <div class="space-y-4"><h3>Catalog New Master SKU Product</h3>
-                    <div class="grid grid-cols-2 gap-3 text-xs font-semibold">
-                        <div class="col-span-2"><label>Item Description Title *</label><input type="text" id="p-new-name" class="w-full p-2 border bg-gray-50 rounded-xl"></div>
-                        <div><label>Dynamic Barcode SKU Code *</label><input type="text" id="p-new-sku" class="w-full p-2 border bg-gray-50 font-mono rounded-xl"></div>
-                        <div><label>Category Linkage *</label><select id="p-new-cat" class="w-full p-2 border bg-gray-50 rounded-xl">${optionsHtml}</select></div>
-                        <div><label>Retail Price *</label><input type="number" step="0.01" id="p-new-price" class="w-full p-2 border bg-gray-50 font-mono rounded-xl"></div>
-                        <div><label>Acquisition Cost Basis *</label><input type="number" step="0.01" id="p-new-cost" class="w-full p-2 border bg-gray-50 font-mono rounded-xl"></div>
-                        <div><label>Sales Tax Obligation *</label><select id="p-new-tax" class="w-full p-2 border bg-gray-50 rounded-xl"><option value="yes">Taxable Standard Retail Item</option><option value="no">Exempt Category Asset</option></select></div>
-                        <div><label>Initial Stock Intake Balance</label><input type="number" id="p-new-stock" value="0" class="w-full p-2 border bg-gray-50 font-mono rounded-xl"></div>
-                    </div><div class="flex gap-2 justify-end pt-2"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs">Dismiss</button><button onclick="processNewProductSkuCreation()" class="px-4 py-2 bg-iosBlue text-white rounded-xl text-xs">Vault Item Matrix Product</button></div>
-                </div>`);
-        }
-
-        async function processNewProductSkuCreation() {
-            let name = document.getElementById("p-new-name").value.trim(); let sku = document.getElementById("p-new-sku").value.trim();
-            let cat = document.getElementById("p-new-cat").value; let price = parseFloat(document.getElementById("p-new-price").value);
-            let cost = parseFloat(document.getElementById("p-new-cost").value); let tax = document.getElementById("p-new-tax").value;
-            let stock = parseInt(document.getElementById("p-new-stock").value) || 0;
-            
-            if(!name || !sku || isNaN(price) || isNaN(cost)) { triggerAppNotificationAlert("Data Deficiency", "Fill required fields completely."); return; }
-            if(state.dbCache.inventory.some(p => p.sku === sku)) { triggerAppNotificationAlert("Collision Fault", "This exact unique code signature is already claimed inside database charts mapping indexes."); return; }
-            
-            let productObj = { sku: sku, nameDescription: name, price: price, cost: cost, taxEligible: tax, categoryId: cat, stockOnHand: stock, variants: [] };
-            await writeRecordToStore("inventory", productObj); state.dbCache.inventory.push(productObj);
-            await writeAuditTrailLogEntry(state.activeEmployee.employeeNum, `Vaulted product code reference keys arrays [${sku}]`);
-            closeGlobalModalOverlay(); renderInventoryCatalogTable();
-        }
-
-        function requireManagerProductDeletionSequence(skuCode) {
-            if(state.activeEmployee && state.activeEmployee.managerAuthority !== 'yes') { triggerAppNotificationAlert("Access Denied", "Supervisor role verification tokens required."); return; }
-            openGlobalModalOverlay(`<div class="space-y-4 text-center"><div class="w-12 h-12 bg-iosRed/10 text-iosRed rounded-full flex items-center justify-center mx-auto"><i data-lucide="trash-2" class="w-6 h-6"></i></div><h3>Authorize Permanent SKU Purging</h3><p class="text-xs text-gray-500">Confirm absolute compliance intent to wipe item profile maps [${skuCode}] from system database vectors completely.</p><div class="flex gap-2 justify-center"><button onclick="closeGlobalModalOverlay()" class="px-4 py-2 bg-gray-100 rounded-xl text-xs">Abort</button><button onclick="processProductPermanentlyPurged('${skuCode}')" class="px-4 py-2 bg-iosRed text-white rounded-xl text-xs shadow-sm">Confirm Permanent Purge</button></div></div>`);
-            lucide.createIcons();
-        }
-
-        async function processProductPermanentlyPurged(skuCode) {
-            await deleteRecordFromStore("inventory", skuCode);
-            await writeAuditTrailLogEntry(state.activeEmployee.employeeNum, `Purged SKU item tracking codes configuration profile lists blocks: ${skuCode}`);
-            closeGlobalModalOverlay(); renderInventoryCatalogTable(); clearInventoryInspectionPane();
-        }
-
-        function openCategorySetupModal() {
-            if(state.activeEmployee && state.activeEmployee.managerAuthority !== 'yes') { triggerAppNotificationAlert("Access Denied", "Administrative elevation tokens required."); return; }
-            let htmlList = ""; state.dbCache.categories.forEach(c => { htmlList += `<div class="p-2 border-b text-xs font-semibold"><span>${c.name} <span class="text-[9px] font-mono text-gray-400">[${c.id}]</span></span></div>`; });
-            openGlobalModalOverlay(`<div class="space-y-4"><h3>Category Blueprint Hierarchy Mappings</h3><div class="space-y-1 max-h-32 overflow-y-auto border p-2 rounded-xl bg-gray-50">${htmlList}</div><div class="border-t pt-2 space-y-2"><div class="flex gap-2"><input type="text" id="new-cat-title" placeholder="Forge New Merchandising Category Block" class="flex-1 p-2 bg-gray-50 border rounded-xl text-xs"><button onclick="executeCategoryCreationLine()" class="bg-iosBlue text-white px-4 rounded-xl text-xs font-bold">Create</button></div></div><button onclick="closeGlobalModalOverlay()" class="w-full py-2 bg-gray-100 rounded-xl text-xs font-bold text-gray-600">Close</button></div>`);
-        }
-
-        async function executeCategoryCreationLine() {
-            let title = document.getElementById("new-cat-title").value.trim(); if(!title) return;
-            let catObj = { id: "cat_" + Date.now(), name: title }; await writeRecordToStore("categories", catObj);
-            state.dbCache.categories.push(catObj); closeGlobalModalOverlay(); openCategorySetupModal();
         }
 
         // =========================================================================
@@ -1469,12 +1941,11 @@
 
         window.addEventListener("DOMContentLoaded", async () => {
             startSystemCoreClockEngineDaemon();
-            // Boot sequence handles empty collections gracefully now
             await syncCacheFromFirestoreEngine();
             await enforceFoundationalSystemSeedData();
-            
-            // Move view to login panel smoothly once memory mirrors populate
             navigateTo('view-login');
             lucide.createIcons();
         });
     </script>
+</body>
+</html>
